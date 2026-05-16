@@ -676,6 +676,12 @@ body.modal-open{overflow:hidden}
 
 @media(max-width:991px){
   .obs-sidebar{display:none!important}
+  /* Mobilde sol üstteki hamburger menüyü gizle (alt navigasyon zaten var) */
+  .obs-topbar [data-lte-toggle="sidebar"],
+  .obs-topbar .nav-item:has([data-lte-toggle="sidebar"]){display:none!important}
+  .obs-topbar{padding:8px 12px;min-height:56px}
+  .obs-topbar .navbar-nav{gap:4px}
+  .obs-topbar .brand-text{font-size:15px;font-weight:700;color:var(--obs-primary);letter-spacing:-.01em}
   .app-content{padding-bottom:96px}
   .page-title-row,.profile-header,.section-title-row{flex-direction:column;align-items:flex-start}
   .profile-actions{justify-content:flex-start}
