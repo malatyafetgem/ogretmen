@@ -55,24 +55,25 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
   <!-- TOPBAR -->
   <nav class="app-header navbar navbar-expand bg-body obs-topbar">
     <ul class="navbar-nav">
-      <!-- Bordered square hamburger (referans tasarım) -->
-      <li class="nav-item">
+      <!-- Hamburger — sadece masaüstünde görünür -->
+      <li class="nav-item d-none d-lg-flex">
         <a class="nav-link top-icon-link" data-lte-toggle="sidebar" href="#" role="button"
            onclick="event.preventDefault()" aria-label="Menüyü aç/kapat">
           <i class="fas fa-bars"></i>
         </a>
       </li>
       <!-- Masaüstü marka -->
-      <li class="nav-item d-none d-md-flex align-items-center">
+      <li class="nav-item d-none d-lg-flex align-items-center">
         <span class="nav-link top-brand-inline">
-          <i class="fas fa-user-tie"></i><span>Öğretmen Bilgi Sistemi</span>
+          <i class="fas fa-chalkboard-user top-brand-icon"></i>
+          <span class="top-brand-title">Öğretmen Bilgi Sistemi</span>
         </span>
       </li>
       <!-- Mobil marka -->
-      <li class="nav-item d-flex d-lg-none align-items-center ms-1">
+      <li class="nav-item d-flex d-lg-none align-items-center">
         <a href="#dashboard" class="top-mobile-brand" onclick="return sTab('dashboard')" aria-label="Ana Sayfa">
-          <img src="./icon.png" alt="" class="top-mobile-brand-icon">
-          <span>Öğretmen</span>
+          <span class="top-mobile-icon-wrap"><i class="fas fa-chalkboard-user"></i></span>
+          <span class="top-mobile-title">Öğretmen</span>
         </a>
       </li>
     </ul>
@@ -80,7 +81,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <li class="nav-item"><span class="nav-link version-pill" id="versionBadge"></span></li>
       <li class="nav-item">
         <a href="#" class="nav-link top-action-link" onclick="logout(); return false;">
-          <i class="fas fa-arrow-right-from-bracket me-1"></i><span>Çıkış</span>
+          <i class="fas fa-arrow-right-from-bracket me-1"></i><span class="d-none d-sm-inline">Çıkış</span>
         </a>
       </li>
     </ul>
@@ -119,12 +120,9 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               <h2>Panel</h2>
               <p>Öğretmen, nöbet, görev ve program durumunun kısa özeti.</p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openTeacherModal()">
-              <i class="fas fa-plus me-1"></i>Öğretmen Ekle
-            </button>
           </div>
           <div id="dashboardCards" class="row g-3"></div>
-          <div class="card obs-panel mb-3">
+          <div class="card obs-panel dashboard-search-card">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-magnifying-glass me-2"></i>Arama</h3></div>
             <div class="card-body">
               <div class="input-group">
@@ -133,6 +131,11 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
                 <button class="btn btn-outline-secondary" onclick="clearDashboardSearch()"><i class="fas fa-xmark"></i></button>
               </div>
               <div id="dashboardSearchResults" class="dashboard-search-results"></div>
+              <div class="dashboard-add-row">
+                <button class="btn btn-primary dashboard-add-btn" onclick="openTeacherModal()">
+                  <i class="fas fa-user-plus me-2"></i>Öğretmen Ekle
+                </button>
+              </div>
             </div>
           </div>
           <div class="row g-3 mt-1">

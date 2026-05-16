@@ -147,7 +147,7 @@ body {
   background: var(--c-surface) !important;
 }
 
-/* Hamburger — referanstaki bordered square stil */
+/* Hamburger — referanstaki bordered square stil — sadece masaüstü */
 .top-icon-link {
   display:inline-flex; align-items:center; justify-content:center;
   width:42px; height:42px;
@@ -159,11 +159,35 @@ body {
 }
 .top-icon-link:hover { background:#f3f4f6; }
 
-.top-brand-inline, .top-mobile-brand {
-  display:flex; align-items:center; gap:8px;
-  color:var(--c-ink); font-weight:700; text-decoration:none; font-size:.95rem;
+/* Masaüstü marka */
+.top-brand-inline {
+  display:flex; align-items:center; gap:10px;
+  color:var(--c-ink); text-decoration:none;
 }
-.obs-sidebar .brand-image, .top-mobile-brand-icon { width:30px; height:30px; object-fit:contain; }
+.top-brand-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:34px; height:34px;
+  border:var(--border-ink); border-radius:var(--r);
+  font-size:.95rem; color:var(--c-blue); flex-shrink:0;
+}
+.top-brand-title {
+  font-size:.92rem; font-weight:800; letter-spacing:-.02em; color:var(--c-ink);
+}
+
+/* Mobil marka */
+.top-mobile-brand {
+  display:flex; align-items:center; gap:9px;
+  color:var(--c-ink); text-decoration:none;
+}
+.top-mobile-icon-wrap {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:32px; height:32px;
+  border:var(--border-ink); border-radius:var(--r);
+  font-size:.88rem; color:var(--c-blue); flex-shrink:0;
+}
+.top-mobile-title {
+  font-size:.95rem; font-weight:800; letter-spacing:-.02em; color:var(--c-ink);
+}
 
 .top-action-link {
   display:flex; align-items:center; gap:5px; padding:6px 12px;
@@ -369,7 +393,7 @@ body {
 */
 .metric-card {
   display:flex; flex-direction:column; justify-content:space-between;
-  min-height:120px; border-radius:var(--r);
+  min-height:116px; border-radius:var(--r);
   padding:16px 16px 14px; position:relative; overflow:hidden;
   /* Varsayılan: beyaz kart, kalın siyah kenarlık */
   background:var(--c-surface); border:var(--border-ink-thick); color:var(--c-ink);
@@ -708,7 +732,17 @@ body {
 .chip-active { background:var(--c-blue) !important; color:#fff !important; border-color:var(--c-blue) !important; }
 
 /* ─── 27. ARAMA SONUÇLARI ─── */
+.dashboard-search-card { margin-top:14px; }
 .dashboard-search-results { margin-top:10px; }
+.dashboard-add-row {
+  margin-top:12px; padding-top:12px;
+  border-top:var(--border-light);
+  display:flex; align-items:center; justify-content:flex-start;
+}
+.dashboard-add-btn {
+  gap:6px; font-size:.85rem; padding:8px 16px;
+  border-radius:var(--r);
+}
 .search-result-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; }
 .search-result-item {
   display:flex; align-items:center; gap:10px; width:100%;
