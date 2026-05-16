@@ -1,0 +1,21 @@
+{
+  "name": "Öğretmen Bilgi Sistemi",
+  "short_name": "Öğretmen",
+  "id": "./",
+  "lang": "tr",
+  "description": "Öğretmen bilgileri, ders programı, nöbet ve görev takibi için yönetim sistemi.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#2563eb",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
