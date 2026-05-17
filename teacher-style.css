@@ -398,6 +398,23 @@ body {
 }
 .empty-state i { color:var(--c-blue); }
 
+/* Program bölümü: dersi yok mesajı — tek satır, kompakt */
+.program-empty {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 0; color:var(--c-muted); font-size:.84rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.program-empty i { color:var(--c-blue); flex-shrink:0; }
+
+/* Haftalık program — yatay kaydırma */
+.teacher-weekly-scroll {
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  border-radius:var(--r); border:var(--border-ink);
+  margin-top:8px;
+}
+.teacher-weekly-scroll .table-responsive { border:none; border-radius:0; }
+.teacher-weekly-scroll table { min-width:600px; }
+
 /* ─── 15. METRİK KARTLAR ─── */
 /*
   JS ürettiği HTML:

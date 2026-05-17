@@ -283,7 +283,7 @@ function buildTeacherProfileSchedule(t, lessons){
     }
     return `<tr><th>${escapeHtml(day)}</th>${cells.join('')}</tr>`;
   }).join('');
-  return `<div class="section-body-actions no-print"><button class="btn btn-sm btn-outline-secondary" onclick="openTeacherSchedule('${t.id}')">Programda Aç</button></div><div class="table-responsive"><table class="table table-bordered teacher-program-board mb-0"><thead><tr><th>Ders/Gün</th>${hourHeads}</tr><tr><th>Saat</th>${timeHeads}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="teacher-weekly-scroll"><div class="table-responsive"><table class="table table-bordered teacher-program-board mb-0"><thead><tr><th>Ders/Gün</th>${hourHeads}</tr><tr><th>Saat</th>${timeHeads}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 function teacherBoardSlotHtml(slots){
@@ -302,7 +302,7 @@ function teacherDailySlotHtml(slot){
 
 function buildTeacherDailySchedule(t, lessons, day){
   const dayLessons=lessons.filter(s=>s.day===day);
-  if(!dayLessons.length) return `<div class="empty-state mt-2"><i class="fas fa-calendar-xmark"></i><span>${escapeHtml(day)} günü dersi bulunmamaktadır.</span></div>`;
+  if(!dayLessons.length) return `<div class="program-empty"><i class="fas fa-calendar-xmark"></i><span>${escapeHtml(day)} günü dersi bulunmamaktadır.</span></div>`;
   const cards=schoolHours().map(hour=>{
     const slot=dayLessons.filter(s=>Number(s.hour)===Number(hour));
     const duty=t.dutyDay===day?' duty-sheet':'';
