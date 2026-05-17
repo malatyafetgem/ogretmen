@@ -108,6 +108,7 @@ function goTeacherProfile(id){
   const select=getEl('teacherProfileSelect'); if(select) select.value=id;
   updateTeacherBadge(t);
   showProfileButtons(true);
+  const filter=getEl('teacherProgramFilter'); if(filter) filter.style.display='';
   sTab('teachers');
   showTeacherProfile(id);
   setTimeout(()=>getEl('teacherProfile')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
@@ -120,13 +121,15 @@ function showTeacherProfile(id){
   document.querySelectorAll('#teacherTable tr').forEach(row=>row.classList.remove('selected-row'));
   document.querySelectorAll('#teacherTable tbody tr').forEach(row=>{ if(row.dataset.teacherId===id) row.classList.add('selected-row'); });
   const lessons=teacherLessons(id), tasks=teacherTasks(id), free=teacherFreeInfo(id);
-  const day=getEl('teacherProfileDay')?.value||todayName()||schoolDays()[0];
   const dutyMeta=[t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'Kayıt yok';
   // Badge ve butonları güncelle
   updateTeacherBadge(t);
   showProfileButtons(true);
-  getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-header profile-header"><div><h3 class="card-title"><i class="fas fa-id-card me-2"></i>${escapeHtml(teacherName(t))}</h3><p>${escapeHtml(t.branch||'Branş yok')}</p></div></div><div class="card-body profile-disclosures">
-    ${disclosureSection({key:`teacher-${id}-daily-${day}`,title:`Program`,icon:'fas fa-calendar-days',meta:teacherName(t),content:buildTeacherDailySchedule(t, lessons, day)+buildTeacherProfileSchedule(t, lessons),open:true})}
+  // Program filtreni göster, modu sıfırla
+  const filter=getEl('teacherProgramFilter'); if(filter) filter.style.display='';
+  setProgramMode('', '', false); // görsel sıfırla ama render etme
+  getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
+    <div id="teacherProgramSection" class="teacher-program-section"></div>
     ${disclosureSection({key:`teacher-${id}-personal`,title:'Kişisel Bilgiler',icon:'fas fa-user',meta:'Öğretmen kartı',content:buildTeacherPersonalInfo(t, lessons, tasks, free),open:false})}
     ${disclosureSection({key:`teacher-${id}-load`,title:'Ders Yükü',icon:'fas fa-book-open',meta:`${lessons.length} saat / hafta`,content:buildTeacherLessonLoad(t, lessons)})}
     ${disclosureSection({key:`teacher-${id}-duty`,title:'Nöbet',icon:'fas fa-clipboard-check',meta:dutyMeta,content:buildTeacherDutyInfo(t)})}
@@ -134,12 +137,52 @@ function showTeacherProfile(id){
     ${disclosureSection({key:`teacher-${id}-free`,title:'Boş Saatler',icon:'fas fa-calendar-minus',meta:`${free.freeSlots.length} boş ders`,content:buildTeacherFreeSlots(free)})}
   </div></div>`;
 }
+
+let currentProgramMode='';
+
+function setProgramMode(mode, day='', render=true){
+  currentProgramMode=mode;
+  // Buton vurgularını güncelle
+  document.querySelectorAll('.prog-mode-btn').forEach(btn=>{
+    const isDay=mode==='day';
+    const matches=(!isDay && btn.dataset.mode===mode) || (isDay && btn.dataset.mode===day);
+    btn.classList.toggle('prog-mode-active', btn.dataset.mode===mode||(mode==='day'&&btn.dataset.mode===day));
+  });
+  // Gün butonlarını güncelle (haftalık değilse gün seçimi göster)
+  const daySelect=getEl('teacherProfileDay');
+  if(daySelect){ daySelect.style.display=(mode===''||mode==='weekly')?'none':''; }
+  if(!render) return;
+  const t=teacherById(selectedTeacherId); if(!t) return;
+  const lessons=teacherLessons(selectedTeacherId);
+  const section=getEl('teacherProgramSection'); if(!section) return;
+  if(!mode){ section.innerHTML=''; return; }
+  if(mode==='weekly'){
+    section.innerHTML=`<div class="program-section-content">${buildTeacherProfileSchedule(t,lessons)}</div>`;
+  } else if(mode==='day'){
+    const selectedDay=day||getEl('teacherProfileDay')?.value||schoolDays()[0];
+    section.innerHTML=`<div class="program-section-content">${buildTeacherDailySchedule(t,lessons,selectedDay)}</div>`;
+  }
+}
+
+function selectDayFromProgram(day){
+  const daySelect=getEl('teacherProfileDay');
+  if(daySelect) daySelect.value=day;
+  // Gün butonunu aktif et
+  document.querySelectorAll('.prog-mode-btn').forEach(btn=>btn.classList.toggle('prog-mode-active', btn.dataset.mode===day));
+  currentProgramMode='day';
+  const t=teacherById(selectedTeacherId); if(!t) return;
+  const lessons=teacherLessons(selectedTeacherId);
+  const section=getEl('teacherProgramSection'); if(!section) return;
+  section.innerHTML=`<div class="program-section-content">${buildTeacherDailySchedule(t,lessons,day)}</div>`;
+}
 function clearTeacherSearch(){
   const input=getEl('teacherSearch'); if(input) input.value='';
   const results=getEl('teacherSearchResults'); if(results) results.innerHTML='';
   selectedTeacherId='';
+  currentProgramMode='';
   updateTeacherBadge(null);
   showProfileButtons(false);
+  const filter=getEl('teacherProgramFilter'); if(filter) filter.style.display='none';
   const profile=getEl('teacherProfile'); if(profile) profile.innerHTML='';
   const table=getEl('teacherTable'); if(table) table.innerHTML=teacherTableHtml(filteredTeachers(),{actions:true});
 }

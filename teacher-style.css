@@ -793,21 +793,47 @@ body {
 .teacher-preview-info strong { font-size:.88rem; color:var(--c-ink); font-weight:700; }
 .teacher-preview-info span   { font-size:.76rem; color:var(--c-muted); }
 
-/* Aksiyon butonları satırı */
+/* ─── PROGRAM FİLTRESİ ─── */
+.teacher-program-filter { border:var(--border-ink-thick) !important; }
+.program-filter-row {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.program-filter-label {
+  display:flex; align-items:center; gap:6px;
+  font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--c-muted); white-space:nowrap;
+}
+.program-filter-label i { color:var(--c-blue); font-size:.85rem; }
+.program-mode-btns {
+  display:flex; gap:5px; flex-wrap:wrap; flex:1;
+}
+.prog-mode-btn {
+  font-size:.78rem; font-weight:700; padding:5px 11px;
+  border-radius:var(--r); border:var(--border-ink);
+  background:var(--c-surface); color:var(--c-ink);
+  cursor:pointer; white-space:nowrap; transition:background .1s, color .1s;
+}
+.prog-mode-btn:hover { background:#f3f4f6; }
+.prog-mode-btn.prog-mode-active {
+  background:var(--c-ink); color:#fff;
+}
+.program-day-select { max-width:130px; font-size:.82rem; }
+.program-section-content { padding:12px 0 4px; }
+
+/* Aksiyon buton satırı — mobilde tek satır */
 .teacher-action-row {
-  display:flex; gap:8px; flex-wrap:wrap;
+  display:flex; gap:8px; flex-wrap:nowrap;
   margin-top:12px; padding-top:12px;
   border-top:var(--border-light);
 }
 .teacher-action-btn {
-  font-size:.82rem; font-weight:700; padding:7px 14px;
+  flex:1; font-size:.82rem; font-weight:700; padding:7px 10px;
   border-radius:var(--r);
   background:var(--c-surface); border:var(--border-ink); color:var(--c-ink);
-  white-space:nowrap;
+  white-space:nowrap; text-align:center;
 }
 .teacher-action-btn:hover { background:#f3f4f6; }
-/* Profil butonları (Düzenle, Yazdır) - biraz daha soluk başlangıçta */
-.teacher-action-btn--profile { opacity:.85; }
+.teacher-action-btn--profile { opacity:.9; }
 
 /* Dashboard add-row */
 .dashboard-add-row {

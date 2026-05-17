@@ -171,21 +171,26 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               <div id="teacherSelectedBadge" class="teacher-selected-preview" style="display:none"></div>
               <!-- Alt aksiyon butonları -->
               <div class="teacher-action-row">
-                <button class="btn teacher-action-btn" onclick="sTab('reports'); setReportMode('teachers')"><i class="fas fa-table me-1"></i>Tam Liste</button>
                 <button class="btn teacher-action-btn" onclick="openTeacherModal()"><i class="fas fa-user-plus me-1"></i>Ekle</button>
                 <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherEditBtn" style="display:none" onclick="openTeacherModal(selectedTeacherId)"><i class="fas fa-pen me-1"></i>Düzenle</button>
                 <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherPrintBtn" style="display:none" onclick="printArea('teacherProfile','Ogretmen_Profili')"><i class="fas fa-print me-1"></i>Yazdır</button>
               </div>
             </div>
           </div>
-          <!-- Filtre: Program günü -->
-          <div class="card obs-panel mt-2 mb-2 p-0">
-            <div class="card-body py-2 px-3 d-flex align-items-center gap-3 flex-wrap">
-              <label class="form-label mb-0 fw-semibold" style="white-space:nowrap"><i class="fas fa-calendar-days me-1"></i>Program</label>
-              <select id="teacherProfileSelect" class="form-select form-select-sm d-none" onchange="goTeacherProfile(this.value)"></select>
-              <select id="teacherProfileDay" class="form-select form-select-sm" style="max-width:160px" onchange="showTeacherProfile(selectedTeacherId)"></select>
+          <!-- Filtre: Program -->
+          <div class="card obs-panel mt-2 mb-2 teacher-program-filter" id="teacherProgramFilter" style="display:none">
+            <div class="card-body py-3 px-3">
+              <div class="program-filter-row">
+                <div class="program-filter-label"><i class="fas fa-calendar-days"></i><span>Program</span></div>
+                <div class="program-mode-btns" id="programModeBtns">
+                  <button class="prog-mode-btn prog-mode-active" data-mode="" onclick="setProgramMode('')">Seçiniz</button>
+                  <button class="prog-mode-btn" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button>
+                </div>
+                <select id="teacherProfileDay" class="form-select form-select-sm program-day-select" onchange="setProgramMode('day',this.value)"></select>
+              </div>
             </div>
           </div>
+          <select id="teacherProfileSelect" class="d-none" onchange="goTeacherProfile(this.value)"></select>
           <div id="teacherProfile" class="mt-2"></div>
           <details class="teacher-list-details no-print mt-3">
             <summary><i class="fas fa-list me-1"></i>Öğretmen listesini ekranda göster</summary>
