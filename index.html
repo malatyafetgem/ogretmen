@@ -321,7 +321,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
 
   <footer class="app-footer">© 2026 AYUSTASI</footer>
 
-  <!-- MOBİL ALT NAVİGASYON — referans: Panel | Öğretmenler | Sınıflar | Ders Progra... | Nöbet -->
+  <!-- MOBİL ALT NAVİGASYON -->
   <nav id="bottomNav" class="bottom-nav" aria-label="Alt navigasyon">
     <a id="bnav-dashboard" href="#dashboard" class="bnav-item active" onclick="return sTab('dashboard')">
       <i class="fas fa-house"></i><span>Panel</span>
@@ -335,11 +335,8 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
     <a id="bnav-reports" href="#reports" class="bnav-item" onclick="return sTab('reports')">
       <i class="fas fa-calendar-days"></i><span>Program</span>
     </a>
-    <!-- 5. sekme: Nöbet → duty modunda reports açılır; JS bnav-reports'u aktif eder ama
-         aşağıdaki onclick bunu düzeltiyor (sTab senkron çalıştığı için sonrasında güvenle değiştirilir) -->
-    <a id="bnav-settings" href="#reports" class="bnav-item"
-       onclick="sTab('duty'); document.getElementById('bnav-reports').classList.remove('active'); document.getElementById('bnav-settings').classList.add('active'); return false;">
-      <i class="fas fa-shield-halved"></i><span>Nöbet</span>
+    <a id="bnav-settings" href="#settings" class="bnav-item" onclick="return sTab('settings')">
+      <i class="fas fa-gear"></i><span>Ayarlar</span>
     </a>
   </nav>
 
@@ -360,7 +357,13 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label">Adı</label><input id="tFirstName" class="form-control" placeholder="Ad"></div>
           <div class="col-md-6"><label class="form-label">Soyadı</label><input id="tLastName" class="form-control" placeholder="Soyad"></div>
-          <div class="col-md-4"><label class="form-label">T.C. Kimlik No</label><input id="tIdentityNo" class="form-control" placeholder="11 haneli TC"></div>
+          <div class="col-md-4">
+            <label class="form-label">T.C. Kimlik No</label>
+            <div class="input-group">
+              <input id="tIdentityNo" type="password" class="form-control" placeholder="11 haneli TC" autocomplete="off">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleTcVisibility(this)" tabindex="-1"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
           <div class="col-md-4"><label class="form-label">Branşı</label><input id="tBranch" class="form-control" placeholder="Branş"></div>
           <div class="col-md-4"><label class="form-label">Cep Telefonu</label><input id="tPhone" class="form-control" placeholder="0555 000 00 00"></div>
           <div class="col-md-6"><label class="form-label">E-posta</label><input id="tEmail" type="email" class="form-control" placeholder="ornek@okul.gov.tr"></div>
@@ -371,6 +374,15 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <div class="col-md-6"><label class="form-label">Nöbet Günü</label><select id="tDutyDay" class="form-select"></select></div>
           <div class="col-md-6"><label class="form-label">Nöbet Yeri</label><input id="tDutyPlace" class="form-control" placeholder="Nöbet yeri"></div>
           <div class="col-12"><label class="form-label">Ders Programı Notu</label><textarea id="tScheduleNote" class="form-control" rows="2" placeholder="Geçici program notu..."></textarea></div>
+          <div class="col-12">
+            <label class="form-label">Verdiği Dersler</label>
+            <div id="tSubjectsList" class="teacher-subjects-list"></div>
+            <div class="d-flex gap-2 mt-2">
+              <input id="tSubjectInput" class="form-control form-control-sm" list="tSubjectOptions" placeholder="Ders adı seç veya yaz...">
+              <datalist id="tSubjectOptions"></datalist>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTeacherSubject()"><i class="fas fa-plus"></i> Ekle</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -392,9 +404,12 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <div class="modal-body">
         <input type="hidden" id="scheduleId">
         <div class="row g-3">
-          <div class="col-12"><label class="form-label">Öğretmen</label><select id="sTeacher" class="form-select"></select></div>
+          <div class="col-12"><label class="form-label">Öğretmen</label><select id="sTeacher" class="form-select" onchange="onScheduleTeacherChange()"></select></div>
           <div class="col-md-6"><label class="form-label">Sınıf</label><select id="sClass" class="form-select"></select></div>
-          <div class="col-md-6"><label class="form-label">Ders</label><input id="sSubject" class="form-control" list="subjectOptions" placeholder="Örn: Matematik"><datalist id="subjectOptions"></datalist></div>
+          <div class="col-md-6">
+            <label class="form-label">Ders</label>
+            <select id="sSubjectSelect" class="form-select"></select>
+          </div>
           <div class="col-md-6"><label class="form-label">Gün</label><select id="sDay" class="form-select"></select></div>
           <div class="col-md-6"><label class="form-label">Saat</label><select id="sHour" class="form-select"></select></div>
           <div class="col-12"><label class="form-label">Not / Derslik</label><input id="sNote" class="form-control" placeholder="Opsiyonel not veya derslik bilgisi"></div>

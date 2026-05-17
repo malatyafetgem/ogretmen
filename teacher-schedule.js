@@ -5,20 +5,53 @@ function openScheduleModal(id=''){
   const s=DB.schedules.find(x=>x.id===id)||null;
   getEl('scheduleModalTitle').textContent=s?'Ders Düzenle':'Ders Ekle';
   getEl('scheduleId').value=s?.id||'';
-  getEl('sTeacher').value=s?.teacherId||sortedTeachers()[0]?.id||'';
+  const teacherId=s?.teacherId||sortedTeachers()[0]?.id||'';
+  getEl('sTeacher').value=teacherId;
   getEl('sClass').value=s?.className||DB.settings.classes[0];
-  getEl('sSubject').value=s?.subject||teacherById(getEl('sTeacher').value)?.branch||'';
   getEl('sDay').value=s?.day||schoolDays()[0];
   getEl('sHour').value=s?.hour||schoolHours()[0]||1;
   getEl('sNote').value=s?.note||'';
+  // Öğretmene göre ders listesini doldur, sonra seçili dersi set et
+  fillScheduleSubjectSelect(teacherId, s?.subject||'');
   bootstrap.Modal.getOrCreateInstance(getEl('scheduleModal')).show();
+}
+
+function onScheduleTeacherChange(){
+  const teacherId=getEl('sTeacher')?.value||'';
+  const currentSubject=getEl('sSubjectSelect')?.value||'';
+  fillScheduleSubjectSelect(teacherId, currentSubject);
+}
+
+function fillScheduleSubjectSelect(teacherId, selectedSubject=''){
+  const select=getEl('sSubjectSelect'); if(!select) return;
+  const t=teacherById(teacherId);
+  // Öğretmenin "Verdiği Dersler" listesi, yoksa branşı, yoksa tüm dersler
+  const teacherSubjects=t?.subjects?.length ? t.subjects
+    : (t?.branch ? [t.branch] : []);
+  const allSubjects=subjectSettings().map(s=>s.name);
+  // Öğretmenin dersleri önce, sonra geri kalanlar (tekrar etmeden)
+  const teacherKeys=new Set(teacherSubjects.map(s=>plainKey(s)));
+  const others=allSubjects.filter(s=>!teacherKeys.has(plainKey(s)));
+  const opts=[
+    ...teacherSubjects.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`),
+    others.length && teacherSubjects.length ? '<option disabled>──────────</option>' : '',
+    ...others.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
+  ].filter(Boolean).join('');
+  select.innerHTML=opts||'<option value="">Ders listesi boş</option>';
+  // Seçili dersi set et
+  if(selectedSubject && [...select.options].some(o=>o.value===selectedSubject)){
+    select.value=selectedSubject;
+  } else if(teacherSubjects.length){
+    select.value=teacherSubjects[0];
+  }
 }
 
 function saveScheduleForm(){
   const id=getEl('scheduleId').value||uid('s');
   const hour=Number(getEl('sHour').value), time=lessonTimeByHour(hour);
   const teacherId=getEl('sTeacher').value;
-  const item={id,teacherId,className:getEl('sClass').value,subject:normalizeSubjectName(getEl('sSubject').value.trim(), teacherId),day:getEl('sDay').value,hour,startTime:time?.start||'',endTime:time?.end||'',note:getEl('sNote').value.trim()};
+  const subject=getEl('sSubjectSelect')?.value||'';
+  const item={id,teacherId,className:getEl('sClass').value,subject:normalizeSubjectName(subject, teacherId),day:getEl('sDay').value,hour,startTime:time?.start||'',endTime:time?.end||'',note:getEl('sNote').value.trim()};
   if(!item.teacherId||!item.className||!item.subject||!item.day||!item.hour){showToast('Öğretmen, sınıf, ders, gün ve saat zorunlu.','warning');return;}
   const conflict=findScheduleSaveConflict(item,id);
   if(conflict&&!confirm(`${conflict} Yine de kaydedilsin mi?`)) return;
@@ -419,11 +452,12 @@ function scheduleConflicts(){
 }
 
 function isAllowedSharedClassSlot(items){
-  const ids=new Set(items.map(s=>s.teacherId));
-  const subjects=new Set(items.map(s=>plainKey(s.subject)));
-  const artMusic=ids.size===2 && ids.has('12275702534') && ids.has('40522761546') && subjects.has(plainKey('Görsel Sanatlar')) && subjects.has(plainKey('Müzik'));
-  const elective=ids.size===2 && ids.has('15643689888') && ids.has('24836297168') && subjects.has(plainKey('Seçmeli Klasik Ahlak Metinleri')) && subjects.has(plainKey('Seçmeli Türk Sosyal Hayatında Aile'));
-  return artMusic || elective;
+  const pairs=(DB.settings.sharedLessonPairs||[]);
+  if(!pairs.length) return false;
+  const subjects=items.map(s=>plainKey(s.subject));
+  return pairs.some(pair=>
+    subjects.includes(plainKey(pair[0])) && subjects.includes(plainKey(pair[1]))
+  );
 }
 
 function buildScheduleHealthPanel(){

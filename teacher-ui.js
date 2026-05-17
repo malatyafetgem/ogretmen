@@ -19,7 +19,6 @@ function fillDynamicSelects(){
   const st=getEl('sTeacher'), stValue=st?.value||''; if(st){ st.innerHTML=teacherOpts; keepValue(st,stValue); }
   const tt=getEl('taskTeacher'), ttValue=tt?.value||''; if(tt){ tt.innerHTML=teacherOpts; keepValue(tt,ttValue); }
   const trt=getEl('taskReportTeacher'), trtValue=trt?.value||''; if(trt){ trt.innerHTML=tOpts; keepValue(trt,trtValue); }
-  const subjectList=getEl('subjectOptions'); if(subjectList) subjectList.innerHTML=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr')).map(s=>`<option value="${escapeHtml(s.name)}">${escapeHtml(s.code||'')}</option>`).join('');
   const taskKinds=['Kulüp','Kurul','Komisyon','Zümre Başkanlığı','Belirli Gün ve Haftalar','Diğer',...(DB.tasks||[]).map(t=>t.kind||'Genel')];
   const taskKindList=getEl('taskKindOptions'); if(taskKindList) taskKindList.innerHTML=[...new Set(taskKinds.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr')).map(k=>`<option value="${escapeHtml(k)}"></option>`).join('');
   const grades=[...new Set((DB.settings.classes||CLASS_LIST).map(c=>classGrade(c)).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)||String(a).localeCompare(String(b),'tr'));

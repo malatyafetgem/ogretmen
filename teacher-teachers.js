@@ -192,8 +192,77 @@ function clearTeacherSearch(){
   const profile=getEl('teacherProfile'); if(profile) profile.innerHTML='';
   const table=getEl('teacherTable'); if(table) table.innerHTML=teacherTableHtml(filteredTeachers(),{actions:true});
 }
-function openTeacherModal(id=''){ const t=id?teacherById(id):null, nameParts=t?teacherNameParts(t):null; getEl('teacherModalTitle').textContent=t?'Öğretmen Düzenle':'Öğretmen Ekle'; getEl('teacherId').value=t?.id||''; ['FirstName','LastName','Branch','Phone','Email','ClassAdvisor','Club','Project','DutyPlace','ScheduleNote'].forEach(k=>{ const map={FirstName:'firstName',LastName:'lastName',Branch:'branch',Phone:'phone',Email:'email',ClassAdvisor:'classAdvisor',Club:'club',Project:'project',DutyPlace:'dutyPlace',ScheduleNote:'scheduleNote'}; getEl('t'+k).value=t?.[map[k]]||''; }); getEl('tIdentityNo').value=t?._tcRaw||''; if(nameParts){ getEl('tFirstName').value=nameParts.first; getEl('tLastName').value=nameParts.last; } getEl('tFreeDay').value=t?.freeDay||''; getEl('tDutyDay').value=t?.dutyDay||''; bootstrap.Modal.getOrCreateInstance(getEl('teacherModal')).show(); }
-function saveTeacherForm(){ const oldId=getEl('teacherId').value, rawTc=getEl('tIdentityNo').value.trim().replace(/\D+/g,''); const hashed=rawTc?tcHash(rawTc):''; const id=hashed||oldId||uid('t'); const draft={firstName:getEl('tFirstName').value.trim(),lastName:getEl('tLastName').value.trim()}; const nameParts=teacherNameParts(draft); const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim()}; if(rawTc) t._tcRaw=rawTc; if(!t.firstName||!t.lastName){showToast('Ad ve soyad zorunlu.','warning');return;} if(oldId&&oldId!==id){DB.schedules.forEach(s=>{if(s.teacherId===oldId)s.teacherId=id;}); (DB.tasks||[]).forEach(g=>{if(g.teacherId===oldId)g.teacherId=id;}); if(selectedTeacherId===oldId)selectedTeacherId=id;} const i=DB.teachers.findIndex(x=>x.id===oldId||x.id===id); if(i>=0)DB.teachers[i]=t; else DB.teachers.push(t); saveDB(); bootstrap.Modal.getInstance(getEl('teacherModal')).hide(); renderAll(); showTeacherProfile(t.id); showToast('Öğretmen kaydedildi.','success'); }
+function openTeacherModal(id=''){
+  const t=id?teacherById(id):null, nameParts=t?teacherNameParts(t):null;
+  getEl('teacherModalTitle').textContent=t?'Öğretmen Düzenle':'Öğretmen Ekle';
+  getEl('teacherId').value=t?.id||'';
+  ['FirstName','LastName','Branch','Phone','Email','ClassAdvisor','Club','Project','DutyPlace','ScheduleNote'].forEach(k=>{
+    const map={FirstName:'firstName',LastName:'lastName',Branch:'branch',Phone:'phone',Email:'email',ClassAdvisor:'classAdvisor',Club:'club',Project:'project',DutyPlace:'dutyPlace',ScheduleNote:'scheduleNote'};
+    getEl('t'+k).value=t?.[map[k]]||'';
+  });
+  getEl('tIdentityNo').value=t?._tcRaw||'';
+  if(nameParts){ getEl('tFirstName').value=nameParts.first; getEl('tLastName').value=nameParts.last; }
+  getEl('tFreeDay').value=t?.freeDay||'';
+  getEl('tDutyDay').value=t?.dutyDay||'';
+  // Verdiği Dersler: mevcut liste yoksa branşı ekle
+  const subjects=t?.subjects?.length ? [...t.subjects] : (t?.branch ? [t.branch] : []);
+  renderTeacherSubjectsList(subjects);
+  // Datalist güncelle
+  const dl=getEl('tSubjectOptions');
+  if(dl) dl.innerHTML=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr')).map(s=>`<option value="${escapeHtml(s.name)}">`).join('');
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherModal')).show();
+}
+
+function toggleTcVisibility(btn){
+  const input=getEl('tIdentityNo'); if(!input) return;
+  const show=input.type==='password';
+  input.type=show?'text':'password';
+  btn.innerHTML=show?'<i class="fas fa-eye-slash"></i>':'<i class="fas fa-eye"></i>';
+}
+
+function renderTeacherSubjectsList(subjects){
+  const list=getEl('tSubjectsList'); if(!list) return;
+  list.innerHTML=subjects.length
+    ? subjects.map((s,i)=>`<span class="teacher-subject-chip">${escapeHtml(s)}<button type="button" class="btn-remove-subject" onclick="removeTeacherSubject(${i})" title="Kaldır"><i class="fas fa-times"></i></button></span>`).join('')
+    : '<span class="text-muted small">Henüz ders eklenmedi. Branş otomatik kullanılacak.</span>';
+  list.dataset.subjects=JSON.stringify(subjects);
+}
+
+function addTeacherSubject(){
+  const input=getEl('tSubjectInput'); if(!input) return;
+  const val=input.value.trim(); if(!val) return;
+  const list=getEl('tSubjectsList'); if(!list) return;
+  const current=JSON.parse(list.dataset.subjects||'[]');
+  if(current.some(s=>plainKey(s)===plainKey(val))){ showToast('Bu ders zaten listede.','warning'); return; }
+  current.push(val);
+  renderTeacherSubjectsList(current);
+  input.value='';
+}
+
+function removeTeacherSubject(index){
+  const list=getEl('tSubjectsList'); if(!list) return;
+  const current=JSON.parse(list.dataset.subjects||'[]');
+  current.splice(index,1);
+  renderTeacherSubjectsList(current);
+}
+function saveTeacherForm(){
+  const oldId=getEl('teacherId').value, rawTc=getEl('tIdentityNo').value.trim().replace(/\D+/g,'');
+  const hashed=rawTc?tcHash(rawTc):'';
+  const id=hashed||oldId||uid('t');
+  const draft={firstName:getEl('tFirstName').value.trim(),lastName:getEl('tLastName').value.trim()};
+  const nameParts=teacherNameParts(draft);
+  const subjectsList=getEl('tSubjectsList');
+  const subjects=JSON.parse(subjectsList?.dataset?.subjects||'[]');
+  const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim(),subjects};
+  if(rawTc) t._tcRaw=rawTc;
+  if(!t.firstName||!t.lastName){showToast('Ad ve soyad zorunlu.','warning');return;}
+  if(oldId&&oldId!==id){DB.schedules.forEach(s=>{if(s.teacherId===oldId)s.teacherId=id;}); (DB.tasks||[]).forEach(g=>{if(g.teacherId===oldId)g.teacherId=id;}); if(selectedTeacherId===oldId)selectedTeacherId=id;}
+  const i=DB.teachers.findIndex(x=>x.id===oldId||x.id===id);
+  if(i>=0)DB.teachers[i]=t; else DB.teachers.push(t);
+  saveDB();
+  bootstrap.Modal.getInstance(getEl('teacherModal')).hide();
+  renderAll(); showTeacherProfile(t.id); showToast('Öğretmen kaydedildi.','success');
+}
 function deleteTeacher(id){ const t=teacherById(id); if(!t||!confirm(`${teacherName(t)} silinsin mi?`))return; DB.teachers=DB.teachers.filter(x=>x.id!==id); DB.schedules=DB.schedules.filter(x=>x.teacherId!==id); DB.tasks=(DB.tasks||[]).filter(x=>x.teacherId!==id); if(selectedTeacherId===id){selectedTeacherId=''; getEl('teacherProfile').innerHTML='';} saveDB(); renderAll(); showToast('Öğretmen silindi.','success'); }
 
 function formatPhone(phone){
