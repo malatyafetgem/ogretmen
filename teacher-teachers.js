@@ -208,9 +208,6 @@ function openTeacherModal(id=''){
   // Verdiği Dersler: mevcut liste yoksa branşı ekle
   const subjects=t?.subjects?.length ? [...t.subjects] : (t?.branch ? [t.branch] : []);
   renderTeacherSubjectsList(subjects);
-  // Datalist güncelle
-  const dl=getEl('tSubjectOptions');
-  if(dl) dl.innerHTML=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr')).map(s=>`<option value="${escapeHtml(s.name)}">`).join('');
   bootstrap.Modal.getOrCreateInstance(getEl('teacherModal')).show();
 }
 
@@ -223,28 +220,13 @@ function toggleTcVisibility(btn){
 
 function renderTeacherSubjectsList(subjects){
   const list=getEl('tSubjectsList'); if(!list) return;
-  list.innerHTML=subjects.length
-    ? subjects.map((s,i)=>`<span class="teacher-subject-chip">${escapeHtml(s)}<button type="button" class="btn-remove-subject" onclick="removeTeacherSubject(${i})" title="Kaldır"><i class="fas fa-times"></i></button></span>`).join('')
-    : '<span class="text-muted small">Henüz ders eklenmedi. Branş otomatik kullanılacak.</span>';
-  list.dataset.subjects=JSON.stringify(subjects);
-}
-
-function addTeacherSubject(){
-  const input=getEl('tSubjectInput'); if(!input) return;
-  const val=input.value.trim(); if(!val) return;
-  const list=getEl('tSubjectsList'); if(!list) return;
-  const current=JSON.parse(list.dataset.subjects||'[]');
-  if(current.some(s=>plainKey(s)===plainKey(val))){ showToast('Bu ders zaten listede.','warning'); return; }
-  current.push(val);
-  renderTeacherSubjectsList(current);
-  input.value='';
-}
-
-function removeTeacherSubject(index){
-  const list=getEl('tSubjectsList'); if(!list) return;
-  const current=JSON.parse(list.dataset.subjects||'[]');
-  current.splice(index,1);
-  renderTeacherSubjectsList(current);
+  const all=subjectSettings().map(s=>s.name).sort((a,b)=>a.localeCompare(b,'tr'));
+  list.innerHTML=all.length
+    ? all.map(s=>{
+        const checked=subjects.some(sel=>plainKey(sel)===plainKey(s));
+        return `<label class="teacher-subject-check"><input type="checkbox" value="${escapeHtml(s)}"${checked?' checked':''}> ${escapeHtml(s)}</label>`;
+      }).join('')
+    : '<span class="text-muted small">Sistemde kayıtlı ders bulunamadı.</span>';
 }
 function saveTeacherForm(){
   const oldId=getEl('teacherId').value, rawTc=getEl('tIdentityNo').value.trim().replace(/\D+/g,'');
@@ -253,7 +235,7 @@ function saveTeacherForm(){
   const draft={firstName:getEl('tFirstName').value.trim(),lastName:getEl('tLastName').value.trim()};
   const nameParts=teacherNameParts(draft);
   const subjectsList=getEl('tSubjectsList');
-  const subjects=JSON.parse(subjectsList?.dataset?.subjects||'[]');
+  const subjects=[...subjectsList?.querySelectorAll('input[type=checkbox]:checked')||[]].map(cb=>cb.value);
   const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim(),subjects};
   if(rawTc) t._tcRaw=rawTc;
   if(!t.firstName||!t.lastName){showToast('Ad ve soyad zorunlu.','warning');return;}

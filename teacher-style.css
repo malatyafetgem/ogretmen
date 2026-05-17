@@ -1164,3 +1164,8 @@ body {
   .page-actions .btn { flex:1 1 auto; justify-content:center; }
   .free-slot-grid { grid-template-columns:1fr 1fr; }
 }
+
+/* ─── VERDİĞİ DERSLER CHECKBOX LİSTESİ ─── */
+.teacher-subjects-list { display:flex; flex-wrap:wrap; gap:6px 14px; max-height:220px; overflow-y:auto; padding:6px 2px; }
+.teacher-subject-check { display:flex; align-items:center; gap:5px; font-size:0.875rem; cursor:pointer; white-space:nowrap; }
+.teacher-subject-check input[type=checkbox] { cursor:pointer; accent-color:var(--c-blue); }

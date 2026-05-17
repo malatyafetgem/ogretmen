@@ -99,7 +99,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <nav class="mt-2">
         <ul class="nav sidebar-menu flex-column" role="menu">
           <li class="nav-item"><a id="nav-dashboard" href="#dashboard" class="nav-link active" onclick="return sTab('dashboard')"><i class="nav-icon fas fa-house"></i><p>Ana Sayfa</p></a></li>
-          <li class="nav-item"><a id="nav-teachers" href="#teachers" class="nav-link" onclick="return sTab('teachers')"><i class="nav-icon fas fa-user-tie"></i><p>Öğretmenler</p></a></li>
+          <li class="nav-item"><a id="nav-teachers" href="#teachers" class="nav-link" onclick="return sTab('teachers')"><i class="nav-icon fas fa-user-tie"></i><p>Öğretmen</p></a></li>
           <li class="nav-item"><a id="nav-classes" href="#classes" class="nav-link" onclick="return sTab('classes')"><i class="nav-icon fas fa-users"></i><p>Sınıflar</p></a></li>
           <li class="nav-item"><a id="nav-reports" href="#reports" class="nav-link" onclick="return sTab('reports')"><i class="nav-icon fas fa-calendar-days"></i><p>Raporlar</p></a></li>
           <li class="nav-item"><a id="nav-settings" href="#settings" class="nav-link" onclick="return sTab('settings')"><i class="nav-icon fas fa-gear"></i><p>Ayarlar</p></a></li>
@@ -156,7 +156,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
         <!-- ÖĞRETMEN -->
         <section id="teachers" class="pane">
           <div class="page-title-row page-title-row--compact">
-            <div><h2>Öğretmenler</h2></div>
+            <div><h2>Öğretmen</h2></div>
           </div>
           <div class="card obs-panel dashboard-search-card">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-magnifying-glass me-2"></i>Arama</h3></div>
@@ -181,16 +181,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <select id="teacherProfileSelect" class="d-none" onchange="goTeacherProfile(this.value)"></select>
           <select id="teacherProfileDay" class="d-none"></select>
           <div id="teacherProfile" class="mt-2"></div>
-          <details class="teacher-list-details no-print mt-3">
-            <summary><i class="fas fa-list me-1"></i>Öğretmen listesini ekranda göster</summary>
-            <div id="teacherPrintArea" class="card obs-panel mt-2">
-              <div class="card-body p-0">
-                <div class="table-responsive">
-                  <table class="table table-hover align-middle mb-0" id="teacherTable"></table>
-                </div>
-              </div>
-            </div>
-          </details>
+          <div id="teacherPrintArea" class="d-none"><table id="teacherTable"></table></div>
         </section>
 
         <!-- SINIF -->
@@ -327,7 +318,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <i class="fas fa-house"></i><span>Panel</span>
     </a>
     <a id="bnav-teachers" href="#teachers" class="bnav-item" onclick="return sTab('teachers')">
-      <i class="fas fa-user-tie"></i><span>Öğretmenler</span>
+      <i class="fas fa-user-tie"></i><span>Öğretmen</span>
     </a>
     <a id="bnav-classes" href="#classes" class="bnav-item" onclick="return sTab('classes')">
       <i class="fas fa-graduation-cap"></i><span>Sınıflar</span>
@@ -377,11 +368,6 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <div class="col-12">
             <label class="form-label">Verdiği Dersler</label>
             <div id="tSubjectsList" class="teacher-subjects-list"></div>
-            <div class="d-flex gap-2 mt-2">
-              <input id="tSubjectInput" class="form-control form-control-sm" list="tSubjectOptions" placeholder="Ders adı seç veya yaz...">
-              <datalist id="tSubjectOptions"></datalist>
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTeacherSubject()"><i class="fas fa-plus"></i> Ekle</button>
-            </div>
           </div>
         </div>
       </div>
