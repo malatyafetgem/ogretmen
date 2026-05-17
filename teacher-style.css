@@ -341,7 +341,9 @@ body {
   display:flex; align-items:flex-start; justify-content:space-between;
   gap:12px; margin:0 0 16px;
 }
-.page-title-row--compact { margin:0 0 10px; }
+.page-title-row--compact { margin:0 0 8px; }
+/* dashboardCards row'un üstten negatif margin'ini sıfırla */
+#dashboardCards { margin-top:0 !important; }
 .page-title-row h2 {
   font-size:1.35rem; font-weight:800; letter-spacing:-.03em;
   margin:0; color:var(--c-ink); line-height:1.15;
@@ -398,9 +400,9 @@ body {
 */
 .metric-card {
   display:flex; flex-direction:column; justify-content:space-between;
-  min-height:116px; border-radius:var(--r);
-  padding:16px 16px 14px; position:relative; overflow:hidden;
-  /* Varsayılan: beyaz kart, kalın siyah kenarlık */
+  height:116px; min-height:116px; max-height:116px;
+  border-radius:var(--r);
+  padding:14px 14px 12px; position:relative; overflow:hidden;
   background:var(--c-surface); border:var(--border-ink-thick); color:var(--c-ink);
 }
 .metric-card > div {
@@ -416,11 +418,13 @@ body {
   border-radius:0;
 }
 
-/* Etiket — küçük büyük harf */
+/* Etiket — küçük büyük harf, tek satır */
 .metric-label {
-  font-size:.72rem; font-weight:800;
-  text-transform:uppercase; letter-spacing:.08em;
+  font-size:.68rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.07em;
   color:inherit; opacity:.75;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  padding-right:28px; /* ikon için yer */
 }
 /* Değer — çok büyük, kalın */
 .metric-value {
@@ -445,9 +449,9 @@ body {
 }
 .metric-info .metric-icon { opacity:.2; }
 
-/* warning → TAM TURUNCU dolgu, KOYU metin (referansta: Bugün Nöbetçi) */
+/* warning → TAM TURUNCU dolgu, siyah kenarlık, KOYU metin (Bugün Nöbetçi) */
 .metric-warning {
-  background:var(--c-orange); border-color:var(--c-orange); color:var(--c-ink);
+  background:var(--c-orange); border-color:var(--c-ink); color:var(--c-ink);
 }
 .metric-warning .metric-icon { opacity:.2; }
 
@@ -900,7 +904,8 @@ body {
   .obs-panel > .card-header { padding:12px 14px; }
 
   .page-title-row { flex-direction:column; align-items:flex-start; gap:8px; margin-bottom:12px; }
-  .page-title-row--compact { margin-bottom:8px; }
+  .page-title-row--compact { margin-bottom:6px; }
+  #dashboardCards { margin-top:0 !important; }
   .page-title-row h2 { font-size:1.2rem; }
   .page-title-row p  { font-size:.82rem; }
   .profile-header { flex-direction:column; gap:8px; }
@@ -966,11 +971,11 @@ body {
   #dashboardCards { display:grid !important; grid-template-columns:1fr 1fr; gap:12px; flex-wrap:unset; margin-right:0; margin-left:0; }
   #dashboardCards .col-6 { width:100%; padding:0; margin:0; }
 
-  .metric-card { min-height:108px; padding:14px 12px 12px; }
-  .metric-value { font-size:2.2rem; }
-  .metric-label { font-size:.7rem; }
-  .metric-sub   { font-size:.77rem; }
-  .metric-icon  { font-size:1.05rem; top:12px; right:10px; }
+  .metric-card { height:104px; min-height:104px; max-height:104px; padding:12px 11px 10px; }
+  .metric-value { font-size:2.1rem; }
+  .metric-label { font-size:.64rem; }
+  .metric-sub   { font-size:.74rem; }
+  .metric-icon  { font-size:1rem; top:11px; right:10px; }
 
   .report-switch { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-wrap:wrap; }
   .report-switch .btn { border-radius:var(--r) !important; border-right-width:2px; flex:none; }
