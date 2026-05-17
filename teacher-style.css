@@ -635,24 +635,38 @@ body {
 }
 
 /* ─── 17. NÖBET MATRİSİ (duty-matrix) ─── */
-/* Referans: satır başlığı bold, dolu hücre turuncu kart, boş kesikli */
-.duty-matrix th { background:#f3f4f6; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
-.duty-matrix .duty-place-head { font-weight:800; white-space:nowrap; min-width:140px; }
-.duty-matrix th, .duty-matrix td { min-width:130px; }
-
-/* Nöbet matrisi dolu hücre */
-.duty-filled-cell {
-  background:var(--c-orange) !important;
-  border:2px solid var(--c-orange) !important;
-  border-radius:var(--r); padding:6px 8px;
+.duty-matrix {
+  table-layout:auto; font-size:.82rem; width:100%;
 }
-.duty-filled-cell strong { display:block; font-weight:800; color:var(--c-ink); font-size:.9rem; }
-.duty-filled-cell span   { display:block; font-size:.76rem; color:var(--c-ink); }
+.duty-matrix th, .duty-matrix td {
+  text-align:center; vertical-align:middle; padding:5px 4px !important;
+  border:var(--border-light); min-width:120px;
+}
+.duty-matrix thead th {
+  background:#f3f4f6 !important; font-size:.72rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.05em;
+}
+.duty-matrix .duty-place-head {
+  text-align:left; white-space:nowrap; padding-left:8px !important;
+  min-width:140px; font-size:.75rem; font-weight:800; background:#f3f4f6 !important;
+}
+
+/* Dolu nöbet hücresi */
+.duty-filled-cell {
+  background:#fff7ed !important;
+  border-left:3px solid var(--c-orange) !important;
+}
+.duty-cell {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; line-height:1.2;
+}
+.duty-cell strong { font-size:.84rem; font-weight:800; color:var(--c-ink); display:block; }
+.duty-cell strong a { color:var(--c-ink); }
+.duty-cell span   { font-size:.72rem; color:#9a3412; display:block; }
 
 /* Boş nöbet hücresi */
 .duty-empty-cell {
-  border:var(--border-dashed) !important; background:transparent !important;
-  color:var(--c-muted); text-align:center;
+  background:transparent !important; color:var(--c-muted); text-align:center;
 }
 
 /* ─── 18. PROGRAM TABLOLARI (board) ─── */

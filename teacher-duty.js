@@ -14,7 +14,7 @@ function renderDuty(){
   const days=schoolDays();
   const rows=places.map(place=>`<tr><th class="duty-place-head">${escapeHtml(place)}</th>${days.map(day=>{
     const teacher=DB.teachers.find(t=>t.dutyDay===day&&dutyPlaceKey(t.dutyPlace)===dutyPlaceKey(place));
-    return `<td>${teacher?`<strong>${teacherLink(teacher)}</strong><small>${escapeHtml(teacher.branch||'')}</small>`:'<span class="text-muted">—</span>'}</td>`;
+    return `<td class="${teacher?'duty-filled-cell':'duty-empty-cell'}">${teacher?`<div class="duty-cell"><strong>${teacherLink(teacher)}</strong><span>${escapeHtml(teacher.branch||'')}</span></div>`:'<span>—</span>'}</td>`;
   }).join('')}</tr>`).join('');
   const count=DB.teachers.filter(t=>t.dutyDay&&t.dutyPlace).length;
   getEl('dutyContent').innerHTML=`<div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-clipboard-check me-2"></i>Haftalık Nöbet Çizelgesi</h3><span class="small text-muted">${count} nöbet</span></div><div class="card-body p-0"><div class="table-responsive"><table class="table duty-matrix mb-0"><thead><tr><th>Nöbet Yeri</th>${days.map(day=>`<th>${day}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
