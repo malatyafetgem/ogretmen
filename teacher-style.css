@@ -406,14 +406,57 @@ body {
 }
 .program-empty i { color:var(--c-blue); flex-shrink:0; }
 
-/* Haftalık program — yatay kaydırma */
-.teacher-weekly-scroll {
-  overflow-x:auto; -webkit-overflow-scrolling:touch;
-  border-radius:var(--r); border:var(--border-ink);
-  margin-top:8px;
+/* ─── HAFTALIK PROGRAM TABLOSU (Swiss Minimal) ─── */
+.prog-table {
+  width:100%; border-collapse:collapse; min-width:520px;
+  font-size:.82rem;
 }
-.teacher-weekly-scroll .table-responsive { border:none; border-radius:0; overflow:visible; }
-.teacher-weekly-scroll table { min-width:520px; }
+/* Başlık satırı */
+.prog-table thead th {
+  background:#f3f4f6; font-size:.7rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.07em; color:var(--c-muted);
+  padding:6px 8px; border:1px solid #e2e8f0; text-align:center;
+}
+.prog-th-day {
+  text-align:left !important; white-space:nowrap;
+  min-width:72px; max-width:88px; padding-left:10px !important;
+}
+.prog-th-sub { font-size:.65rem !important; font-weight:600 !important; color:#9ca3af !important; }
+.prog-th-hour { min-width:60px; }
+.prog-th-time { font-size:.65rem !important; color:var(--c-muted); line-height:1.3; }
+.prog-th-time span { display:block; }
+
+/* Gün satırları */
+.prog-table tbody th.prog-th-day {
+  font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--c-muted); padding:6px 10px; border:1px solid #e2e8f0;
+  background:#f9fafb; white-space:nowrap;
+}
+/* Dolu hücre — siyah kalın kenarlık, beyaz */
+.prog-td-filled {
+  border:2px solid var(--c-ink) !important;
+  background:#fff; padding:5px 6px !important;
+  vertical-align:middle;
+}
+/* Boş hücre — kesik kenarlık */
+.prog-td-empty {
+  border:1.5px dashed #cbd5e1 !important;
+  background:#fafafa; min-height:52px;
+  padding:0 !important;
+}
+/* Nöbet günü arka planı */
+.prog-td-duty { background:#fff7ed !important; }
+.prog-td-filled.prog-td-duty { border-color:var(--c-orange) !important; }
+
+/* Slot içeriği — ders adı üstte bold, sınıf altta soluk */
+.prog-slot {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:1px; text-align:center;
+  min-height:44px;
+}
+.prog-slot strong { font-size:.85rem; font-weight:800; color:var(--c-ink); line-height:1.15; }
+.prog-slot span   { font-size:.72rem; color:var(--c-muted); line-height:1.1; }
+.prog-slot small  { font-size:.65rem; color:var(--c-muted); }
 
 /* ─── 15. METRİK KARTLAR ─── */
 /*
@@ -848,6 +891,12 @@ body {
 .program-day-select { display:none; }
 .program-section-content { padding:8px 0 4px; }
 .teacher-program-section { min-height:0; }
+/* Haftalık program — yatay kaydırma wrapper */
+.teacher-weekly-scroll {
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  border-radius:var(--r); border:var(--border-ink);
+  margin-top:8px;
+}
 @media (min-width:576px){
   .program-mode-btns { grid-template-columns:repeat(auto-fit, minmax(90px,1fr)); }
 }

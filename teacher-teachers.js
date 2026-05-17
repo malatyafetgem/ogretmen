@@ -39,7 +39,11 @@ function renderDashboardSearch(){
   ];
   target.innerHTML=items.length?`<div class="search-result-list">${items.join('')}</div>`:emptyState('Aramaya uygun öğretmen veya sınıf bulunamadı.');
 }
-function clearDashboardSearch(){ const input=getEl('dashboardSearch'); if(input) input.value=''; renderDashboardSearch(); }
+function clearDashboardSearch(){
+  const input=getEl('dashboardSearch'); if(input) input.value='';
+  const results=getEl('dashboardSearchResults'); if(results) results.innerHTML='';
+  renderDashboardSearch();
+}
 function filteredTeachers(){ const q=normalizeText(getEl('teacherSearch')?.value||''); return sortedTeachers().filter(t=>!q||normalizeText(`${teacherName(t)} ${t.branch}`).includes(q)); }
 function renderTeacherSearch(){
   const input=getEl('teacherSearch'), target=getEl('teacherSearchResults');
@@ -103,8 +107,9 @@ function renderTeacherReport(){
 function goTeacherProfile(id){
   const t=teacherById(id); if(!t)return false;
   selectedTeacherId=id;
-  const search=getEl('teacherSearch'); if(search) search.value='';
-  const results=getEl('teacherSearchResults'); if(results) results.innerHTML='';
+  // Her yerden gelinebilir — dashboard ve öğretmen aramasını temizle
+  ['dashboardSearch','teacherSearch'].forEach(sid=>{ const el=getEl(sid); if(el) el.value=''; });
+  ['dashboardSearchResults','teacherSearchResults'].forEach(sid=>{ const el=getEl(sid); if(el) el.innerHTML=''; });
   const select=getEl('teacherProfileSelect'); if(select) select.value=id;
   updateTeacherBadge(t);
   showProfileButtons(true);
@@ -270,20 +275,24 @@ function teacherFreeInfo(id){
 }
 function buildTeacherProfileSchedule(t, lessons){
   const days=schoolDays(), hours=schoolHours();
-  const hourHeads=hours.map(hour=>`<th>${lessonBoardHeader(hour)}</th>`).join('');
-  const timeHeads=hours.map(hour=>{ const t=lessonTimeByHour(hour); return `<th><span class="lesson-time-sub">${t?.start&&t?.end?`${escapeHtml(t.start)}<br>${escapeHtml(t.end)}`:''}</span></th>`; }).join('');
+  const hourHeads=hours.map(hour=>`<th class="prog-th-hour">${lessonBoardHeader(hour)}</th>`).join('');
+  const timeHeads=hours.map(hour=>{ const tm=lessonTimeByHour(hour); return `<th class="prog-th-time">${tm?.start&&tm?.end?`${escapeHtml(tm.start)}<br><span>${escapeHtml(tm.end)}</span>`:''}</th>`; }).join('');
   const rows=days.map(day=>{
     const cells=[];
     for(let i=0;i<hours.length;i++){
       const hour=hours[i], slot=lessons.filter(s=>s.day===day&&Number(s.hour)===hour);
       const span=slot.length ? matchingSlotSpan(lessons,day,i,hours,slot) : 1;
-      const duty=t.dutyDay===day?' duty-sheet':'';
-      cells.push(`<td colspan="${span}" class="${slot.length?'teacher-board-filled':'teacher-board-empty'}${duty}">${slot.length?teacherBoardSlotHtml(slot):'—'}</td>`);
+      const duty=t.dutyDay===day?' prog-td-duty':'';
+      if(slot.length){
+        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}</td>`);
+      } else {
+        cells.push(`<td class="prog-td-empty${duty}"></td>`);
+      }
       i+=span-1;
     }
-    return `<tr><th>${escapeHtml(day)}</th>${cells.join('')}</tr>`;
+    return `<tr><th class="prog-th-day">${escapeHtml(day)}</th>${cells.join('')}</tr>`;
   }).join('');
-  return `<div class="teacher-weekly-scroll"><div class="table-responsive"><table class="table table-bordered teacher-program-board mb-0"><thead><tr><th>Ders/Gün</th>${hourHeads}</tr><tr><th>Saat</th>${timeHeads}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="teacher-weekly-scroll"><table class="prog-table mb-0"><thead><tr><th class="prog-th-day"></th>${hourHeads}</tr><tr><th class="prog-th-day prog-th-sub">Saat</th>${timeHeads}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function teacherBoardSlotHtml(slots){
@@ -291,7 +300,7 @@ function teacherBoardSlotHtml(slots){
   const rawSubject=[...new Set(slots.map(s=>displaySubjectName(s.subject)))].join('/');
   const subject=rawSubject.length>12 ? [...new Set(slots.map(s=>subjectCode(s.subject)))].join('/') : rawSubject;
   const notes=[...new Set(slots.map(scheduleNoteText).filter(Boolean))].join('/');
-  return `<div class="teacher-board-slot"><strong class="slot-class">${escapeHtml(classes)}</strong><span class="slot-subject">${escapeHtml(subject)}</span>${notes?`<small>${escapeHtml(notes)}</small>`:''}</div>`;
+  return `<div class="prog-slot"><strong>${escapeHtml(classes)}</strong><span>${escapeHtml(subject)}</span>${notes?`<small>${escapeHtml(notes)}</small>`:''}</div>`;
 }
 
 function teacherDailySlotHtml(slot){
