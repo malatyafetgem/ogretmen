@@ -412,8 +412,8 @@ body {
   border-radius:var(--r); border:var(--border-ink);
   margin-top:8px;
 }
-.teacher-weekly-scroll .table-responsive { border:none; border-radius:0; }
-.teacher-weekly-scroll table { min-width:600px; }
+.teacher-weekly-scroll .table-responsive { border:none; border-radius:0; overflow:visible; }
+.teacher-weekly-scroll table { min-width:520px; }
 
 /* ─── 15. METRİK KARTLAR ─── */
 /*
@@ -614,19 +614,37 @@ body {
 
 /* ─── 18. PROGRAM TABLOLARI (board) ─── */
 .class-program-board, .teacher-program-board {
-  table-layout:fixed; font-size:.84rem;
+  table-layout:auto; font-size:.82rem; width:100%;
 }
 .class-program-board th, .class-program-board td,
 .teacher-program-board th, .teacher-program-board td {
-  text-align:center; vertical-align:middle; min-width:80px; padding:6px 4px !important;
+  text-align:center; vertical-align:middle; padding:5px 4px !important;
   border:var(--border-light);
 }
+/* Gün sütunu — geniş, sola hizalı */
 .class-program-board th:first-child, .teacher-program-board th:first-child {
-  min-width:90px; text-align:left;
+  text-align:left; white-space:nowrap; padding-left:8px !important;
+  min-width:80px; font-size:.75rem;
+}
+/* Saat sütunları — sabit dar */
+.teacher-program-board td, .teacher-program-board thead th:not(:first-child) {
+  min-width:58px; max-width:90px;
 }
 .class-program-board thead th, .teacher-program-board thead th {
-  background:#f3f4f6 !important; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em;
+  background:#f3f4f6 !important; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em;
 }
+/* Board slot — sınıf + ders ortalı */
+.teacher-board-slot {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1px; line-height:1.2;
+}
+.teacher-board-slot .slot-class {
+  font-size:.82rem; font-weight:800; display:block;
+}
+.teacher-board-slot .slot-subject {
+  font-size:.7rem; color:var(--c-muted); display:block;
+}
+.teacher-board-slot small { font-size:.65rem; color:var(--c-muted); display:block; }
 
 /* ─── 19. GÜNLÜK PROGRAM KARTLARI ─── */
 .daily-program-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }

@@ -287,10 +287,11 @@ function buildTeacherProfileSchedule(t, lessons){
 }
 
 function teacherBoardSlotHtml(slots){
-  const classes=[...new Set(slots.map(s=>s.className))].join(' / ');
-  const subjects=[...new Set(slots.map(s=>displaySubjectName(s.subject)))].join(' / ');
-  const notes=[...new Set(slots.map(scheduleNoteText).filter(Boolean))].join(' / ');
-  return `<div class="teacher-board-slot"><strong class="slot-class">${escapeHtml(classes)}</strong><span class="slot-subject">${escapeHtml(subjects)}</span>${notes?`<small>${escapeHtml(notes)}</small>`:''}</div>`;
+  const classes=[...new Set(slots.map(s=>s.className))].join('/');
+  const rawSubject=[...new Set(slots.map(s=>displaySubjectName(s.subject)))].join('/');
+  const subject=rawSubject.length>12 ? [...new Set(slots.map(s=>subjectCode(s.subject)))].join('/') : rawSubject;
+  const notes=[...new Set(slots.map(scheduleNoteText).filter(Boolean))].join('/');
+  return `<div class="teacher-board-slot"><strong class="slot-class">${escapeHtml(classes)}</strong><span class="slot-subject">${escapeHtml(subject)}</span>${notes?`<small>${escapeHtml(notes)}</small>`:''}</div>`;
 }
 
 function teacherDailySlotHtml(slot){
