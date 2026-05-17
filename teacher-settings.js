@@ -306,6 +306,8 @@ function saveSharedLessonSettings(){
   renderSettings();
   showToast('Ortak ders çiftleri kaydedildi.','success');
 }
+
+function teacherSelectOptions(selected='', emptyLabel='Seçiniz'){
   const teachers=sortedTeachers();
   return `<option value="">${emptyLabel}</option>`+teachers.map(t=>`<option value="${t.id}" ${t.id===selected?'selected':''}>${escapeHtml(teacherName(t))}</option>`).join('');
 }
