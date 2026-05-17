@@ -13,9 +13,9 @@ function renderDashboard(){
   const schedulableFree=today?teachers.filter(t=>isSchedulableTeacher(t)&&isTeacherFreeAllDay(t.id,today)).length:0;
   getEl('dashboardCards').innerHTML=[
     dashboardCard('Öğretmen',DB.teachers.length,'fas fa-user-tie','primary',`${branchList().length} branş`),
-    dashboardCard('Şu Anda Dersi Olan',active.length,'fas fa-chalkboard-user','info',slotText),
+    dashboardCard('Şu Anda Dersi Olan',active.length,'fas fa-chalkboard-user','primary',slotText),
     dashboardCard('Bugün Nöbetçi',duty,'fas fa-clipboard-check','warning',today||'Hafta sonu'),
-    dashboardCard('Bugün Boş Günü',schedulableFree,'fas fa-calendar-minus','info',today||'Hafta sonu')
+    dashboardCard('Bugün Boş Günü',schedulableFree,'fas fa-calendar-minus','primary',today||'Hafta sonu')
   ].join('');
   const rows=today?DB.teachers.filter(t=>t.dutyDay===today).sort(sortByDutyPlace).map(t=>`<tr><td>${teacherLink(t)}</td><td>${escapeHtml(t.branch)}</td><td>${escapeHtml(t.dutyPlace||'—')}</td></tr>`).join(''):'';
   getEl('todayPanel').innerHTML=rows?`<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Öğretmen</th><th>Branş</th><th>Nöbet Yeri</th></tr></thead><tbody>${rows}</tbody></table></div>`:emptyState(today?'Bugün için nöbet kaydı yok.':'Hafta sonu için nöbet gösterilmiyor.');

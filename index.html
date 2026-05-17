@@ -73,7 +73,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <li class="nav-item d-flex d-lg-none align-items-center">
         <a href="#dashboard" class="top-mobile-brand" onclick="return sTab('dashboard')" aria-label="Ana Sayfa">
           <span class="top-mobile-icon-wrap"><i class="fas fa-chalkboard-user"></i></span>
-          <span class="top-mobile-title">Öğretmen</span>
+          <span class="top-mobile-title">Öğretmen Bilgi Sistemi</span>
         </a>
       </li>
     </ul>
@@ -115,10 +115,9 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
 
         <!-- ANA SAYFA -->
         <section id="dashboard" class="pane active-pane">
-          <div class="page-title-row">
+          <div class="page-title-row page-title-row--compact">
             <div>
-              <h2>Panel</h2>
-              <p>Öğretmen, nöbet, görev ve program durumunun kısa özeti.</p>
+              <h2>Özet</h2>
             </div>
           </div>
           <div id="dashboardCards" class="row g-3"></div>
@@ -132,7 +131,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               </div>
               <div id="dashboardSearchResults" class="dashboard-search-results"></div>
               <div class="dashboard-add-row">
-                <button class="btn btn-primary dashboard-add-btn" onclick="openTeacherModal()">
+                <button class="btn dashboard-add-btn" onclick="openTeacherModal()">
                   <i class="fas fa-user-plus me-2"></i>Öğretmen Ekle
                 </button>
               </div>
@@ -340,7 +339,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <i class="fas fa-graduation-cap"></i><span>Sınıflar</span>
     </a>
     <a id="bnav-reports" href="#reports" class="bnav-item" onclick="return sTab('reports')">
-      <i class="fas fa-calendar-days"></i><span>Ders Progra...</span>
+      <i class="fas fa-calendar-days"></i><span>Program</span>
     </a>
     <!-- 5. sekme: Nöbet → duty modunda reports açılır; JS bnav-reports'u aktif eder ama
          aşağıdaki onclick bunu düzeltiyor (sTab senkron çalıştığı için sonrasında güvenle değiştirilir) -->
