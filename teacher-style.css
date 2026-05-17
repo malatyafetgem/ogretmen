@@ -342,16 +342,12 @@ body {
   gap:12px; margin:0 0 16px;
 }
 .page-title-row--compact { margin:0 0 8px; }
-/* dashboardCards — row negatif margin'i yok, tam hizalı */
+/* dashboardCards — negatif margin yok, tam hizalı, col wrapper yok */
 #dashboardCards {
   display:grid;
   grid-template-columns:repeat(4, 1fr);
   gap:12px;
   margin:0 0 12px;
-}
-#dashboardCards .col-6,
-#dashboardCards .col-lg-3 {
-  width:auto !important; padding:0 !important; margin:0 !important;
 }
 
 /* Bugün + Hızlı Sorgu satırı — negatif margin yok */

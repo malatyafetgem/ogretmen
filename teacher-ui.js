@@ -172,5 +172,5 @@ body:not(.entry-print) .schedule-entry-list,.schedule-health{display:none!import
   w.focus();
   setTimeout(()=>{w.print();w.close();},350);
 }
-function dashboardCard(label,value,icon,tone,sub=''){ return `<div class="col-6 col-lg-3"><div class="metric-card metric-${tone}"><span class="metric-icon"><i class="${icon}"></i></span><div><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${sub?`<div class="metric-sub">${sub}</div>`:''}</div></div></div>`; }
+function dashboardCard(label,value,icon,tone,sub=''){ return `<div class="metric-card metric-${tone}"><span class="metric-icon"><i class="${icon}"></i></span><div><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${sub?`<div class="metric-sub">${sub}</div>`:''}</div></div>`; }
 function emptyState(text){ return `<div class="empty-state"><i class="fas fa-circle-info"></i><span>${escapeHtml(text)}</span></div>`; }
