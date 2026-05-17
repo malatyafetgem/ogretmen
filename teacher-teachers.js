@@ -205,8 +205,9 @@ function openTeacherModal(id=''){
   if(nameParts){ getEl('tFirstName').value=nameParts.first; getEl('tLastName').value=nameParts.last; }
   getEl('tFreeDay').value=t?.freeDay||'';
   getEl('tDutyDay').value=t?.dutyDay||'';
-  // Verdiği Dersler: mevcut liste yoksa branşı ekle
-  const subjects=t?.subjects?.length ? [...t.subjects] : (t?.branch ? [t.branch] : []);
+  // Verdiği Dersler: kayıtlı subjects varsa onlar, yoksa ders programındaki dersler, o da yoksa branş
+  const scheduleSubjects=t?.id ? [...new Set(teacherLessons(t.id).map(s=>displaySubjectName(s.subject)))] : [];
+  const subjects=t?.subjects?.length ? [...t.subjects] : (scheduleSubjects.length ? scheduleSubjects : (t?.branch ? [t.branch] : []));
   renderTeacherSubjectsList(subjects);
   bootstrap.Modal.getOrCreateInstance(getEl('teacherModal')).show();
 }
