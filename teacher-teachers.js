@@ -13,9 +13,9 @@ function renderDashboard(){
   const schedulableFree=today?teachers.filter(t=>isSchedulableTeacher(t)&&isTeacherFreeAllDay(t.id,today)).length:0;
   getEl('dashboardCards').innerHTML=[
     dashboardCard('Öğretmen',DB.teachers.length,'fas fa-user-tie','primary',`${branchList().length} branş`),
-    dashboardCard('Şu Anda Dersi Olan',active.length,'fas fa-chalkboard-user','primary',slotText),
+    dashboardCard('Şu Anda Dersi Olan',active.length,'fas fa-chalkboard-user','info',slotText),
     dashboardCard('Bugün Nöbetçi',duty,'fas fa-clipboard-check','warning',today||'Hafta sonu'),
-    dashboardCard('Bugün Boş Günü',schedulableFree,'fas fa-calendar-minus','primary',today||'Hafta sonu')
+    dashboardCard('Bugün Boş Günü',schedulableFree,'fas fa-calendar-minus','info',today||'Hafta sonu')
   ].join('');
   const rows=today?DB.teachers.filter(t=>t.dutyDay===today).sort(sortByDutyPlace).map(t=>`<tr><td>${teacherLink(t)}</td><td>${escapeHtml(t.branch)}</td><td>${escapeHtml(t.dutyPlace||'—')}</td></tr>`).join(''):'';
   getEl('todayPanel').innerHTML=rows?`<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Öğretmen</th><th>Branş</th><th>Nöbet Yeri</th></tr></thead><tbody>${rows}</tbody></table></div>`:emptyState(today?'Bugün için nöbet kaydı yok.':'Hafta sonu için nöbet gösterilmiyor.');
@@ -34,8 +34,8 @@ function renderDashboardSearch(){
   const teacherRows=sortedTeachers().filter(t=>normalizeText(`${teacherName(t)} ${t.branch}`).includes(q)).slice(0,8);
   const classRows=(DB.settings.classes||CLASS_LIST).filter(cls=>normalizeText(cls).includes(q)).slice(0,8);
   const items=[
-    ...teacherRows.map(t=>`<button class="search-result-item" onclick="goTeacherProfile('${escapeHtml(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span></button>`),
-    ...classRows.map(cls=>`<button class="search-result-item" onclick="goClassProfile('${escapeHtml(cls)}')"><i class="fas fa-users"></i><span><strong>${escapeHtml(cls)}</strong><small>Sınıf profiline git</small></span></button>`)
+    ...teacherRows.map(t=>`<button class="search-result-item" onclick="goTeacherProfile('${escapeHtml(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`),
+    ...classRows.map(cls=>`<button class="search-result-item" onclick="goClassProfile('${escapeHtml(cls)}')"><i class="fas fa-users"></i><span><strong>${escapeHtml(cls)}</strong><small>Sınıf profiline git</small></span><span class="search-result-select">Seç</span></button>`)
   ];
   target.innerHTML=items.length?`<div class="search-result-list">${items.join('')}</div>`:emptyState('Aramaya uygun öğretmen veya sınıf bulunamadı.');
 }
@@ -47,22 +47,45 @@ function renderTeacherSearch(){
   const q=normalizeText(input.value||'');
   if(!q){ target.innerHTML=''; return; }
   const teacherRows=sortedTeachers().filter(t=>normalizeText(`${teacherName(t)} ${t.branch}`).includes(q)).slice(0,8);
-  const classRows=(DB.settings.classes||CLASS_LIST).filter(cls=>normalizeText(cls).includes(q)).slice(0,8);
-  const items=[
-    ...teacherRows.map(t=>`<button class="search-result-item" onclick="goTeacherProfile('${escapeHtml(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span></button>`),
-    ...classRows.map(cls=>`<button class="search-result-item" onclick="goClassProfile('${escapeHtml(cls)}')"><i class="fas fa-users"></i><span><strong>${escapeHtml(cls)}</strong><small>Sınıf profiline git</small></span></button>`)
-  ];
-  target.innerHTML=items.length?`<div class="search-result-list">${items.join('')}</div>`:emptyState('Aramaya uygun öğretmen veya sınıf bulunamadı.');
+  const items=teacherRows.map(t=>`<button class="search-result-item" onclick="selectTeacherFromSearch('${escapeHtml(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`);
+  target.innerHTML=items.length?`<div class="search-result-list">${items.join('')}</div>`:emptyState('Aramaya uygun öğretmen bulunamadı.');
+}
+function selectTeacherFromSearch(id){
+  const t=teacherById(id); if(!t) return;
+  selectedTeacherId=id;
+  // Arama kutusunu temizle, sonuçları kapat
+  const input=getEl('teacherSearch'); if(input) input.value='';
+  const results=getEl('teacherSearchResults'); if(results) results.innerHTML='';
+  // Badge güncelle
+  updateTeacherBadge(t);
+  // Profil butonlarını göster
+  showProfileButtons(true);
+  // Profil render
+  showTeacherProfile(id);
+  getEl('teacherProfile')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function updateTeacherBadge(t){
+  const badge=getEl('teacherSelectedBadge'); if(!badge) return;
+  if(!t){ badge.style.display='none'; badge.innerHTML=''; return; }
+  badge.style.display='';
+  badge.innerHTML=`<i class="fas fa-user-tie"></i><div class="teacher-preview-info"><strong>${escapeHtml(teacherName(t))}</strong><span>${escapeHtml(t.branch||'Branş yok')}</span></div>`;
+}
+function showProfileButtons(visible){
+  const editBtn=getEl('teacherEditBtn'), printBtn=getEl('teacherPrintBtn');
+  if(editBtn) editBtn.style.display=visible?'':'none';
+  if(printBtn) printBtn.style.display=visible?'':'none';
 }
 function renderTeachers(){
   const rows=filteredTeachers(), table=getEl('teacherTable'), profile=getEl('teacherProfile');
   if(table) table.innerHTML=teacherTableHtml(rows,{actions:true});
-  renderTeacherSearch();
-  if(!rows.length){ if(profile) profile.innerHTML=emptyState('Henüz öğretmen kaydı yok. Ekle butonuyla veya Veri & Ayarlar sekmesinden içe aktarabilirsiniz.'); return; }
-  const selected=rows.some(t=>t.id===selectedTeacherId) ? selectedTeacherId : rows[0].id;
-  const select=getEl('teacherProfileSelect');
-  if(select && [...select.options].some(o=>o.value===selected)) select.value=selected;
-  showTeacherProfile(selected);
+  // Sadece daha önce seçili bir öğretmen varsa profili göster
+  if(selectedTeacherId && rows.some(t=>t.id===selectedTeacherId)){
+    showTeacherProfile(selectedTeacherId);
+  } else if(!selectedTeacherId){
+    if(profile) profile.innerHTML='';
+    updateTeacherBadge(null);
+    showProfileButtons(false);
+  }
 }
 function teacherTableHtml(rows,{actions=false}={}){
   if(!rows.length) return `<tbody><tr><td>${emptyState('Kayıt bulunamadı.')}</td></tr></tbody>`;
@@ -81,7 +104,10 @@ function goTeacherProfile(id){
   const t=teacherById(id); if(!t)return false;
   selectedTeacherId=id;
   const search=getEl('teacherSearch'); if(search) search.value='';
+  const results=getEl('teacherSearchResults'); if(results) results.innerHTML='';
   const select=getEl('teacherProfileSelect'); if(select) select.value=id;
+  updateTeacherBadge(t);
+  showProfileButtons(true);
   sTab('teachers');
   showTeacherProfile(id);
   setTimeout(()=>getEl('teacherProfile')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
@@ -96,20 +122,27 @@ function showTeacherProfile(id){
   const lessons=teacherLessons(id), tasks=teacherTasks(id), free=teacherFreeInfo(id);
   const day=getEl('teacherProfileDay')?.value||todayName()||schoolDays()[0];
   const dutyMeta=[t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'Kayıt yok';
-  // Update selected badge
-  const badge=getEl('teacherSelectedBadge');
-  if(badge){ badge.style.display=''; badge.innerHTML=`<span class="selected-teacher-label"><i class="fas fa-user-tie me-1"></i>Seçili Öğretmen: <strong>${escapeHtml(teacherName(t))}</strong> <span class="selected-teacher-branch">(${escapeHtml(t.branch||'Branş yok')})</span></span>`; }
-  getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-header profile-header"><div><h3 class="card-title"><i class="fas fa-id-card me-2"></i>${escapeHtml(teacherName(t))}</h3><p>${escapeHtml(t.branch||'Branş yok')}</p></div><div class="profile-actions no-print"><button class="btn btn-sm btn-outline-primary" onclick="openTeacherModal('${t.id}')"><i class="fas fa-pen me-1"></i>Düzenle</button><button class="btn btn-sm btn-outline-secondary" onclick="openTeacherSchedule('${t.id}')"><i class="fas fa-calendar-days me-1"></i>Program</button><button class="btn btn-sm btn-outline-secondary" onclick="printArea('teacherProfile','Ogretmen_Profili')"><i class="fas fa-print me-1"></i>Yazdır</button></div></div><div class="card-body profile-disclosures">
-    ${disclosureSection({key:`teacher-${id}-daily-${day}`,title:`${day} Programı`,icon:'fas fa-calendar-day',meta:teacherName(t),content:buildTeacherDailySchedule(t, lessons, day),open:true})}
+  // Badge ve butonları güncelle
+  updateTeacherBadge(t);
+  showProfileButtons(true);
+  getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-header profile-header"><div><h3 class="card-title"><i class="fas fa-id-card me-2"></i>${escapeHtml(teacherName(t))}</h3><p>${escapeHtml(t.branch||'Branş yok')}</p></div></div><div class="card-body profile-disclosures">
+    ${disclosureSection({key:`teacher-${id}-daily-${day}`,title:`Program`,icon:'fas fa-calendar-days',meta:teacherName(t),content:buildTeacherDailySchedule(t, lessons, day)+buildTeacherProfileSchedule(t, lessons),open:true})}
     ${disclosureSection({key:`teacher-${id}-personal`,title:'Kişisel Bilgiler',icon:'fas fa-user',meta:'Öğretmen kartı',content:buildTeacherPersonalInfo(t, lessons, tasks, free),open:false})}
     ${disclosureSection({key:`teacher-${id}-load`,title:'Ders Yükü',icon:'fas fa-book-open',meta:`${lessons.length} saat / hafta`,content:buildTeacherLessonLoad(t, lessons)})}
-    ${disclosureSection({key:`teacher-${id}-weekly`,title:'Haftalık Program',icon:'fas fa-calendar-days',meta:`${schoolDays().length} gün`,content:buildTeacherProfileSchedule(t, lessons)})}
     ${disclosureSection({key:`teacher-${id}-duty`,title:'Nöbet',icon:'fas fa-clipboard-check',meta:dutyMeta,content:buildTeacherDutyInfo(t)})}
     ${disclosureSection({key:`teacher-${id}-tasks`,title:'Görevler',icon:'fas fa-list-check',meta:`${tasks.length} görev`,content:buildTeacherProfileTasks(t, tasks)})}
     ${disclosureSection({key:`teacher-${id}-free`,title:'Boş Saatler',icon:'fas fa-calendar-minus',meta:`${free.freeSlots.length} boş ders`,content:buildTeacherFreeSlots(free)})}
   </div></div>`;
 }
-function clearTeacherSearch(){ const input=getEl('teacherSearch'); if(input) input.value=''; const results=getEl('teacherSearchResults'); if(results) results.innerHTML=''; renderTeachers(); }
+function clearTeacherSearch(){
+  const input=getEl('teacherSearch'); if(input) input.value='';
+  const results=getEl('teacherSearchResults'); if(results) results.innerHTML='';
+  selectedTeacherId='';
+  updateTeacherBadge(null);
+  showProfileButtons(false);
+  const profile=getEl('teacherProfile'); if(profile) profile.innerHTML='';
+  const table=getEl('teacherTable'); if(table) table.innerHTML=teacherTableHtml(filteredTeachers(),{actions:true});
+}
 function openTeacherModal(id=''){ const t=id?teacherById(id):null, nameParts=t?teacherNameParts(t):null; getEl('teacherModalTitle').textContent=t?'Öğretmen Düzenle':'Öğretmen Ekle'; getEl('teacherId').value=t?.id||''; ['FirstName','LastName','Branch','Phone','Email','ClassAdvisor','Club','Project','DutyPlace','ScheduleNote'].forEach(k=>{ const map={FirstName:'firstName',LastName:'lastName',Branch:'branch',Phone:'phone',Email:'email',ClassAdvisor:'classAdvisor',Club:'club',Project:'project',DutyPlace:'dutyPlace',ScheduleNote:'scheduleNote'}; getEl('t'+k).value=t?.[map[k]]||''; }); getEl('tIdentityNo').value=t?._tcRaw||''; if(nameParts){ getEl('tFirstName').value=nameParts.first; getEl('tLastName').value=nameParts.last; } getEl('tFreeDay').value=t?.freeDay||''; getEl('tDutyDay').value=t?.dutyDay||''; bootstrap.Modal.getOrCreateInstance(getEl('teacherModal')).show(); }
 function saveTeacherForm(){ const oldId=getEl('teacherId').value, rawTc=getEl('tIdentityNo').value.trim().replace(/\D+/g,''); const hashed=rawTc?tcHash(rawTc):''; const id=hashed||oldId||uid('t'); const draft={firstName:getEl('tFirstName').value.trim(),lastName:getEl('tLastName').value.trim()}; const nameParts=teacherNameParts(draft); const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim()}; if(rawTc) t._tcRaw=rawTc; if(!t.firstName||!t.lastName){showToast('Ad ve soyad zorunlu.','warning');return;} if(oldId&&oldId!==id){DB.schedules.forEach(s=>{if(s.teacherId===oldId)s.teacherId=id;}); (DB.tasks||[]).forEach(g=>{if(g.teacherId===oldId)g.teacherId=id;}); if(selectedTeacherId===oldId)selectedTeacherId=id;} const i=DB.teachers.findIndex(x=>x.id===oldId||x.id===id); if(i>=0)DB.teachers[i]=t; else DB.teachers.push(t); saveDB(); bootstrap.Modal.getInstance(getEl('teacherModal')).hide(); renderAll(); showTeacherProfile(t.id); showToast('Öğretmen kaydedildi.','success'); }
 function deleteTeacher(id){ const t=teacherById(id); if(!t||!confirm(`${teacherName(t)} silinsin mi?`))return; DB.teachers=DB.teachers.filter(x=>x.id!==id); DB.schedules=DB.schedules.filter(x=>x.teacherId!==id); DB.tasks=(DB.tasks||[]).filter(x=>x.teacherId!==id); if(selectedTeacherId===id){selectedTeacherId=''; getEl('teacherProfile').innerHTML='';} saveDB(); renderAll(); showToast('Öğretmen silindi.','success'); }

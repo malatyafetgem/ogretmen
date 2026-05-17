@@ -155,38 +155,38 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
 
         <!-- ÖĞRETMEN -->
         <section id="teachers" class="pane">
-          <div class="page-title-row">
-            <div><h2>Öğretmenler</h2><p>Öğretmen arayın, profilini açın, kişisel bilgileri ve programını yönetin.</p></div>
-            <div class="page-actions">
-              <button class="btn btn-outline-secondary btn-sm" onclick="sTab('reports'); setReportMode('teachers')"><i class="fas fa-table me-1"></i>Tam Liste</button>
-              <button class="btn btn-primary btn-sm" onclick="openTeacherModal()"><i class="fas fa-plus me-1"></i>Ekle</button>
-            </div>
+          <div class="page-title-row page-title-row--compact">
+            <div><h2>Öğretmenler</h2></div>
           </div>
-          <div class="card obs-panel mb-3">
+          <div class="card obs-panel dashboard-search-card">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-magnifying-glass me-2"></i>Arama</h3></div>
             <div class="card-body">
-              <div id="teacherSelectedBadge" class="selected-teacher-badge mb-2" style="display:none"></div>
-              <div class="row g-2 align-items-end">
-                <div class="col-md-6">
-                  <label class="form-label">Arama</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input id="teacherSearch" class="form-control" placeholder="Ad, soyad veya branş..." oninput="renderTeachers()">
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <label class="form-label">Günlük Program</label>
-                  <select id="teacherProfileSelect" class="form-select d-none" onchange="goTeacherProfile(this.value)"></select>
-                  <select id="teacherProfileDay" class="form-select" onchange="renderTeachers()"></select>
-                </div>
-                <div class="col-md-3">
-                  <button class="btn btn-outline-secondary w-100" onclick="clearTeacherSearch()">
-                    <i class="fas fa-xmark me-1"></i>Temizle
-                  </button>
-                </div>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-magnifying-glass"></i></span>
+                <input id="teacherSearch" class="form-control" placeholder="Öğretmen adı, branş..." oninput="renderTeacherSearch()">
+                <button class="btn btn-outline-secondary" onclick="clearTeacherSearch()"><i class="fas fa-xmark"></i></button>
+              </div>
+              <div id="teacherSearchResults" class="dashboard-search-results"></div>
+              <!-- Seçili öğretmen önizlemesi -->
+              <div id="teacherSelectedBadge" class="teacher-selected-preview" style="display:none"></div>
+              <!-- Alt aksiyon butonları -->
+              <div class="teacher-action-row">
+                <button class="btn teacher-action-btn" onclick="sTab('reports'); setReportMode('teachers')"><i class="fas fa-table me-1"></i>Tam Liste</button>
+                <button class="btn teacher-action-btn" onclick="openTeacherModal()"><i class="fas fa-user-plus me-1"></i>Ekle</button>
+                <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherEditBtn" style="display:none" onclick="openTeacherModal(selectedTeacherId)"><i class="fas fa-pen me-1"></i>Düzenle</button>
+                <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherPrintBtn" style="display:none" onclick="printArea('teacherProfile','Ogretmen_Profili')"><i class="fas fa-print me-1"></i>Yazdır</button>
               </div>
             </div>
           </div>
-          <div id="teacherProfile" class="mt-3"></div>
+          <!-- Filtre: Program günü -->
+          <div class="card obs-panel mt-2 mb-2 p-0">
+            <div class="card-body py-2 px-3 d-flex align-items-center gap-3 flex-wrap">
+              <label class="form-label mb-0 fw-semibold" style="white-space:nowrap"><i class="fas fa-calendar-days me-1"></i>Program</label>
+              <select id="teacherProfileSelect" class="form-select form-select-sm d-none" onchange="goTeacherProfile(this.value)"></select>
+              <select id="teacherProfileDay" class="form-select form-select-sm" style="max-width:160px" onchange="showTeacherProfile(selectedTeacherId)"></select>
+            </div>
+          </div>
+          <div id="teacherProfile" class="mt-2"></div>
           <details class="teacher-list-details no-print mt-3">
             <summary><i class="fas fa-list me-1"></i>Öğretmen listesini ekranda göster</summary>
             <div id="teacherPrintArea" class="card obs-panel mt-2">
