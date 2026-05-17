@@ -81,8 +81,9 @@ function showProfileButtons(visible){
 }
 function renderTeachers(){
   const rows=filteredTeachers(), table=getEl('teacherTable'), profile=getEl('teacherProfile');
-  if(table) table.innerHTML=teacherTableHtml(rows,{actions:true});
-  // Sadece daha önce seçili bir öğretmen varsa profili göster
+  // Tablo sadece details açıksa render edilir
+  const details=document.querySelector('.teacher-list-details');
+  if(table && details?.open) table.innerHTML=teacherTableHtml(rows,{actions:true});
   if(selectedTeacherId && rows.some(t=>t.id===selectedTeacherId)){
     showTeacherProfile(selectedTeacherId);
   } else if(!selectedTeacherId){

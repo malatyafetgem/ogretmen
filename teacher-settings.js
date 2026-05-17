@@ -275,20 +275,27 @@ function saveSubjectSettings(){
 
 function buildSharedLessonSettings(){
   const pairs=(DB.settings.sharedLessonPairs||[]);
-  const rows=pairs.map((pair,i)=>sharedLessonRow(pair,i)).join('');
-  const subjectOpts=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr')).map(s=>`<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
-  return `<div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-link me-2"></i>Ortak Ders Çiftleri</h3><div class="page-actions no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addSharedLessonRow()">Çift Ekle</button><button class="btn btn-sm btn-primary" onclick="saveSharedLessonSettings()">Kaydet</button></div></div><div class="card-body"><p class="text-muted small">Aynı sınıfta aynı saatte birlikte işlenen ders çiftleri. Bu çiftler çakışma uyarısı üretmez.</p><datalist id="sharedSubjectOptions">${subjectOpts}</datalist><div class="table-responsive"><table class="table settings-matrix mb-0"><thead><tr><th>1. Ders</th><th></th><th>2. Ders</th><th class="no-print">İşlem</th></tr></thead><tbody id="sharedLessonBody">${rows||`<tr><td colspan="4" class="text-muted text-center py-3">Henüz ortak ders çifti eklenmedi.</td></tr>`}</tbody></table></div></div></div>`;
+  const subjects=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  const baseOpts=subjects.map(s=>`<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
+  const rows=pairs.map((pair,i)=>sharedLessonRow(pair,i,baseOpts)).join('');
+  return `<div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-link me-2"></i>Ortak Ders Çiftleri</h3><div class="page-actions no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addSharedLessonRow()">Çift Ekle</button><button class="btn btn-sm btn-primary" onclick="saveSharedLessonSettings()">Kaydet</button></div></div><div class="card-body"><p class="text-muted small">Aynı sınıfta aynı saatte birlikte işlenen ders çiftleri. Bu çiftler çakışma uyarısı üretmez.</p><table class="table settings-matrix mb-0"><thead><tr><th>1. Ders</th><th style="width:28px"></th><th>2. Ders</th><th class="no-print" style="width:56px">İşlem</th></tr></thead><tbody id="sharedLessonBody">${rows||`<tr id="sharedLessonEmpty"><td colspan="4" class="text-muted text-center py-3">Henüz ortak ders çifti eklenmedi.</td></tr>`}</tbody></table></div></div>`;
 }
 
-function sharedLessonRow(pair,index){
-  return `<tr class="shared-lesson-row" data-row="${index}"><td><input class="form-control form-control-sm shared-subject-1" list="sharedSubjectOptions" value="${escapeHtml(pair[0]||'')}" placeholder="Ders adı"></td><td class="text-center text-muted fw-bold">+</td><td><input class="form-control form-control-sm shared-subject-2" list="sharedSubjectOptions" value="${escapeHtml(pair[1]||'')}" placeholder="Ders adı"></td><td class="no-print"><button class="btn btn-sm btn-outline-danger" onclick="removeSettingsRow(this)">Sil</button></td></tr>`;
+function sharedLessonRow(pair,index,baseOpts){
+  if(!baseOpts){
+    const subjects=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+    baseOpts=subjects.map(s=>`<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
+  }
+  const mkSel=(val,cls)=>`<select class="form-select form-select-sm ${cls}"><option value="">— Ders seçin —</option>${baseOpts.replace(`value="${escapeHtml(val)}"`,`value="${escapeHtml(val)}" selected`)}</select>`;
+  return `<tr class="shared-lesson-row" data-row="${index}"><td>${mkSel(pair[0]||'','shared-subject-1')}</td><td class="text-center text-muted fw-bold">+</td><td>${mkSel(pair[1]||'','shared-subject-2')}</td><td class="no-print"><button class="btn btn-sm btn-outline-danger" onclick="removeSettingsRow(this)">Sil</button></td></tr>`;
 }
 
 function addSharedLessonRow(){
   const body=getEl('sharedLessonBody');
-  // Boş placeholder satırını temizle
-  if(body.querySelector('td[colspan]')) body.innerHTML='';
-  body.insertAdjacentHTML('beforeend',sharedLessonRow(['',''],Date.now()));
+  const empty=getEl('sharedLessonEmpty'); if(empty) empty.remove();
+  const subjects=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+  const baseOpts=subjects.map(s=>`<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
+  body.insertAdjacentHTML('beforeend',sharedLessonRow(['',''],Date.now(),baseOpts));
 }
 
 function saveSharedLessonSettings(){

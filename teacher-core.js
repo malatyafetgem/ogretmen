@@ -177,7 +177,9 @@ function readSession(){ try{ return sessionStorage.getItem('obsLoggedIn')==='1';
 function writeSession(){ MEMORY_SESSION_LOGGED_IN=true; try{ sessionStorage.setItem('obsLoggedIn','1'); }catch(e){} }
 function clearSession(){ MEMORY_SESSION_LOGGED_IN=false; try{ sessionStorage.removeItem('obsLoggedIn'); }catch(e){} }
 function dbForStorage(db){
-  return {...db, teachers: db.teachers.map(t=>{ const c={...t}; delete c._tcRaw; return c; })};
+  // _tcRaw Firebase'e kaydedilir — modalda gösterilmesi için gerekli
+  // Güvenlik notu: TC verisi Firebase güvenlik kurallarıyla korunmalı
+  return {...db, teachers: db.teachers.map(t=>({...t}))};
 }
 function saveDB(){ normalizeDB(DB); writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB))); queueRemoteSave(); }
 function hasFirebaseConfig(){ return !!window.OGRETMEN_FIREBASE_CONFIG?.databaseURL; }
