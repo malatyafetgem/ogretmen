@@ -214,7 +214,7 @@ function buildReportClassProgramBoard(className,days,hours,teacherId=''){
 
 function buildTeacherSheet(){
   const f=scheduleFilters();
-  const teachers=sortedTeachers().filter(t=>!f.teacherId||t.id===f.teacherId);
+  const teachers=sortedTeachers().filter(t=>isSchedulableTeacher(t)&&(!f.teacherId||t.id===f.teacherId));
   const days=visibleScheduleDays(f), hours=visibleScheduleHours(f);
   const head=days.map(d=>`<th colspan="${hours.length}">${d}</th>`).join('');
   const sub=days.map(()=>hours.map(h=>`<th>${h}</th>`).join('')).join('');
