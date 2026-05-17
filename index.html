@@ -177,20 +177,9 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               </div>
             </div>
           </div>
-          <!-- Filtre: Program -->
-          <div class="card obs-panel mt-2 mb-2 teacher-program-filter" id="teacherProgramFilter" style="display:none">
-            <div class="card-body py-3 px-3">
-              <div class="program-filter-row">
-                <div class="program-filter-label"><i class="fas fa-calendar-days"></i><span>Program</span></div>
-                <div class="program-mode-btns" id="programModeBtns">
-                  <button class="prog-mode-btn prog-mode-active" data-mode="" onclick="setProgramMode('')">Seçiniz</button>
-                  <button class="prog-mode-btn" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button>
-                </div>
-                <select id="teacherProfileDay" class="form-select form-select-sm program-day-select" onchange="setProgramMode('day',this.value)"></select>
-              </div>
-            </div>
-          </div>
+          <!-- Filtre: Program (artık profil içinde) -->
           <select id="teacherProfileSelect" class="d-none" onchange="goTeacherProfile(this.value)"></select>
+          <select id="teacherProfileDay" class="d-none"></select>
           <div id="teacherProfile" class="mt-2"></div>
           <details class="teacher-list-details no-print mt-3">
             <summary><i class="fas fa-list me-1"></i>Öğretmen listesini ekranda göster</summary>

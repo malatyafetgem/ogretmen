@@ -108,7 +108,6 @@ function goTeacherProfile(id){
   const select=getEl('teacherProfileSelect'); if(select) select.value=id;
   updateTeacherBadge(t);
   showProfileButtons(true);
-  const filter=getEl('teacherProgramFilter'); if(filter) filter.style.display='';
   sTab('teachers');
   showTeacherProfile(id);
   setTimeout(()=>getEl('teacherProfile')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
@@ -125,11 +124,9 @@ function showTeacherProfile(id){
   // Badge ve butonları güncelle
   updateTeacherBadge(t);
   showProfileButtons(true);
-  // Program filtreni göster, modu sıfırla
-  const filter=getEl('teacherProgramFilter'); if(filter) filter.style.display='';
-  setProgramMode('', '', false); // görsel sıfırla ama render etme
+  currentProgramMode='';
   getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-    <div id="teacherProgramSection" class="teacher-program-section"></div>
+    ${disclosureSection({key:`teacher-${id}-program`,title:'Program',icon:'fas fa-calendar-days',meta:'Gün veya Haftalık seçin',content:buildTeacherProgramContent(id),open:false})}
     ${disclosureSection({key:`teacher-${id}-personal`,title:'Kişisel Bilgiler',icon:'fas fa-user',meta:'Öğretmen kartı',content:buildTeacherPersonalInfo(t, lessons, tasks, free),open:false})}
     ${disclosureSection({key:`teacher-${id}-load`,title:'Ders Yükü',icon:'fas fa-book-open',meta:`${lessons.length} saat / hafta`,content:buildTeacherLessonLoad(t, lessons)})}
     ${disclosureSection({key:`teacher-${id}-duty`,title:'Nöbet',icon:'fas fa-clipboard-check',meta:dutyMeta,content:buildTeacherDutyInfo(t)})}
@@ -138,7 +135,12 @@ function showTeacherProfile(id){
   </div></div>`;
 }
 
-let currentProgramMode='';
+function buildTeacherProgramContent(id){
+  const days=schoolDays();
+  const dayBtns=days.map(d=>`<button class="prog-mode-btn" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
+  const btns=`<div class="program-mode-btns" id="programModeBtns">${dayBtns}<button class="prog-mode-btn" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button></div>`;
+  return `<div class="program-filter-inline">${btns}</div><div id="teacherProgramSection" class="teacher-program-section"></div>`;
+}
 
 function setProgramMode(mode, day='', render=true){
   currentProgramMode=mode;
@@ -182,7 +184,6 @@ function clearTeacherSearch(){
   currentProgramMode='';
   updateTeacherBadge(null);
   showProfileButtons(false);
-  const filter=getEl('teacherProgramFilter'); if(filter) filter.style.display='none';
   const profile=getEl('teacherProfile'); if(profile) profile.innerHTML='';
   const table=getEl('teacherTable'); if(table) table.innerHTML=teacherTableHtml(filteredTeachers(),{actions:true});
 }
@@ -301,13 +302,13 @@ function teacherDailySlotHtml(slot){
 
 function buildTeacherDailySchedule(t, lessons, day){
   const dayLessons=lessons.filter(s=>s.day===day);
+  if(!dayLessons.length) return `<div class="empty-state mt-2"><i class="fas fa-calendar-xmark"></i><span>${escapeHtml(day)} günü dersi bulunmamaktadır.</span></div>`;
   const cards=schoolHours().map(hour=>{
     const slot=dayLessons.filter(s=>Number(s.hour)===Number(hour));
     const duty=t.dutyDay===day?' duty-sheet':'';
     return `<div class="daily-lesson-card${slot.length?' has-lesson':''}${duty}"><div class="daily-lesson-hour">${lessonHourCell(hour)}</div>${slot.length?teacherDailySlotHtml(slot):'<span class="text-muted">—</span>'}</div>`;
   }).join('');
-  const noLessonsMsg=dayLessons.length===0?`<div class="empty-state mt-2"><i class="fas fa-calendar-xmark"></i><span>${escapeHtml(day)} günü dersi bulunmamaktadır.</span></div>`:'';
-  return `<div class="daily-program-grid">${cards}</div>${noLessonsMsg}`;
+  return `<div class="daily-program-grid">${cards}</div>`;
 }
 function buildTeacherDutyInfo(t){
   const hasDuty=!!(t.dutyDay||t.dutyPlace);

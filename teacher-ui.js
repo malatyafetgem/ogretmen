@@ -4,12 +4,6 @@ function hydrateStaticSelects(){
   ['tFreeDay','tDutyDay','sDay'].forEach(id=>{ const el=getEl(id); if(el) el.innerHTML=dayBlank; });
   const dayFilter=getEl('scheduleDayFilter'); if(dayFilter) dayFilter.innerHTML='<option value="">Tüm Günler</option>'+days.map(d=>`<option value="${d}">${d}</option>`).join('');
   const teacherDay=getEl('teacherProfileDay'), teacherDayValue=teacherDay?.value||todayName()||days[0]; if(teacherDay) teacherDay.innerHTML=days.map(d=>`<option value="${d}" ${d===teacherDayValue?'selected':''}>${d}</option>`).join('');
-  // Program filtre butonlarına gün butonlarını ekle
-  const modeBtns=getEl('programModeBtns');
-  if(modeBtns){
-    const dayBtns=days.map(d=>`<button class="prog-mode-btn" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
-    modeBtns.innerHTML=`<button class="prog-mode-btn prog-mode-active" data-mode="" onclick="setProgramMode('')">Seçiniz</button>${dayBtns}<button class="prog-mode-btn" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button>`;
-  }
   const classDay=getEl('classProfileDay'); if(classDay) classDay.innerHTML=days.map(d=>`<option value="${d}" ${d===(todayName()||days[0])?'selected':''}>${d}</option>`).join('');
   const hourEl=getEl('sHour'); if(hourEl) hourEl.innerHTML=hours.map(h=>`<option value="${h}">${h}. Ders</option>`).join('');
   const hourFilter=getEl('scheduleHourFilter'); if(hourFilter) hourFilter.innerHTML='<option value="">Tüm Saatler</option>'+hours.map(h=>`<option value="${h}">${h}. Ders</option>`).join('');

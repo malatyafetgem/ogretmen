@@ -793,32 +793,29 @@ body {
 .teacher-preview-info strong { font-size:.88rem; color:var(--c-ink); font-weight:700; }
 .teacher-preview-info span   { font-size:.76rem; color:var(--c-muted); }
 
-/* ─── PROGRAM FİLTRESİ ─── */
-.teacher-program-filter { border:var(--border-ink-thick) !important; }
-.program-filter-row {
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-}
-.program-filter-label {
-  display:flex; align-items:center; gap:6px;
-  font-size:.75rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
-  color:var(--c-muted); white-space:nowrap;
-}
-.program-filter-label i { color:var(--c-blue); font-size:.85rem; }
+/* ─── PROGRAM FİLTRESİ (disclosure içi) ─── */
+.program-filter-inline { padding:4px 0 10px; }
 .program-mode-btns {
-  display:flex; gap:5px; flex-wrap:wrap; flex:1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
 }
 .prog-mode-btn {
-  font-size:.78rem; font-weight:700; padding:5px 11px;
+  font-size:.85rem; font-weight:700; padding:9px 10px;
   border-radius:var(--r); border:var(--border-ink);
   background:var(--c-surface); color:var(--c-ink);
-  cursor:pointer; white-space:nowrap; transition:background .1s, color .1s;
+  cursor:pointer; text-align:center; transition:background .1s, color .1s;
 }
 .prog-mode-btn:hover { background:#f3f4f6; }
 .prog-mode-btn.prog-mode-active {
-  background:var(--c-ink); color:#fff;
+  background:var(--c-ink); color:#fff; border-color:var(--c-ink);
 }
-.program-day-select { max-width:130px; font-size:.82rem; }
-.program-section-content { padding:12px 0 4px; }
+.program-day-select { display:none; }
+.program-section-content { padding:8px 0 4px; }
+.teacher-program-section { min-height:0; }
+@media (min-width:576px){
+  .program-mode-btns { grid-template-columns:repeat(auto-fit, minmax(90px,1fr)); }
+}
 
 /* Aksiyon buton satırı — mobilde tek satır */
 .teacher-action-row {
