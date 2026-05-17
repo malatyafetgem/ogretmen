@@ -748,7 +748,17 @@ body {
 .duty-profile-box span   { display:block; color:#9a3412; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
 .duty-profile-box strong { display:block; margin-top:3px; font-size:.95rem; }
 
-/* ─── 21. SLOT SPAN NOTU ─── */
+/* Çarşaf dolu hücre içeriği — ortalı, üstte sınıf, altta ders */
+.sheet-cell-content {
+  text-align:center !important; vertical-align:middle !important;
+}
+.sheet-cell-content strong { display:block; font-size:.78rem; font-weight:800; line-height:1.1; }
+.sheet-cell-content span   { display:block; font-size:.65rem; color:var(--c-muted); line-height:1.1; }
+/* Sınıf çarşafı hücreleri de ortalı */
+.class-sheet .sheet-filled { text-align:center !important; vertical-align:middle !important; }
+.class-sheet .sheet-filled br + small { display:block; }
+/* Boş hücreler de ortalı */
+.sheet-empty { text-align:center !important; vertical-align:middle !important; color:var(--c-muted); }
 .slot-span-note { display:none !important; }
 .schedule-sheet .slot-span-note {
   display:inline-flex !important; align-items:center; justify-content:center;

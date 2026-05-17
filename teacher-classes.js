@@ -49,10 +49,10 @@ function buildClassDailySchedule(className, day){
 
 function buildClassWeeklySchedule(className){
   const days=schoolDays(), hours=schoolHours();
-  const hourHeads=hours.map(hour=>`<th>${lessonBoardHeader(hour)}</th>`).join('');
-  const timeHeads=hours.map(hour=>{ const t=lessonTimeByHour(hour); return `<th><span class="lesson-time-sub">${t?.start&&t?.end?`${escapeHtml(t.start)}<br>${escapeHtml(t.end)}`:''}</span></th>`; }).join('');
-  const rows=days.map(day=>`<tr><th>${escapeHtml(day)}</th>${classProgramRowCells(className,day,hours)}</tr>`).join('');
-  return `<div class="table-responsive"><table class="table table-bordered class-program-board mb-0"><thead><tr><th>Ders/Gün</th>${hourHeads}</tr><tr><th>Saat</th>${timeHeads}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const hourHeads=hours.map(hour=>`<th class="prog-th-hour">${lessonBoardHeader(hour)}</th>`).join('');
+  const timeHeads=hours.map(hour=>{ const t=lessonTimeByHour(hour); return `<th class="prog-th-time">${t?.start&&t?.end?`${escapeHtml(t.start)}<br><span>${escapeHtml(t.end)}</span>`:''}</th>`; }).join('');
+  const rows=days.map(day=>`<tr><th class="prog-th-day">${escapeHtml(day)}</th>${classProgramRowCells(className,day,hours)}</tr>`).join('');
+  return `<div class="teacher-weekly-scroll"><table class="prog-table mb-0"><thead><tr><th class="prog-th-day"></th>${hourHeads}</tr><tr><th class="prog-th-day prog-th-sub">Saat</th>${timeHeads}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function classProgramRowCells(className, day, hours, teacherId=''){
@@ -62,7 +62,7 @@ function classProgramRowCells(className, day, hours, teacherId=''){
     const slots=DB.schedules.filter(s=>s.className===className&&s.day===day&&Number(s.hour)===Number(hour)&&(!teacherId||s.teacherId===teacherId));
     const span=slots.length ? classProgramSlotSpan(className,day,i,hours,slots,teacherId) : 1;
     const hasDuty=slots.some(s=>teacherById(s.teacherId)?.dutyDay===day);
-    cells.push(`<td colspan="${span}" class="${slots.length?'class-board-filled':'class-board-empty'}${hasDuty?' duty-sheet':''}">${slots.length?classBoardSlotHtml(slots):'—'}</td>`);
+    cells.push(`<td colspan="${span}" class="${slots.length?'prog-td-filled':'prog-td-empty'}${hasDuty?' prog-td-duty':''}">${slots.length?classBoardSlotHtml(slots):''}</td>`);
     i+=span-1;
   }
   return cells.join('');
@@ -88,10 +88,11 @@ function classSlotHtml(s){
 }
 
 function classBoardSlotHtml(slots){
-  const subjects=[...new Set(slots.map(s=>sheetSubjectCode(s.subject)))].join('/');
-  const teachers=[...new Set(slots.map(s=>compactTeacherCode(teacherById(s.teacherId))))].join(' / ');
-  const notes=[...new Set(slots.map(scheduleNoteText).filter(Boolean))].join(' / ');
-  return `<div class="class-board-slot"><strong class="slot-subject">${escapeHtml(subjects)}</strong><span class="slot-teacher">${escapeHtml(teachers)}</span>${notes?`<small>${escapeHtml(notes)}</small>`:''}</div>`;
+  const rawSubject=[...new Set(slots.map(s=>displaySubjectName(s.subject)))].join('/');
+  const subject=rawSubject.length>12 ? [...new Set(slots.map(s=>subjectCode(s.subject)))].join('/') : rawSubject;
+  const teachers=[...new Set(slots.map(s=>compactTeacherCode(teacherById(s.teacherId))))].join('/');
+  const notes=[...new Set(slots.map(scheduleNoteText).filter(Boolean))].join('/');
+  return `<div class="prog-slot"><strong>${escapeHtml(subject)}</strong><span>${escapeHtml(teachers)}</span>${notes?`<small>${escapeHtml(notes)}</small>`:''}</div>`;
 }
 
 function classDailySlotHtml(slots){
