@@ -342,8 +342,26 @@ body {
   gap:12px; margin:0 0 16px;
 }
 .page-title-row--compact { margin:0 0 8px; }
-/* dashboardCards row'un üstten negatif margin'ini sıfırla */
-#dashboardCards { margin-top:0 !important; }
+/* dashboardCards — row negatif margin'i yok, tam hizalı */
+#dashboardCards {
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:12px;
+  margin:0 0 12px;
+}
+#dashboardCards .col-6,
+#dashboardCards .col-lg-3 {
+  width:auto !important; padding:0 !important; margin:0 !important;
+}
+
+/* Bugün + Hızlı Sorgu satırı — negatif margin yok */
+.dashboard-bottom-row {
+  display:grid;
+  grid-template-columns:58.333% 41.667%;
+  gap:12px;
+  margin-top:12px;
+}
+.dashboard-bottom-col { width:auto !important; padding:0 !important; margin:0 !important; }
 .page-title-row h2 {
   font-size:1.35rem; font-weight:800; letter-spacing:-.03em;
   margin:0; color:var(--c-ink); line-height:1.15;
@@ -399,14 +417,14 @@ body {
   </div>
 */
 .metric-card {
-  display:flex; flex-direction:column; justify-content:space-between;
+  display:flex; flex-direction:column; justify-content:flex-end;
   height:116px; min-height:116px; max-height:116px;
   border-radius:var(--r);
   padding:14px 14px 12px; position:relative; overflow:hidden;
   background:var(--c-surface); border:var(--border-ink-thick); color:var(--c-ink);
 }
 .metric-card > div {
-  display:flex; flex-direction:column; gap:2px;
+  display:flex; flex-direction:column; gap:1px;
 }
 
 /* İkon — sağ üstte soluk */
@@ -905,7 +923,9 @@ body {
 
   .page-title-row { flex-direction:column; align-items:flex-start; gap:8px; margin-bottom:12px; }
   .page-title-row--compact { margin-bottom:6px; }
-  #dashboardCards { margin-top:0 !important; }
+  /* mobilde 4→2 sütun */
+  #dashboardCards { grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .dashboard-bottom-row { grid-template-columns:1fr; gap:10px; margin-top:10px; }
   .page-title-row h2 { font-size:1.2rem; }
   .page-title-row p  { font-size:.82rem; }
   .profile-header { flex-direction:column; gap:8px; }
@@ -968,8 +988,8 @@ body {
 
 @media (max-width:575px) {
   /* Metric kartlar 2×2 grid */
-  #dashboardCards { display:grid !important; grid-template-columns:1fr 1fr; gap:12px; flex-wrap:unset; margin-right:0; margin-left:0; }
-  #dashboardCards .col-6 { width:100%; padding:0; margin:0; }
+  #dashboardCards { grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+  .dashboard-bottom-row { grid-template-columns:1fr; gap:10px; margin-top:10px; }
 
   .metric-card { height:104px; min-height:104px; max-height:104px; padding:12px 11px 10px; }
   .metric-value { font-size:2.1rem; }
