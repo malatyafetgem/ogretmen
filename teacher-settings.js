@@ -42,6 +42,11 @@ function buildImportSettings(){
       <p class="text-muted small">Excel veya CSV dosyası yükleyin; sihirbaz sütunları eşleştirmenizi sağlar. T.C. Kimlik No zorunludur.</p>
       <input type="file" class="form-control" accept=".xlsx,.xls,.csv" onchange="importScheduleFileWizard(event)">
     </div>
+    <div class="import-block">
+      <h4>Görev Aktar</h4>
+      <p class="text-muted small">Excel veya CSV dosyası yükleyin; sihirbaz sütunları eşleştirmenizi sağlar. T.C. Kimlik No esas alınır, mevcut öğretmenlerle eşleştirilir.</p>
+      <input type="file" class="form-control" accept=".xlsx,.xls,.csv" onchange="importTaskFileWizard(event)">
+    </div>
   </div></div>`;
 }
 
@@ -1155,4 +1160,321 @@ function backToScheduleImportWizard(){
   _siWizardStep = 2;
   _siRenderWizardStep();
   bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportWizardModal')).show();
+}
+
+/* ─────────────────────────────────────────────────
+   Görev İçe Aktarma Sihirbazı (Task Import Wizard)
+───────────────────────────────────────────────── */
+
+let _taskIExcelData  = [];
+let _taskIHeaders    = [];
+let _taskIWizardStep = 0;
+let _taskIPendingData = null;
+let _taskIStep1Saved  = {};
+
+const TASK_WIZ_STEPS = [
+  { title: '1. Zorunlu Alanlar' },
+  { title: '2. İsteğe Bağlı Alanlar' },
+];
+
+function importTaskFileWizard(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  if (!window.XLSX) {
+    showToast('Excel içe aktarma için XLSX kütüphanesi gerekir.', 'warning', 6000);
+    e.target.value = ''; return;
+  }
+  if (!/\.(xlsx|xls|xlsm|csv)$/i.test(f.name)) {
+    showToast('Sadece Excel/CSV dosyaları yüklenebilir.', 'error');
+    e.target.value = ''; return;
+  }
+  const r = new FileReader();
+  r.onerror = () => { showToast('Dosya okunamadı.', 'danger'); e.target.value = ''; };
+  r.onload = ev => {
+    try {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', raw: false });
+      let sheet = null;
+      for (const sn of wb.SheetNames) { const s = wb.Sheets[sn]; if (s && s['!ref']) { sheet = s; break; } }
+      if (!sheet) throw new Error('Dosyada dolu sayfa bulunamadı.');
+      _taskIExcelData = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+      if (!_taskIExcelData.length) throw new Error('Sayfada veri satırı bulunamadı.');
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      _taskIHeaders = [];
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const cell = sheet[XLSX.utils.encode_cell({ c: C, r: range.s.r })];
+        if (cell && cell.v !== undefined && String(cell.v).trim() !== '')
+          _taskIHeaders.push(String(cell.v).trim());
+      }
+      if (!_taskIHeaders.length) throw new Error('Başlık satırı okunamadı.');
+      _taskIWizardStep = 0;
+      _taskIStep1Saved = {};
+      _taskIRenderWizardStep();
+      bootstrap.Modal.getOrCreateInstance(getEl('taskImportWizardModal')).show();
+    } catch (err) {
+      showToast('Hata: ' + (err.message || 'Bilinmeyen hata'), 'danger');
+    }
+    e.target.value = '';
+  };
+  r.readAsArrayBuffer(f);
+}
+
+function _taskIGuess(label) {
+  const norm = s => s.toLocaleLowerCase('tr-TR').replace(/[\s\.\-_]+/g, '');
+  const t = norm(label);
+  return _taskIHeaders.find(col => norm(col) === t || norm(col).includes(t)) || '';
+}
+
+function _taskIColOpts(selected = '', allowEmpty = false) {
+  let html = allowEmpty ? '<option value="">— Boş Geç —</option>' : '<option value="">— Sütun Seçin —</option>';
+  _taskIHeaders.forEach(col => {
+    const sel = selected && col.toLocaleLowerCase('tr-TR') === selected.toLocaleLowerCase('tr-TR');
+    html += `<option value="${escapeHtml(col)}" ${sel ? 'selected' : ''}>${escapeHtml(col)}</option>`;
+  });
+  return html;
+}
+
+function _taskISaveStep1() {
+  _taskIStep1Saved = {
+    tc:    getEl('taskIColTc')?.value    || '',
+    kind:  getEl('taskIColKind')?.value  || '',
+    title: getEl('taskIColTitle')?.value || '',
+  };
+}
+
+function _taskIRenderWizardStep() {
+  const step = _taskIWizardStep;
+  const progHtml = `<div class="ti-wizard-progress">
+    <div class="ti-wizard-step-row">
+      ${TASK_WIZ_STEPS.map((s, i) => `<div class="ti-wizard-step-label ${i === step ? 'is-active' : i < step ? 'is-complete' : ''}">${i < step ? '✓ ' : ''}${s.title}</div>`).join('')}
+    </div>
+    <div class="progress ti-prog-bar-wrap"><div class="progress-bar ti-prog-bar" style="width:${Math.round(((step + 1) / TASK_WIZ_STEPS.length) * 100)}%"></div></div>
+  </div>`;
+
+  let stepHtml = '';
+
+  if (step === 0) {
+    const s = _taskIStep1Saved;
+    stepHtml = `
+      <div class="ti-section">
+        <div class="ti-section-head"><i class="fas fa-lock me-1"></i> Zorunlu Alanlar</div>
+        <p class="text-muted small">T.C. Kimlik No ile öğretmen eşleştirilir — ad/soyada gerek yoktur.</p>
+        <div class="ti-field-row">
+          <label class="ti-field-label">T.C. Kimlik No <span class="text-danger">*</span></label>
+          <select id="taskIColTc" class="form-select form-select-sm">${_taskIColOpts(s.tc || _taskIGuess('T.C. KİMLİK NO'))}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Görev Türü <span class="text-danger">*</span></label>
+          <select id="taskIColKind" class="form-select form-select-sm">${_taskIColOpts(s.kind || _taskIGuess('GÖREV TÜRÜ'))}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Görev Tanımı <span class="text-danger">*</span></label>
+          <select id="taskIColTitle" class="form-select form-select-sm">${_taskIColOpts(s.title || _taskIGuess('GÖREV TANIMI'))}</select>
+        </div>
+      </div>`;
+  } else {
+    const s2 = _taskIStep1Saved;
+    stepHtml = `
+      <div class="ti-section">
+        <div class="ti-section-head"><i class="fas fa-sliders-h me-1"></i> İsteğe Bağlı Alanlar <span class="ti-section-sub">Boş bırakılanlar atlanır</span></div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Açıklamalar</label>
+          <select id="taskIColDesc" class="form-select form-select-sm">${_taskIColOpts(_taskIStep1Saved._desc || _taskIGuess('AÇIKLAMALAR'), true)}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Ayrıntılar</label>
+          <select id="taskIColDetails" class="form-select form-select-sm">${_taskIColOpts(_taskIStep1Saved._details || _taskIGuess('AYRINTILAR'), true)}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Başlangıç Tarihi</label>
+          <select id="taskIColStart" class="form-select form-select-sm">${_taskIColOpts(_taskIStep1Saved._start || _taskIGuess('BAŞLANGIÇ'), true)}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Bitiş Tarihi</label>
+          <select id="taskIColEnd" class="form-select form-select-sm">${_taskIColOpts(_taskIStep1Saved._end || _taskIGuess('BİTİŞ'), true)}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">İçe Aktarma Modu</label>
+          <select id="taskIMode" class="form-select form-select-sm">
+            <option value="append">Mevcut görevlere ekle</option>
+            <option value="replace">Tümünü sil ve yeniden yükle</option>
+          </select>
+        </div>
+      </div>`;
+  }
+
+  getEl('taskImportWizardBody').innerHTML = progHtml + stepHtml;
+
+  const btnBack = step > 0
+    ? `<button type="button" class="btn btn-outline-secondary" onclick="taskIWizardNav(-1)"><i class="fas fa-arrow-left me-1"></i>Geri</button>`
+    : `<button type="button" class="btn btn-outline-secondary" onclick="cancelTaskImport()">İptal</button>`;
+  const btnNext = step < TASK_WIZ_STEPS.length - 1
+    ? `<button type="button" class="btn btn-primary ms-auto" onclick="taskIWizardNav(1)">İleri <i class="fas fa-arrow-right ms-1"></i></button>`
+    : `<button type="button" class="btn btn-primary ms-auto" onclick="processTaskImport()">Önizle <i class="fas fa-eye ms-1"></i></button>`;
+
+  getEl('taskImportWizardFooter').innerHTML = btnBack + btnNext;
+}
+
+function taskIWizardNav(dir) {
+  if (_taskIWizardStep === 0 && dir === 1) {
+    if (!getEl('taskIColTc')?.value)    { showToast('T.C. Kimlik No sütununu seçin.', 'warning'); return; }
+    if (!getEl('taskIColKind')?.value)  { showToast('Görev Türü sütununu seçin.', 'warning'); return; }
+    if (!getEl('taskIColTitle')?.value) { showToast('Görev Tanımı sütununu seçin.', 'warning'); return; }
+    _taskISaveStep1();
+  }
+  if (_taskIWizardStep === 1 && dir === -1) {
+    // Adım 2 değerlerini sakla (geri dönüldüğünde kaybolmasın)
+    _taskIStep1Saved._desc    = getEl('taskIColDesc')?.value    || '';
+    _taskIStep1Saved._details = getEl('taskIColDetails')?.value || '';
+    _taskIStep1Saved._start   = getEl('taskIColStart')?.value   || '';
+    _taskIStep1Saved._end     = getEl('taskIColEnd')?.value     || '';
+  }
+  _taskIWizardStep = Math.max(0, Math.min(TASK_WIZ_STEPS.length - 1, _taskIWizardStep + dir));
+  _taskIRenderWizardStep();
+}
+
+function processTaskImport() {
+  // Adım 2 sütunlarını oku
+  const colTc      = _taskIStep1Saved.tc;
+  const colKind    = _taskIStep1Saved.kind;
+  const colTitle   = _taskIStep1Saved.title;
+  const colDesc    = getEl('taskIColDesc')?.value    || '';
+  const colDetails = getEl('taskIColDetails')?.value || '';
+  const colStart   = getEl('taskIColStart')?.value   || '';
+  const colEnd     = getEl('taskIColEnd')?.value     || '';
+  const mode       = getEl('taskIMode')?.value       || 'append';
+
+  const items = [], errors = [];
+  const tcSeen = new Set();
+
+  _taskIExcelData.forEach((row, idx) => {
+    const line = idx + 2;
+    const rawTc    = String(row[colTc]    || '').replace(/\D+/g, '').trim();
+    const rawKind  = String(row[colKind]  || '').trim();
+    const rawTitle = String(row[colTitle] || '').trim();
+
+    if (!rawTc)              { errors.push(`${line}. satır: T.C. Kimlik No boş.`); return; }
+    if (rawTc.length !== 11) { errors.push(`${line}. satır: T.C. geçersiz (${rawTc.length} hane).`); return; }
+    if (!rawKind)            { errors.push(`${line}. satır: Görev Türü boş.`); return; }
+    if (!rawTitle)           { errors.push(`${line}. satır: Görev Tanımı boş.`); return; }
+
+    // Öğretmeni T.C. ile bul
+    const hashed   = (typeof tcHash === 'function') ? tcHash(rawTc) : rawTc;
+    const teacher  = DB.teachers.find(t => t.id === hashed || String(t._tcRaw || '') === rawTc);
+    if (!teacher) { errors.push(`${line}. satır: T.C. ${rawTc} sistemde bulunamadı.`); return; }
+
+    // Tarih alanlarını normalize et (YYYY-MM-DD veya DD.MM.YYYY → YYYY-MM-DD)
+    const parseDate = val => {
+      const s = String(val || '').trim();
+      if (!s) return '';
+      // DD.MM.YYYY veya DD/MM/YYYY
+      const m = s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/);
+      if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      // YYYY-MM-DD (zaten doğru)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      return s; // bilinmeyen format — olduğu gibi bırak
+    };
+
+    items.push({
+      id:          uid('g'),
+      teacherId:   teacher.id,
+      kind:        rawKind,
+      title:       rawTitle,
+      description: colDesc    ? String(row[colDesc]    || '').trim() : '',
+      details:     colDetails ? String(row[colDetails] || '').trim() : '',
+      startDate:   colStart   ? parseDate(row[colStart])              : '',
+      endDate:     colEnd     ? parseDate(row[colEnd])                : '',
+    });
+  });
+
+  _taskIPendingData = { items, errors, mode };
+
+  // Önizleme HTML
+  let html = `<div class="ti-preview-summary">
+    <div class="ti-preview-box ti-preview-add"><strong>${items.length}</strong><span>Eklenecek Görev</span></div>
+    <div class="ti-preview-box ti-preview-err"><strong>${errors.length}</strong><span>Hatalı Satır</span></div>
+    ${mode === 'replace' ? `<div class="ti-preview-box" style="background:#fef3c7;color:#92400e"><strong>!</strong><span>Mevcut Görevler Silinecek</span></div>` : ''}
+  </div>`;
+
+  if (items.length) {
+    const preview = items.slice(0, 10);
+    const rows = preview.map(task => {
+      const t = teacherById(task.teacherId);
+      return `<tr>
+        <td>${escapeHtml(teacherName(t))}</td>
+        <td>${escapeHtml(task.kind)}</td>
+        <td>${escapeHtml(task.title)}</td>
+        <td>${escapeHtml(task.description || '—')}</td>
+        <td>${escapeHtml(task.startDate || '—')}</td>
+        <td>${escapeHtml(task.endDate || '—')}</td>
+      </tr>`;
+    }).join('');
+    html += `<div class="table-responsive mt-3"><table class="table table-sm table-hover mb-0">
+      <thead><tr><th>Öğretmen</th><th>Görev Türü</th><th>Görev Tanımı</th><th>Açıklama</th><th>Başlangıç</th><th>Bitiş</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+    if (items.length > 10)
+      html += `<p class="text-muted small mt-2">İlk 10 kayıt gösteriliyor; toplamda ${items.length} görev işlenecek.</p>`;
+  }
+
+  if (errors.length) {
+    html += `<div class="table-responsive mt-3"><table class="table table-sm mb-0">
+      <thead><tr><th>Hata</th></tr></thead>
+      <tbody>${errors.slice(0, 10).map(e => `<tr><td class="text-danger">${escapeHtml(e)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+    if (errors.length > 10) html += `<p class="text-muted small mt-1">İlk 10 hata gösteriliyor.</p>`;
+  }
+
+  getEl('taskImportPreviewBody').innerHTML = html;
+  bootstrap.Modal.getOrCreateInstance(getEl('taskImportWizardModal')).hide();
+  bootstrap.Modal.getOrCreateInstance(getEl('taskImportPreviewModal')).show();
+}
+
+function confirmTaskImport() {
+  if (!_taskIPendingData) { cancelTaskImport(); return; }
+  const { items, errors, mode } = _taskIPendingData;
+  if (errors.length && !confirm(`${errors.length} hatalı satır var. Hatasız ${items.length} görev yine de aktarılsın mı?`)) return;
+  if (mode === 'replace') {
+    if (!confirm('Mevcut tüm görevler silinecek ve yeniden yüklenecek. Devam edilsin mi?')) return;
+    DB.tasks = [];
+  }
+  DB.tasks = DB.tasks || [];
+  items.forEach(task => DB.tasks.push(task));
+  saveDB();
+  renderAll();
+  showToast(`${items.length} görev içe aktarıldı.`, 'success');
+  cancelTaskImport();
+}
+
+function cancelTaskImport() {
+  _taskIPendingData = null;
+  _taskIExcelData   = [];
+  _taskIHeaders     = [];
+  _taskIStep1Saved  = {};
+  _taskIWizardStep  = 0;
+  bootstrap.Modal.getOrCreateInstance(getEl('taskImportWizardModal')).hide();
+  bootstrap.Modal.getOrCreateInstance(getEl('taskImportPreviewModal')).hide();
+}
+
+function backToTaskImportWizard() {
+  bootstrap.Modal.getOrCreateInstance(getEl('taskImportPreviewModal')).hide();
+  _taskIWizardStep = 1;
+  _taskIRenderWizardStep();
+  bootstrap.Modal.getOrCreateInstance(getEl('taskImportWizardModal')).show();
+}
+
+function downloadTaskTemplate() {
+  if (!window.XLSX) { showToast('Şablon üretmek için XLSX kütüphanesi gerekir.', 'warning'); return; }
+  const example = [{
+    'T.C. KİMLİK NO': '',
+    'GÖREV TÜRÜ': 'Kulüp',
+    'GÖREV TANIMI': 'Satranç Kulübü Danışmanlığı',
+    'AÇIKLAMALAR': '',
+    'AYRINTILAR': '',
+    'BAŞLANGIÇ': '2025-09-01',
+    'BİTİŞ': '2026-06-30',
+  }];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(example);
+  XLSX.utils.book_append_sheet(wb, ws, 'Görevler');
+  XLSX.writeFile(wb, 'gorev-aktarim-sablonu.xlsx');
 }
