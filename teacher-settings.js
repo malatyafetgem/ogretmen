@@ -7,26 +7,24 @@ function renderSettings(){
       <div class="row g-3">
         <div class="col-lg-6">${buildImportSettings()}</div>
         <div class="col-lg-6">${buildBackupSettings()}</div>
+      </div>
+    </section>
+    <section class="settings-group">
+      <div class="settings-group-head"><h3>Okul Yapısı</h3><p>Nöbet düzeni ile günler ve ders saatleri gibi temel yapısal tanımlar.</p></div>
+      <div class="row g-3">
         <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
           ${disclosureSection({key:'settings-duty',title:'Nöbet Düzeni',icon:'fas fa-clipboard-check',meta:`${DB.teachers.filter(t=>t.dutyDay&&t.dutyPlace).length} nöbet`,content:buildDutySettings(),open:false})}
+          ${disclosureSection({key:'settings-calendar',title:'Günler ve Ders Saatleri',icon:'fas fa-clock',meta:`${schoolDays().length} gün · ${schoolHours().length} ders saati`,content:buildCalendarSettings(),open:false})}
+        </div></div></div>
+      </div>
+    </section>
+    <section class="settings-group">
+      <div class="settings-group-head"><h3>Ders Programı Düzenleme</h3><p>Hızlı düzenleme, ders tanımları ve ortak ders çiftleri.</p></div>
+      <div class="row g-3">
+        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
           ${disclosureSection({key:'settings-class-program',title:'Ders Programı Hızlı Düzenleme',icon:'fas fa-calendar-days',meta:dayValue,content:buildClassProgramSettings(dayValue),open:false})}
-        </div></div></div>
-      </div>
-    </section>
-    <section class="settings-group">
-      <div class="settings-group-head"><h3>Ders Kuralları</h3><p>Aynı anda aynı sınıfta birden fazla öğretmenin girebileceği ders çiftleri.</p></div>
-      <div class="row g-3">
-        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-          ${disclosureSection({key:'settings-shared-lessons',title:'Ders Kuralları (Ortak Ders Çiftleri)',icon:'fas fa-link',meta:`${(DB.settings.sharedLessonPairs||[]).length} çift`,content:buildSharedLessonSettings(),open:false})}
-        </div></div></div>
-      </div>
-    </section>
-    <section class="settings-group">
-      <div class="settings-group-head"><h3>Okul Yapısı</h3><p>Günler, ders saatleri ve ders adları gibi temel tanımlar.</p></div>
-      <div class="row g-3">
-        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-          ${disclosureSection({key:'settings-calendar',title:'Okul Yapısı (Günler ve Ders Saatleri)',icon:'fas fa-clock',meta:`${schoolDays().length} gün · ${schoolHours().length} ders saati`,content:buildCalendarSettings(),open:false})}
           ${disclosureSection({key:'settings-subjects',title:'Dersler ve Kısaltmalar',icon:'fas fa-book-open',meta:`${(DB.settings.subjects||[]).length} ders`,content:buildSubjectSettings(),open:false})}
+          ${disclosureSection({key:'settings-shared-lessons',title:'Ortak Ders Çiftleri',icon:'fas fa-link',meta:`${(DB.settings.sharedLessonPairs||[]).length} çift`,content:buildSharedLessonSettings(),open:false})}
         </div></div></div>
       </div>
     </section>`;
@@ -48,7 +46,7 @@ function buildImportSettings(){
 }
 
 function buildBackupSettings(){
-  return `<div class="card obs-panel h-100"><div class="card-header"><h3 class="card-title">Yedekleme</h3></div><div class="card-body d-grid gap-2"><button class="btn btn-outline-primary" onclick="exportBackup()">Yedeği İndir</button><input type="file" class="form-control" accept=".json" onchange="importBackup(event)"><details class="danger-tools"><summary>Gelişmiş işlemleri göster</summary><div class="d-grid gap-2 mt-2"><button class="btn btn-outline-secondary" onclick="loadDemoData()">Örnek Veri Ekle</button><button class="btn btn-outline-danger" onclick="resetAllData()">Tüm Verileri Sıfırla</button></div></details></div></div>`;
+  return `<div class="card obs-panel h-100"><div class="card-header"><h3 class="card-title">Yedekleme</h3></div><div class="card-body d-grid gap-2"><button class="btn btn-outline-primary" onclick="exportBackup()">Yedeği İndir</button><input type="file" class="form-control" accept=".json" onchange="importBackup(event)"><button class="btn btn-outline-danger" onclick="resetAllData()">Tüm Verileri Sıfırla</button></div></div>`;
 }
 
 function buildCalendarSettings(){
