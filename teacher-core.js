@@ -15,7 +15,7 @@ const LESSON_TIMES = [
 ];
 const CLASS_LIST = ['9A','9B','9C','9D','10A','10B','10C','10D','11A','11B','11C','11D','12A','12B'];
 const CLASS_MIGRATION_VERSION = 'classes-no-12cd-v1';
-const DATA_NORMALIZATION_VERSION = 'subject-branch-normalization-v1';
+const DATA_NORMALIZATION_VERSION = 'subject-secmeli-migration-v2';
 const TEACHER_FIELDS = ['ADI','SOYADI','T.C. KİMLİK NO','BRANŞI','CEP TELEFONU','E-POSTA','SINIFI','KULÜP','PROJE','BOŞ GÜN','NÖBET GÜNÜ','NÖBET YERİ','DERS PROGRAMI'];
 const SCHEDULE_IMPORT_FIELDS = ['SINIF','GÜN','DERS SAATİ','ÖĞRETMEN T.C.','ÖĞRETMEN','DERS','BAŞLANGIÇ','BİTİŞ','NOT'];
 const SUBJECT_CATALOG = [
@@ -150,16 +150,23 @@ function normalizeLessonTimes(lessonTimes, hours){
     return {hour:Number(hour),start:String(item.start||'').trim(),end:String(item.end||'').trim()};
   });
 }
+function migrateSubjectName(name){
+  // "Seçmeli " ön ekini "S. " ile değiştir (büyük/küçük harf fark etmez)
+  return name.replace(/^Seçmeli\s+/i,'S. ').replace(/\s+Seçmeli\s+/gi,' S. ');
+}
 function normalizeSubjectSettings(subjects){
   const source=Array.isArray(subjects)&&subjects.length ? subjects : SUBJECT_CATALOG;
   const seen=new Set(), list=[];
   source.forEach(item=>{
-    const name=String(item?.name||item?.[0]||'').replace(/\s+/g,' ').trim();
-    if(!name) return;
+    const rawName=String(item?.name||item?.[0]||'').replace(/\s+/g,' ').trim();
+    if(!rawName) return;
+    const name=migrateSubjectName(rawName);
     const key=plainKey(name);
     if(seen.has(key)) return;
     seen.add(key);
-    const fallback=SUBJECT_CATALOG.find(s=>s.key===key);
+    // fallback: önce yeni adla, bulamazsa eski adla (migration sonrası eşleşmesi için)
+    const fallback=SUBJECT_CATALOG.find(s=>s.key===key)
+      || SUBJECT_CATALOG.find(s=>plainKey(migrateSubjectName(s.name))===key);
     const code=upperNamePart(String(item?.code||item?.[1]||fallback?.code||name.split(/\s+/).map(w=>w[0]).join('')).replace(/\s+/g,' ').trim());
     list.push({name,code});
   });
@@ -227,8 +234,11 @@ async function hydrateRemoteDB(){
   const snapshot=await remoteRef().once('value');
   const remote=snapshot.val();
   if(remote&&Array.isArray(remote.teachers)&&Array.isArray(remote.schedules)){
+    const needsMigration=remote.meta?.dataNormalizationVersion!==DATA_NORMALIZATION_VERSION;
     DB=normalizeDB(remote);
     writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
+    // Versiyon eskiyse normalize edilmiş veriyi Firebase'e geri yaz (bir kez)
+    if(needsMigration) await remoteRef().set(dbForStorage(DB)).catch(()=>{});
   }else{
     // Firebase'de veri yok — boş veritabanıyla başla, seed yükleme yok
     DB=makeEmptyDB();
@@ -335,7 +345,8 @@ function normalizeTeacherRecord(t){
   return rec;
 }
 function subjectInfo(subject){
-  const key=plainKey(subject);
+  const migrated=migrateSubjectName(String(subject||''));
+  const key=plainKey(migrated);
   const settings=subjectSettings();
   const exact=settings.find(s=>s.key===key);
   if(exact) return exact;
@@ -354,7 +365,7 @@ function normalizeSubjectName(subject, teacherId=''){
     if(teacherId==='40522761546') return 'Müzik';
     return 'Görsel Sanatlar';
   }
-  return subjectInfo(subject)?.name || titleCaseNamePart(String(subject||'Ders').replace(/\s+/g,' ').trim());
+  return subjectInfo(subject)?.name || migrateSubjectName(titleCaseNamePart(String(subject||'Ders').replace(/\s+/g,' ').trim()));
 }
 function subjectCode(subject, teacherId=''){
   if(plainKey(subject)==='almanca') return 'ALM';

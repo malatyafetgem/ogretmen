@@ -286,6 +286,9 @@ function toggleTcReveal(field){
 }
 function profileInfoRaw(label,valueHtml,icon){ return `<div class="col-6 col-xl-3"><div class="info-line profile-info"><span><i class="${icon} me-1"></i>${label}</span><strong>${valueHtml}</strong></div></div>`; }
 function buildTeacherPersonalInfo(t, lessons, tasks, free){
+  const extraHtml = Object.entries(t.extraFields||{}).map(([label,value])=>
+    value ? profileInfo(label, value, 'fas fa-tag') : ''
+  ).join('');
   return `<div class="row g-3">
       ${profileInfoTc(t._tcRaw||'')}
       ${profileInfo('Branş',t.branch||'—','fas fa-book-open')}
@@ -299,6 +302,7 @@ function buildTeacherPersonalInfo(t, lessons, tasks, free){
       ${profileInfo('Görev',tasks.length,'fas fa-list-check')}
       ${profileInfo('Ders Programı Notu',t.scheduleNote||'—','fas fa-note-sticky')}
       ${profileInfo('Nöbet', [t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'—','fas fa-clipboard-check')}
+      ${extraHtml}
     </div>`;
 }
 function buildTeacherLessonLoad(t, lessons){

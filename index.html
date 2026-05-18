@@ -441,6 +441,37 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
   </div>
 </div>
 
+<!-- ── Öğretmen İçe Aktarma Sihirbazı ── -->
+<div class="modal fade" id="teacherImportWizardModal" tabindex="-1" aria-labelledby="teacherImportWizardTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header obs-modal-header">
+        <h5 class="modal-title" id="teacherImportWizardTitle"><i class="fas fa-file-import me-2"></i>Öğretmen İçe Aktarma Sihirbazı</h5>
+        <button type="button" class="btn-close btn-close-white" onclick="cancelTeacherImport()" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body" id="teacherImportWizardBody"></div>
+      <div class="modal-footer" id="teacherImportWizardFooter"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Öğretmen İçe Aktarma Önizleme ── -->
+<div class="modal fade" id="teacherImportPreviewModal" tabindex="-1" aria-labelledby="teacherImportPreviewTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header obs-modal-header">
+        <h5 class="modal-title" id="teacherImportPreviewTitle"><i class="fas fa-eye me-2"></i>İçe Aktarma Önizleme</h5>
+        <button type="button" class="btn-close btn-close-white" onclick="cancelTeacherImport()" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body" id="teacherImportPreviewBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" onclick="backToTeacherImportWizard()"><i class="fas fa-arrow-left me-1"></i>Geri</button>
+        <button type="button" class="btn btn-primary ms-auto" onclick="confirmTeacherImport()"><i class="fas fa-check me-1"></i>Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── JS KÜTÜPHANELER ── -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc7/dist/js/adminlte.min.js"></script>

@@ -30,7 +30,7 @@ function buildImportSettings(){
   return `<div class="card obs-panel h-100"><div class="card-header"><h3 class="card-title">Excel / CSV İçe Aktar</h3></div><div class="card-body">
     <div class="import-block">
       <h4>Öğretmen Bilgileri</h4>
-      <p class="text-muted small">Başlıklar: ${TEACHER_FIELDS.join(', ')}</p>
+      <p class="text-muted small">Excel veya CSV dosyası yükleyin; sihirbaz sizi sütun eşleştirme adımlarından geçirecek. T.C. Kimlik No esas alınır: mevcut kayıtlar güncellenir, yeni kayıtlar eklenir.</p>
       <input type="file" class="form-control" accept=".xlsx,.xls,.csv" onchange="importTeacherFile(event)">
     </div>
     <div class="import-block">
@@ -320,7 +320,351 @@ function teacherSelectOptions(selected='', emptyLabel='Seçiniz'){
 }
 
 // Seed yükleme fonksiyonları kaldırıldı — veriler yalnızca Firebase'den gelir
-function importTeacherFile(e){ const f=e.target.files&&e.target.files[0]; if(!f)return; if(!window.XLSX){ showToast('Excel içe aktarma için internet bağlantısı veya XLSX kütüphanesi gerekir. Hazır veriler yine yerel çalışır.','warning',6000); e.target.value=''; return; } const r=new FileReader(); r.onload=ev=>{ try{ const wb=XLSX.read(ev.target.result,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{defval:''}); const teachers=rows.map(teacherFromRow).filter(t=>t.firstName||t.lastName); DB.teachers=teachers; saveDB(); renderAll(); showToast(`${teachers.length} öğretmen içe aktarıldı.`,'success'); }catch(err){ showToast('Dosya okunamadı.','danger'); } e.target.value=''; }; r.readAsArrayBuffer(f); }
+
+/* ─────────────────────────────────────────────────
+   Öğretmen İçe Aktarma Sihirbazı
+───────────────────────────────────────────────── */
+
+let _tiExcelData  = [];   // parse edilen satırlar
+let _tiHeaders    = [];   // Excel başlıkları
+let _tiWizardStep = 0;    // 0 = zorunlu alanlar, 1 = ek alanlar
+let _tiPendingData = null; // önizleme verisi
+
+// Sistem alanı map: key → { label, header (tahmin için), fieldKey (teacher objesindeki alan adı) }
+const TI_SYSTEM_FIELDS = [
+  { key:'phone',        label:'Cep Telefonu', header:'CEP TELEFONU',  fieldKey:'phone' },
+  { key:'email',        label:'E-posta',       header:'E-POSTA',       fieldKey:'email' },
+  { key:'classAdvisor', label:'Sınıf',         header:'SINIFI',        fieldKey:'classAdvisor' },
+  { key:'club',         label:'Kulüp',         header:'KULÜP',         fieldKey:'club' },
+  { key:'project',      label:'Proje',         header:'PROJE',         fieldKey:'project' },
+  { key:'freeDay',      label:'Boş Gün',       header:'BOŞ GÜN',       fieldKey:'freeDay' },
+  { key:'dutyDay',      label:'Nöbet Günü',    header:'NÖBET GÜNÜ',    fieldKey:'dutyDay' },
+  { key:'dutyPlace',    label:'Nöbet Yeri',    header:'NÖBET YERİ',    fieldKey:'dutyPlace' },
+];
+
+function importTeacherFile(e){
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  if(!window.XLSX){
+    showToast('Excel içe aktarma için XLSX kütüphanesi gerekir.','warning',6000);
+    e.target.value = ''; return;
+  }
+  if(!/\.(xlsx|xls|xlsm|csv)$/i.test(f.name)){
+    showToast('Sadece Excel/CSV dosyaları yüklenebilir.','error');
+    e.target.value = ''; return;
+  }
+  const r = new FileReader();
+  r.onerror = () => { showToast('Dosya okunamadı.','danger'); e.target.value = ''; };
+  r.onload = ev => {
+    try {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', raw:false});
+      let sheet = null;
+      for(const sn of wb.SheetNames){ const s = wb.Sheets[sn]; if(s && s['!ref']){ sheet = s; break; } }
+      if(!sheet) throw new Error('Dosyada dolu sayfa bulunamadı.');
+      _tiExcelData = XLSX.utils.sheet_to_json(sheet, {defval:'', raw:false});
+      if(!_tiExcelData.length) throw new Error('Sayfada veri satırı bulunamadı.');
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      _tiHeaders = [];
+      for(let C = range.s.c; C <= range.e.c; C++){
+        const cell = sheet[XLSX.utils.encode_cell({c:C, r:range.s.r})];
+        if(cell && cell.v !== undefined && String(cell.v).trim() !== '')
+          _tiHeaders.push(String(cell.v).trim());
+      }
+      if(!_tiHeaders.length) throw new Error('Başlık satırı okunamadı.');
+      _tiWizardStep = 0;
+      _tiRenderWizardStep();
+      bootstrap.Modal.getOrCreateInstance(getEl('teacherImportWizardModal')).show();
+    } catch(err){
+      showToast('Hata: ' + (err.message || 'Bilinmeyen hata'), 'danger');
+    }
+    e.target.value = '';
+  };
+  r.readAsArrayBuffer(f);
+}
+
+// Ortak yardımcı: başlık tahmin eder
+function _tiGuess(label){
+  const norm = s => s.toLocaleLowerCase('tr-TR').replace(/[\s\.]+/g,'');
+  const t = norm(label);
+  return _tiHeaders.find(col => norm(col) === t || norm(col).includes(t)) || '';
+}
+
+// Ortak yardımcı: sütun <option> listesi
+function _tiColOpts(selected='', allowEmpty=false){
+  let html = allowEmpty ? '<option value="">— Boş Geç —</option>' : '<option value="">— Sütun Seçin —</option>';
+  _tiHeaders.forEach(col => {
+    const sel = selected && col.toLocaleLowerCase('tr-TR') === selected.toLocaleLowerCase('tr-TR');
+    html += `<option value="${escapeHtml(col)}" ${sel?'selected':''}>${escapeHtml(col)}</option>`;
+  });
+  return html;
+}
+
+// Adım geçişlerinde zorunlu alan seçimlerini sakla
+let _tiStep1Saved = {};
+function _tiSaveStep1(){
+  _tiStep1Saved = {
+    tc:     getEl('tiColTc')?.value     || '',
+    first:  getEl('tiColFirst')?.value  || '',
+    last:   getEl('tiColLast')?.value   || '',
+    branch: getEl('tiColBranch')?.value || '',
+  };
+}
+
+const TI_WIZ_STEPS = [
+  { title:'1. Zorunlu Alanlar' },
+  { title:'2. Ek Alanlar' },
+];
+
+function _tiRenderWizardStep(){
+  const step = _tiWizardStep;
+  const progHtml = `<div class="ti-wizard-progress">
+    <div class="ti-wizard-step-row">
+      ${TI_WIZ_STEPS.map((s,i)=>`<div class="ti-wizard-step-label ${i===step?'is-active':i<step?'is-complete':''}">${i<step?'✓ ':''}${s.title}</div>`).join('')}
+    </div>
+    <div class="progress ti-prog-bar-wrap"><div class="progress-bar ti-prog-bar" style="width:${Math.round(((step+1)/TI_WIZ_STEPS.length)*100)}%"></div></div>
+  </div>`;
+
+  let stepHtml = '';
+
+  if(step === 0){
+    // ── Adım 1: Zorunlu Alanlar ──
+    const s = _tiStep1Saved;
+    stepHtml = `
+      <div class="ti-section">
+        <div class="ti-section-head"><i class="fas fa-lock me-1"></i> Zorunlu Alanlar</div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">T.C. Kimlik No <span class="text-danger">*</span></label>
+          <select id="tiColTc" class="form-select form-select-sm">${_tiColOpts(s.tc||_tiGuess('T.C. KİMLİK NO'))}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Adı <span class="text-danger">*</span></label>
+          <select id="tiColFirst" class="form-select form-select-sm">${_tiColOpts(s.first||_tiGuess('ADI'))}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Soyadı <span class="text-danger">*</span></label>
+          <select id="tiColLast" class="form-select form-select-sm">${_tiColOpts(s.last||_tiGuess('SOYADI'))}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Branşı <span class="text-danger">*</span></label>
+          <select id="tiColBranch" class="form-select form-select-sm">${_tiColOpts(s.branch||_tiGuess('BRANŞI'))}</select>
+        </div>
+      </div>`;
+  } else {
+    // ── Adım 2: Ek Alanlar ──
+    stepHtml = `
+      <div class="ti-section">
+        <div class="ti-section-head d-flex align-items-center justify-content-between">
+          <span><i class="fas fa-sliders-h me-1"></i> Ek Alanlar <span class="ti-section-sub">İsteğe bağlı — profil kartına eklenir</span></span>
+          <button class="btn btn-sm btn-outline-primary" onclick="tiAddExtraRow()"><i class="fas fa-plus me-1"></i>Alan Ekle</button>
+        </div>
+        <div id="tiExtraContainer"></div>
+        <p class="text-muted small ti-extra-hint">Her satırda soldan Excel sütununu seçin, sağa profilde görünecek adı yazın.</p>
+      </div>`;
+  }
+
+  getEl('teacherImportWizardBody').innerHTML = progHtml + stepHtml;
+
+  // Adım 2'deyse önceki satırları geri yükle
+  if(step === 1){
+    (_tiExtraRows || []).forEach(r => tiAddExtraRow(r.col, r.label));
+    if(!(_tiExtraRows||[]).length){
+      // Sistem alanlarından tahmin ederek başlangıç satırları ekle
+      TI_SYSTEM_FIELDS.forEach(def => {
+        const col = _tiGuess(def.header);
+        if(col) tiAddExtraRow(col, def.label);
+      });
+    }
+  }
+
+  // Footer
+  const btnBack = step > 0
+    ? `<button type="button" class="btn btn-outline-secondary" onclick="tiWizardNav(-1)"><i class="fas fa-arrow-left me-1"></i>Geri</button>`
+    : `<button type="button" class="btn btn-outline-secondary" onclick="cancelTeacherImport()">İptal</button>`;
+  const btnNext = step < TI_WIZ_STEPS.length - 1
+    ? `<button type="button" class="btn btn-primary ms-auto" onclick="tiWizardNav(1)">İleri <i class="fas fa-arrow-right ms-1"></i></button>`
+    : `<button type="button" class="btn btn-primary ms-auto" onclick="processTeacherImport()">Önizle <i class="fas fa-eye ms-1"></i></button>`;
+
+  getEl('teacherImportWizardFooter').innerHTML = btnBack + btnNext;
+}
+
+// Sihirbaz gezinme
+let _tiExtraRows = []; // { col, label } — adım 2 satırları bellekte
+function tiWizardNav(dir){
+  if(_tiWizardStep === 0 && dir === 1){
+    // Zorunlu alan kontrolü
+    if(!getEl('tiColTc')?.value)     { showToast('T.C. Kimlik No sütununu seçin.','warning'); return; }
+    if(!getEl('tiColFirst')?.value)  { showToast('Adı sütununu seçin.','warning'); return; }
+    if(!getEl('tiColLast')?.value)   { showToast('Soyadı sütununu seçin.','warning'); return; }
+    if(!getEl('tiColBranch')?.value) { showToast('Branşı sütununu seçin.','warning'); return; }
+    _tiSaveStep1();
+  }
+  if(_tiWizardStep === 1 && dir === -1){
+    // Adım 2'den geri gelirken mevcut satırları kaydet
+    _tiSaveExtraRows();
+  }
+  _tiWizardStep = Math.max(0, Math.min(TI_WIZ_STEPS.length - 1, _tiWizardStep + dir));
+  _tiRenderWizardStep();
+}
+
+function _tiSaveExtraRows(){
+  _tiExtraRows = [];
+  document.querySelectorAll('.ti-extra-row').forEach(row => {
+    const col   = row.querySelector('.ti-extra-col')?.value  || '';
+    const label = row.querySelector('.ti-extra-label-in')?.value.trim() || '';
+    if(col || label) _tiExtraRows.push({col, label});
+  });
+}
+
+// Satır ekle: sol = sütun dropdown, sağ = etiket text input
+function tiAddExtraRow(selectedCol='', typedLabel=''){
+  const container = getEl('tiExtraContainer');
+  if(!container) return;
+  const div = document.createElement('div');
+  div.className = 'ti-extra-row';
+  div.innerHTML = `
+    <select class="form-select form-select-sm ti-extra-col">
+      ${_tiColOpts(selectedCol, true)}
+    </select>
+    <i class="fas fa-arrow-right ti-extra-arrow"></i>
+    <input type="text" class="form-control form-control-sm ti-extra-label-in" placeholder="Profilde görünecek ad (örn: Görev)" value="${escapeHtml(typedLabel)}">
+    <button class="btn btn-sm btn-outline-danger ti-extra-remove" onclick="this.closest('.ti-extra-row').remove()" title="Kaldır"><i class="fas fa-times"></i></button>`;
+  container.appendChild(div);
+}
+
+function processTeacherImport(){
+  _tiSaveExtraRows();
+
+  const colTc     = _tiStep1Saved.tc;
+  const colFirst  = _tiStep1Saved.first;
+  const colLast   = _tiStep1Saved.last;
+  const colBranch = _tiStep1Saved.branch;
+
+  // Ek alan eşlemeleri: { col, label, fieldKey (sistem alanı varsa), isExtra (serbest ise) }
+  const extraMappings = _tiExtraRows.filter(r => r.col && r.label).map(r => {
+    const sys = TI_SYSTEM_FIELDS.find(f => f.label === r.label || f.header === r.label.toLocaleUpperCase('tr-TR'));
+    return { col: r.col, label: r.label, fieldKey: sys ? sys.fieldKey : null };
+  });
+
+  const toAdd = [], toUpdate = [], errRows = [];
+  const tcSeen = new Set();
+
+  _tiExcelData.forEach((row, idx) => {
+    const rowNum = idx + 2;
+    const rawTc    = String(row[colTc]     || '').replace(/\D+/g,'').trim();
+    const firstName = String(row[colFirst] || '').trim();
+    const lastName  = String(row[colLast]  || '').trim();
+    const branch    = String(row[colBranch]|| '').trim();
+
+    if(!rawTc)               { errRows.push({rowNum, reason:'T.C. Kimlik No boş'}); return; }
+    if(rawTc.length !== 11)  { errRows.push({rowNum, reason:`T.C. geçersiz (${rawTc.length} hane)`}); return; }
+    if(!firstName)           { errRows.push({rowNum, reason:'Adı boş'}); return; }
+    if(!lastName)            { errRows.push({rowNum, reason:'Soyadı boş'}); return; }
+    if(!branch)              { errRows.push({rowNum, reason:'Branşı boş'}); return; }
+    if(tcSeen.has(rawTc))    { errRows.push({rowNum, reason:'Aynı T.C. iki kez'}); return; }
+    tcSeen.add(rawTc);
+
+    const hashed   = tcHash(rawTc);
+    const existing = DB.teachers.find(t => t.id === hashed || String(t._tcRaw||'') === rawTc);
+
+    const rec = {
+      phone:'', email:'', classAdvisor:'', club:'', project:'',
+      freeDay:'', dutyDay:'', dutyPlace:'', scheduleNote:'',
+      ...(existing || {}),
+      id: hashed, _tcRaw: rawTc, firstName, lastName,
+      branch: typeof normalizeBranchName === 'function' ? normalizeBranchName(branch) : branch,
+      extraFields: { ...(existing?.extraFields || {}) },
+    };
+
+    // Ek alanları uygula
+    extraMappings.forEach(m => {
+      const val = String(row[m.col] || '').trim();
+      if(!val) return;
+      if(m.fieldKey === 'classAdvisor') rec.classAdvisor = cleanClassName(val);
+      else if(m.fieldKey)               rec[m.fieldKey]  = val;
+      else                              rec.extraFields[m.label] = val; // serbest alan
+    });
+
+    if(existing) toUpdate.push(rec);
+    else toAdd.push(rec);
+  });
+
+  _tiPendingData = { toAdd, toUpdate, errRows, extraMappings };
+
+  // ── Önizleme ──
+  let html = `<div class="ti-preview-summary">
+    <div class="ti-preview-box ti-preview-add"><strong>${toAdd.length}</strong><span>Yeni Kayıt</span></div>
+    <div class="ti-preview-box ti-preview-upd"><strong>${toUpdate.length}</strong><span>Güncellenecek</span></div>
+    <div class="ti-preview-box ti-preview-err"><strong>${errRows.length}</strong><span>Hatalı Satır</span></div>
+  </div>`;
+
+  if(toAdd.length + toUpdate.length === 0){
+    html += `<div class="alert alert-warning mt-3">İçe aktarılacak geçerli kayıt bulunamadı.</div>`;
+  } else {
+    const preview = [...toAdd, ...toUpdate].slice(0, 10);
+    const extraHeads = extraMappings.map(m => `<th>${escapeHtml(m.label)}</th>`).join('');
+    const rows = preview.map(t => {
+      const isUpd = toUpdate.includes(t);
+      const badge = isUpd ? '<span class="ti-badge-upd">Güncelle</span>' : '<span class="ti-badge-add">Yeni</span>';
+      const extras = extraMappings.map(m => {
+        const val = m.fieldKey ? (t[m.fieldKey]||'') : (t.extraFields?.[m.label]||'');
+        return `<td>${escapeHtml(String(val))}</td>`;
+      }).join('');
+      return `<tr><td>${badge}</td><td>${escapeHtml(t.firstName)} ${escapeHtml(t.lastName)}</td><td>${escapeHtml(t.branch)}</td>${extras}</tr>`;
+    }).join('');
+    html += `<div class="table-responsive mt-3"><table class="table table-sm table-hover mb-0">
+      <thead><tr><th>Durum</th><th>Ad Soyad</th><th>Branş</th>${extraHeads}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+    if(toAdd.length + toUpdate.length > 10)
+      html += `<p class="text-muted small mt-2">İlk 10 kayıt gösteriliyor; toplamda ${toAdd.length + toUpdate.length} kayıt işlenecek.</p>`;
+  }
+
+  if(errRows.length){
+    html += `<div class="table-responsive mt-3"><table class="table table-sm mb-0">
+      <thead><tr><th>Satır</th><th>Hata</th></tr></thead>
+      <tbody>${errRows.map(e=>`<tr><td><strong>${escapeHtml(String(e.rowNum))}</strong></td><td class="text-danger">${escapeHtml(e.reason)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  getEl('teacherImportPreviewBody').innerHTML = html;
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherImportWizardModal')).hide();
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherImportPreviewModal')).show();
+}
+
+function confirmTeacherImport(){
+  if(!_tiPendingData){ cancelTeacherImport(); return; }
+  const { toAdd, toUpdate } = _tiPendingData;
+
+  toUpdate.forEach(rec => {
+    const idx = DB.teachers.findIndex(t => t.id === rec.id || String(t._tcRaw||'') === rec._tcRaw);
+    if(idx >= 0) DB.teachers[idx] = rec;
+    else DB.teachers.push(rec);
+  });
+  toAdd.forEach(rec => DB.teachers.push(rec));
+
+  saveDB();
+  renderAll();
+  showToast(`${toAdd.length} yeni, ${toUpdate.length} güncelleme tamamlandı.`, 'success');
+  cancelTeacherImport();
+}
+
+function cancelTeacherImport(){
+  _tiPendingData  = null;
+  _tiExcelData    = [];
+  _tiHeaders      = [];
+  _tiExtraRows    = [];
+  _tiStep1Saved   = {};
+  _tiWizardStep   = 0;
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherImportWizardModal')).hide();
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherImportPreviewModal')).hide();
+}
+
+function backToTeacherImportWizard(){
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherImportPreviewModal')).hide();
+  _tiWizardStep = 1;
+  _tiRenderWizardStep();
+  bootstrap.Modal.getOrCreateInstance(getEl('teacherImportWizardModal')).show();
+}
 function downloadScheduleTemplate(){
   if(!window.XLSX){ showToast('Şablon üretmek için XLSX kütüphanesi gerekir.','warning'); return; }
   const example=[{
