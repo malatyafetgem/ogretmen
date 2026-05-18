@@ -343,8 +343,8 @@ function mergeSpanLabel(span){
 
 function isSchedulableTeacher(t){
   if(!t) return false;
-  const note=(t.scheduleNote||'').toLowerCase();
-  if(note.includes('idareci')||note.includes('rehberlik')) return false;
+  // Sadece "Öğretmen" rolündekiler boş saat/gün hesaplarına girer
+  if((t.role||'Öğretmen')!=='Öğretmen') return false;
   if(!teacherLessons(t.id).length) return false;
   return true;
 }

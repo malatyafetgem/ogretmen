@@ -32,15 +32,15 @@ const SUBJECT_CATALOG = [
   ['Matematik','MAT'],
   ['Rehberlik ve Yönlendirme','REH'],
   ['Sağlık Bilgisi ve Trafik Kültürü','SAĞ'],
-  ['Seçmeli Adabımuaşeret','S. AD'],
-  ['Seçmeli İkinci Yabancı Dil','S. ALM'],
-  ['Seçmeli Klasik Ahlak Metinleri','S. KAM'],
-  ['Seçmeli Türk Sosyal Hayatında Aile','S. TSHA'],
-  ['Seçmeli Matematik Uygulamaları','S. MATU'],
-  ['Seçmeli Peygamberimizin Hayatı','S. PEY'],
-  ['Seçmeli Proje Tasarımı ve Uygulamaları','S. PRO'],
-  ['Seçmeli Spor Eğitimi','S. SPR'],
-  ['Seçmeli Temel Dini Bilgiler','S. TDB'],
+  ['S. Adabımuaşeret','S. AD'],
+  ['S. İkinci Yabancı Dil','S. ALM'],
+  ['S. Klasik Ahlak Metinleri','S. KAM'],
+  ['S. Türk Sosyal Hayatında Aile','S. TSHA'],
+  ['S. Matematik Uygulamaları','S. MATU'],
+  ['S. Peygamberimizin Hayatı','S. PEY'],
+  ['S. Proje Tasarımı ve Uygulamaları','S. PRO'],
+  ['S. Spor Eğitimi','S. SPR'],
+  ['S. Temel Dini Bilgiler','S. TDB'],
   ['T.C. İnkılap Tarihi ve Atatürkçülük','İNK'],
   ['Tarih','TAR'],
   ['Türk Dili ve Edebiyatı','TDE'],
@@ -59,7 +59,18 @@ SUBJECT_CATALOG.forEach(s=>SUBJECT_ALIASES.set(s.key,s));
   ['kimya kimya teknolojisi','Kimya'],
   ['rehberlik','Rehberlik ve Yönlendirme'],
   ['turk dili ve edebiyati','Türk Dili ve Edebiyatı'],
-  ['t c inkilap tarihi ve ataturkculuk','T.C. İnkılap Tarihi ve Atatürkçülük']
+  ['t c inkilap tarihi ve ataturkculuk','T.C. İnkılap Tarihi ve Atatürkçülük'],
+  ['secmeli adabimuaseret','S. Adabımuaşeret'],
+  ['secmeli ikinci yabanci dil','S. İkinci Yabancı Dil'],
+  ['secmeli klasik ahlak metinleri','S. Klasik Ahlak Metinleri'],
+  ['klasik ahlak metinleri','S. Klasik Ahlak Metinleri'],
+  ['secmeli turk sosyal hayatinda aile','S. Türk Sosyal Hayatında Aile'],
+  ['turk sosyal hayatinda aile','S. Türk Sosyal Hayatında Aile'],
+  ['secmeli matematik uygulamalari','S. Matematik Uygulamaları'],
+  ['secmeli peygamberimizin hayati','S. Peygamberimizin Hayatı'],
+  ['secmeli proje tasarimi ve uygulamalari','S. Proje Tasarımı ve Uygulamaları'],
+  ['secmeli spor egitimi','S. Spor Eğitimi'],
+  ['secmeli temel dini bilgiler','S. Temel Dini Bilgiler']
 ].forEach(([alias,target])=>SUBJECT_ALIASES.set(alias,SUBJECT_CATALOG.find(s=>s.name===target)));
 let SUBJECT_SETTINGS_RUNTIME = [...SUBJECT_CATALOG];
 let MEMORY_DB_VALUE = null;
@@ -292,6 +303,23 @@ function normalizeBranchName(value){
   };
   return branchMap[key]||titleCaseNamePart(noRole);
 }
+// Sabit rol atamaları: ad-soyad plainKey → rol
+const TEACHER_ROLE_OVERRIDES = {
+  'ramazan ilhan': 'Müdür',
+  'zulfu taskesen': 'Müdür Yardımcısı',
+  'umit atabey': 'Müdür Yardımcısı',
+  'hacer er': 'Müdür Yardımcısı',
+  'ferat dalaman': 'PDR'
+};
+function resolveTeacherRole(t){
+  // Kayıtlı rol varsa onu kullan
+  if(t.role) return t.role;
+  // Sabit atamalar
+  const fullKey=plainKey(`${t.firstName||''} ${t.lastName||''}`);
+  if(TEACHER_ROLE_OVERRIDES[fullKey]) return TEACHER_ROLE_OVERRIDES[fullKey];
+  // Varsayılan
+  return 'Öğretmen';
+}
 function normalizeTeacherRecord(t){
   const parts=teacherNameParts(t);
   // Eğer id zaten hash biçiminde ('tc' + 8 hex) ise yeniden hashlenmesin
@@ -300,6 +328,8 @@ function normalizeTeacherRecord(t){
   const hashed=alreadyHashed ? t.id : (rawTc ? tcHash(rawTc) : (t.id||uid('t')));
   const id=hashed||t.id||uid('t');
   const rec={...t, id, firstName:parts.first, lastName:parts.last, branch:normalizeBranchName(t.branch), classAdvisor:cleanClassName(t.classAdvisor)};
+  // Rol ataması: sabit listeden veya kayıtlı değerden
+  rec.role=resolveTeacherRole({...rec, firstName:parts.first, lastName:parts.last});
   if(rawTc) rec._tcRaw=rawTc; else delete rec._tcRaw;
   delete rec.identityNo;
   return rec;
@@ -313,9 +343,9 @@ function subjectInfo(subject){
     const alias=SUBJECT_ALIASES.get(key);
     return settings.find(s=>s.key===alias.key) || alias;
   }
-  if(key.includes('klasik ahlak')&&key.includes('turk sosyal')) return settings.find(s=>s.name==='Seçmeli Klasik Ahlak Metinleri') || SUBJECT_CATALOG.find(s=>s.name==='Seçmeli Klasik Ahlak Metinleri');
-  if(key.includes('klasik ahlak')) return settings.find(s=>s.name==='Seçmeli Klasik Ahlak Metinleri') || SUBJECT_CATALOG.find(s=>s.name==='Seçmeli Klasik Ahlak Metinleri');
-  if(key.includes('turk sosyal hayatinda aile')) return settings.find(s=>s.name==='Seçmeli Türk Sosyal Hayatında Aile') || SUBJECT_CATALOG.find(s=>s.name==='Seçmeli Türk Sosyal Hayatında Aile');
+  if(key.includes('klasik ahlak')&&key.includes('turk sosyal')) return settings.find(s=>s.name==='S. Klasik Ahlak Metinleri') || SUBJECT_CATALOG.find(s=>s.name==='S. Klasik Ahlak Metinleri');
+  if(key.includes('klasik ahlak')) return settings.find(s=>s.name==='S. Klasik Ahlak Metinleri') || SUBJECT_CATALOG.find(s=>s.name==='S. Klasik Ahlak Metinleri');
+  if(key.includes('turk sosyal hayatinda aile')) return settings.find(s=>s.name==='S. Türk Sosyal Hayatında Aile') || SUBJECT_CATALOG.find(s=>s.name==='S. Türk Sosyal Hayatında Aile');
   return null;
 }
 function normalizeSubjectName(subject, teacherId=''){
@@ -336,11 +366,11 @@ function normalizeScheduleRecords(schedules){
   schedules.forEach(raw=>{
     const subjectKey=plainKey(raw.subject);
     if(subjectKey.includes('klasik ahlak')&&subjectKey.includes('turk sosyal')){
-      const base={...raw, subject:'Seçmeli Klasik Ahlak Metinleri', note:raw.note||'Grup X'};
+      const base={...raw, subject:'S. Klasik Ahlak Metinleri', note:raw.note||'Grup X'};
       result.push(normalizeScheduleRecord(base));
       const hacId=`${raw.id||uid('s')}_ha`;
       const exists=schedules.some(s=>s.id===hacId) || seen.has(hacId);
-      if(!exists) result.push(normalizeScheduleRecord({...raw,id:hacId,teacherId:'24836297168',subject:'Seçmeli Türk Sosyal Hayatında Aile',note:raw.note||'Grup Y'}));
+      if(!exists) result.push(normalizeScheduleRecord({...raw,id:hacId,teacherId:'24836297168',subject:'S. Türk Sosyal Hayatında Aile',note:raw.note||'Grup Y'}));
       seen.add(hacId);
       return;
     }
@@ -391,7 +421,7 @@ function lessonHourLabel(hour){ return `${Number(hour)}. Ders`; }
 function lessonTimeRange(hour){ const t=lessonTimeByHour(hour); return t&&t.start&&t.end ? `${t.start}-${t.end}` : ''; }
 function lessonHourCell(hour,showTime=false){ const range=lessonTimeRange(hour); return `<span class="lesson-hour-label">${escapeHtml(lessonHourLabel(hour))}</span>${showTime&&range?`<small class="lesson-time-sub">${escapeHtml(range)}</small>`:''}`; }
 function lessonBoardHeader(hour){ return `<span class="lesson-board-hour">(${escapeHtml(hour)})</span>`; }
-function displaySubjectName(subject){ return normalizeSubjectName(subject).replace(/^Seçmeli\s+/i,'S. ').replace(/\s+Seçmeli\s+/gi,' S. '); }
+function displaySubjectName(subject){ return normalizeSubjectName(subject); }
 function scheduleNoteText(item){
   const note=String(item?.note||'').trim();
   const key=plainKey(note);
