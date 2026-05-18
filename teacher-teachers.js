@@ -202,6 +202,7 @@ function openTeacherModal(id=''){
     const map={FirstName:'firstName',LastName:'lastName',Branch:'branch',Phone:'phone',Email:'email',ClassAdvisor:'classAdvisor',Club:'club',Project:'project',DutyPlace:'dutyPlace',ScheduleNote:'scheduleNote'};
     getEl('t'+k).value=t?.[map[k]]||'';
   });
+  getEl('tRole').value=t?resolveTeacherRole(t):'Öğretmen';
   getEl('tIdentityNo').value=t?._tcRaw||'';
   if(nameParts){ getEl('tFirstName').value=nameParts.first; getEl('tLastName').value=nameParts.last; }
   getEl('tFreeDay').value=t?.freeDay||'';
@@ -238,7 +239,7 @@ function saveTeacherForm(){
   const nameParts=teacherNameParts(draft);
   const subjectsList=getEl('tSubjectsList');
   const subjects=[...subjectsList?.querySelectorAll('input[type=checkbox]:checked')||[]].map(cb=>cb.value);
-  const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim(),subjects};
+  const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),role:getEl('tRole').value||'Öğretmen',phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim(),subjects};
   if(rawTc) t._tcRaw=rawTc;
   if(!t.firstName||!t.lastName){showToast('Ad ve soyad zorunlu.','warning');return;}
   if(oldId&&oldId!==id){DB.schedules.forEach(s=>{if(s.teacherId===oldId)s.teacherId=id;}); (DB.tasks||[]).forEach(g=>{if(g.teacherId===oldId)g.teacherId=id;}); if(selectedTeacherId===oldId)selectedTeacherId=id;}

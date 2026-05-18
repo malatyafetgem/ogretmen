@@ -407,6 +407,7 @@ function _tiSaveStep1(){
     first:  getEl('tiColFirst')?.value  || '',
     last:   getEl('tiColLast')?.value   || '',
     branch: getEl('tiColBranch')?.value || '',
+    role:   getEl('tiColRole')?.value   || '',
   };
 }
 
@@ -447,6 +448,10 @@ function _tiRenderWizardStep(){
         <div class="ti-field-row">
           <label class="ti-field-label">Branşı <span class="text-danger">*</span></label>
           <select id="tiColBranch" class="form-select form-select-sm">${_tiColOpts(s.branch||_tiGuess('BRANŞI'))}</select>
+        </div>
+        <div class="ti-field-row">
+          <label class="ti-field-label">Rolü <span class="text-muted small">(isteğe bağlı)</span></label>
+          <select id="tiColRole" class="form-select form-select-sm">${_tiColOpts(s.role||_tiGuess('ROLÜ'), true)}</select>
         </div>
       </div>`;
   } else {
@@ -538,6 +543,7 @@ function processTeacherImport(){
   const colFirst  = _tiStep1Saved.first;
   const colLast   = _tiStep1Saved.last;
   const colBranch = _tiStep1Saved.branch;
+  const colRole   = _tiStep1Saved.role;
 
   // Ek alan eşlemeleri: { col, label, fieldKey (sistem alanı varsa), isExtra (serbest ise) }
   const extraMappings = _tiExtraRows.filter(r => r.col && r.label).map(r => {
@@ -575,6 +581,13 @@ function processTeacherImport(){
       extraFields: { ...(existing?.extraFields || {}) },
     };
 
+    // Rol: Excel sütunundan oku; boşsa mevcut kaydı koru, o da yoksa varsayılan
+    if(colRole){
+      const rawRole = String(row[colRole] || '').trim();
+      if(rawRole) rec.role = rawRole;
+    }
+    if(!rec.role) rec.role = 'Öğretmen';
+
     // Ek alanları uygula
     extraMappings.forEach(m => {
       const val = String(row[m.col] || '').trim();
@@ -609,10 +622,10 @@ function processTeacherImport(){
         const val = m.fieldKey ? (t[m.fieldKey]||'') : (t.extraFields?.[m.label]||'');
         return `<td>${escapeHtml(String(val))}</td>`;
       }).join('');
-      return `<tr><td>${badge}</td><td>${escapeHtml(t.firstName)} ${escapeHtml(t.lastName)}</td><td>${escapeHtml(t.branch)}</td>${extras}</tr>`;
+      return `<tr><td>${badge}</td><td>${escapeHtml(t.firstName)} ${escapeHtml(t.lastName)}</td><td>${escapeHtml(t.branch)}</td><td>${escapeHtml(t.role||'Öğretmen')}</td>${extras}</tr>`;
     }).join('');
     html += `<div class="table-responsive mt-3"><table class="table table-sm table-hover mb-0">
-      <thead><tr><th>Durum</th><th>Ad Soyad</th><th>Branş</th>${extraHeads}</tr></thead>
+      <thead><tr><th>Durum</th><th>Ad Soyad</th><th>Branş</th><th>Rolü</th>${extraHeads}</tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
     if(toAdd.length + toUpdate.length > 10)

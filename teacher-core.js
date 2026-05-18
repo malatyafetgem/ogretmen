@@ -313,21 +313,9 @@ function normalizeBranchName(value){
   };
   return branchMap[key]||titleCaseNamePart(noRole);
 }
-// Sabit rol atamaları: ad-soyad plainKey → rol
-const TEACHER_ROLE_OVERRIDES = {
-  'ramazan ilhan': 'Müdür',
-  'zulfu taskesen': 'Müdür Yardımcısı',
-  'umit atabey': 'Müdür Yardımcısı',
-  'hacer er': 'Müdür Yardımcısı',
-  'ferat dalaman': 'PDR'
-};
+// Rol çözümleyici: kayıtlı t.role varsa onu kullan, yoksa varsayılan
 function resolveTeacherRole(t){
-  // Kayıtlı rol varsa onu kullan
   if(t.role) return t.role;
-  // Sabit atamalar
-  const fullKey=plainKey(`${t.firstName||''} ${t.lastName||''}`);
-  if(TEACHER_ROLE_OVERRIDES[fullKey]) return TEACHER_ROLE_OVERRIDES[fullKey];
-  // Varsayılan
   return 'Öğretmen';
 }
 function normalizeTeacherRecord(t){
