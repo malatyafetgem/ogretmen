@@ -27,7 +27,9 @@ function renderClasses(){
   selectedClassName=cls;
   const day=getEl('classProfileDay')?.value||todayName()||schoolDays()[0];
   const items=classScheduleItems(cls);
-  getEl('classProfileContent').innerHTML=cls?`<div class="card obs-panel profile-card"><div class="card-header profile-header"><div><h3 class="card-title"><i class="fas fa-users me-2"></i>${escapeHtml(cls)}</h3><p>Haftalık ${items.length} ders saati · ${classSubjectSummary(cls).length} farklı ders</p></div><div class="profile-actions no-print"><button class="btn btn-sm btn-outline-secondary" onclick="openClassInReports('${escapeHtml(cls)}')"><i class="fas fa-calendar-days me-1"></i>Raporlarda Aç</button></div></div><div class="card-body profile-disclosures">
+  const advisor=DB.teachers.find(t=>cleanClassName(t.classAdvisor)===cls);
+  const advisorHtml=advisor?` <span style="font-weight:normal;font-size:0.7em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">(${escapeHtml(teacherName(advisor))})</span>`:'';
+  getEl('classProfileContent').innerHTML=cls?`<div class="card obs-panel profile-card"><div class="card-header profile-header"><div><h3 class="card-title"><i class="fas fa-users me-2"></i>${escapeHtml(cls)}${advisorHtml}</h3></div></div><div class="card-body profile-disclosures">
     ${disclosureSection({key:`class-${cls}-daily-${day}`,title:`${day} Programı`,icon:'fas fa-calendar-day',meta:cls,content:buildClassDailySchedule(cls,day),open:true})}
     ${disclosureSection({key:`class-${cls}-weekly`,title:'Haftalık Program',icon:'fas fa-calendar-week',meta:`${items.length} ders kaydı`,content:buildClassWeeklySchedule(cls)})}
     ${disclosureSection({key:`class-${cls}-subjects`,title:'Ders Dağılımı',icon:'fas fa-book-open',meta:`${classSubjectSummary(cls).length} ders`,content:buildClassSubjectTable(cls)})}
