@@ -7,21 +7,27 @@ function renderSettings(){
       <div class="row g-3">
         <div class="col-lg-6">${buildImportSettings()}</div>
         <div class="col-lg-6">${buildBackupSettings()}</div>
-        <div class="col-12">${buildDutySettings()}</div>
-        <div class="col-12">${buildClassProgramSettings(dayValue)}</div>
+        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
+          ${disclosureSection({key:'settings-duty',title:'Nöbet Düzeni',icon:'fas fa-clipboard-check',meta:`${DB.teachers.filter(t=>t.dutyDay&&t.dutyPlace).length} nöbet`,content:buildDutySettings(),open:false})}
+          ${disclosureSection({key:'settings-class-program',title:'Ders Programı Hızlı Düzenleme',icon:'fas fa-calendar-days',meta:dayValue,content:buildClassProgramSettings(dayValue),open:false})}
+        </div></div></div>
       </div>
     </section>
     <section class="settings-group">
       <div class="settings-group-head"><h3>Ders Kuralları</h3><p>Aynı anda aynı sınıfta birden fazla öğretmenin girebileceği ders çiftleri.</p></div>
       <div class="row g-3">
-        <div class="col-12">${buildSharedLessonSettings()}</div>
+        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
+          ${disclosureSection({key:'settings-shared-lessons',title:'Ders Kuralları (Ortak Ders Çiftleri)',icon:'fas fa-link',meta:`${(DB.settings.sharedLessonPairs||[]).length} çift`,content:buildSharedLessonSettings(),open:false})}
+        </div></div></div>
       </div>
     </section>
     <section class="settings-group">
       <div class="settings-group-head"><h3>Okul Yapısı</h3><p>Günler, ders saatleri ve ders adları gibi temel tanımlar.</p></div>
       <div class="row g-3">
-        <div class="col-12">${buildCalendarSettings()}</div>
-        <div class="col-12">${buildSubjectSettings()}</div>
+        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
+          ${disclosureSection({key:'settings-calendar',title:'Okul Yapısı (Günler ve Ders Saatleri)',icon:'fas fa-clock',meta:`${schoolDays().length} gün · ${schoolHours().length} ders saati`,content:buildCalendarSettings(),open:false})}
+          ${disclosureSection({key:'settings-subjects',title:'Dersler ve Kısaltmalar',icon:'fas fa-book-open',meta:`${(DB.settings.subjects||[]).length} ders`,content:buildSubjectSettings(),open:false})}
+        </div></div></div>
       </div>
     </section>`;
 }
