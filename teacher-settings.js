@@ -34,18 +34,10 @@ function buildImportSettings(){
       <input type="file" class="form-control" accept=".xlsx,.xls,.csv" onchange="importTeacherFile(event)">
     </div>
     <div class="import-block">
-      <div class="section-title-row">
-        <h4>Ders Programı</h4>
-        <button class="btn btn-sm btn-outline-secondary no-print" onclick="downloadScheduleTemplate()"><i class="fas fa-download me-1"></i>Şablonu İndir</button>
-      </div>
-      <p class="text-muted small mb-3">Her satır tek ders kaydıdır. Başlıklar: ${SCHEDULE_IMPORT_FIELDS.join(', ')}</p>
-      <div class="row g-2 align-items-end">
-        <div class="col-md-5"><label class="form-label">İçe Aktarma Biçimi</label><select id="scheduleImportMode" class="form-select"><option value="replace">Mevcut programı değiştir</option><option value="append">Mevcut programa ekle</option></select></div>
-        <div class="col-md-7"><label class="form-label">Ders Programı Dosyası</label><input type="file" class="form-control" accept=".xlsx,.xls,.csv" onchange="importScheduleFile(event)"></div>
-      </div>
-      <div id="scheduleImportFeedback" class="import-feedback mt-2"></div>
+      <h4>Ders Programı</h4>
+      <p class="text-muted small">Excel veya CSV dosyası yükleyin; sihirbaz sütunları eşleştirmenizi sağlar. T.C. Kimlik No zorunludur.</p>
+      <input type="file" class="form-control" accept=".xlsx,.xls,.csv" onchange="importScheduleFileWizard(event)">
     </div>
-  
   </div></div>`;
 }
 
@@ -824,3 +816,339 @@ function exportBackup(){
 function importBackup(e){ const f=e.target.files&&e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!Array.isArray(d.teachers)||!Array.isArray(d.schedules))throw Error(); DB=normalizeDB(d); saveDB(); renderAll(); showToast('Yedek geri yüklendi.','success'); }catch(err){ showToast('Yedek dosyası uygun değil.','danger'); } e.target.value=''; }; r.readAsText(f,'utf-8'); }
 function resetAllData(){ if(!confirm('Tüm veriler silinsin mi?'))return; DB=makeEmptyDB(); saveDB(); renderAll(); }
 function loadDemoData(){ const demo=[['Ayşe','Yılmaz','Matematik','9A','Pazartesi','A Blok','Cuma'],['Mehmet','Kaya','Edebiyat','10B','Çarşamba','Bahçe','Salı'],['Elif','Demir','Biyoloji','11C','Perşembe','B Blok','Perşembe'],['Selim','Arslan','Fizik','12A','Salı','C Blok','Pazartesi']].map(x=>({id:uid('t'),firstName:x[0],lastName:x[1],identityNo:'',branch:x[2],phone:'',email:'',classAdvisor:x[3],club:'',project:'',dutyDay:x[4],dutyPlace:x[5],freeDay:x[6],scheduleNote:''})); DB.teachers.push(...demo); const [a,b,c,d]=demo; DB.schedules.push({id:uid('s'),teacherId:a.id,className:'9A',subject:'Matematik',day:'Pazartesi',hour:1,startTime:'08:15',endTime:'08:55',note:''},{id:uid('s'),teacherId:a.id,className:'9A',subject:'Matematik',day:'Pazartesi',hour:2,startTime:'09:05',endTime:'09:45',note:''},{id:uid('s'),teacherId:b.id,className:'10B',subject:'Edebiyat',day:'Salı',hour:3,startTime:'09:55',endTime:'10:35',note:''},{id:uid('s'),teacherId:c.id,className:'11C',subject:'Biyoloji',day:'Perşembe',hour:5,startTime:'11:35',endTime:'12:15',note:'Lab'},{id:uid('s'),teacherId:d.id,className:'12A',subject:'Fizik',day:'Salı',hour:1,startTime:'08:15',endTime:'08:55',note:''}); DB.tasks=DB.tasks||[]; DB.tasks.push({id:uid('g'),teacherId:a.id,kind:'Demo',title:'Örnek Görev',description:'Deneme amaçlı görev',details:'',startDate:'',endDate:''}); saveDB(); renderAll(); showToast('Örnek veri eklendi.','success'); }
+
+/* ─────────────────────────────────────────────────
+   Ders Programı İçe Aktarma Sihirbazı
+───────────────────────────────────────────────── */
+
+let _siExcelData  = [];
+let _siHeaders    = [];
+let _siWizardStep = 0;
+let _siStep1Saved = {};
+let _siStep2Saved = {};
+let _siPendingData = null;
+
+const SI_WIZ_STEPS = [
+  { title:'1. Zorunlu Alanlar' },
+  { title:'2. İsteğe Bağlı Alanlar' },
+  { title:'3. İçe Aktarma Seçeneği' },
+];
+
+function importScheduleFileWizard(e){
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  if(!window.XLSX){ showToast('Excel içe aktarma için XLSX kütüphanesi gerekir.','warning',6000); e.target.value=''; return; }
+  if(!/\.(xlsx|xls|xlsm|csv)$/i.test(f.name)){ showToast('Sadece Excel/CSV dosyaları yüklenebilir.','warning'); e.target.value=''; return; }
+  const r = new FileReader();
+  r.onerror = () => { showToast('Dosya okunamadı.','danger'); e.target.value=''; };
+  r.onload = ev => {
+    try {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', raw:false});
+      let sheet = null;
+      for(const sn of wb.SheetNames){ const s = wb.Sheets[sn]; if(s && s['!ref']){ sheet = s; break; } }
+      if(!sheet) throw new Error('Dosyada dolu sayfa bulunamadı.');
+      _siExcelData = XLSX.utils.sheet_to_json(sheet, {defval:'', raw:false});
+      if(!_siExcelData.length) throw new Error('Sayfada veri satırı bulunamadı.');
+      const range = XLSX.utils.decode_range(sheet['!ref']);
+      _siHeaders = [];
+      for(let C = range.s.c; C <= range.e.c; C++){
+        const cell = sheet[XLSX.utils.encode_cell({c:C, r:range.s.r})];
+        if(cell && cell.v !== undefined && String(cell.v).trim() !== '')
+          _siHeaders.push(String(cell.v).trim());
+      }
+      if(!_siHeaders.length) throw new Error('Başlık satırı okunamadı.');
+      _siWizardStep = 0;
+      _siStep1Saved = {};
+      _siStep2Saved = {};
+      _siPendingData = null;
+      _siRenderWizardStep();
+      bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportWizardModal')).show();
+    } catch(err){
+      showToast('Hata: ' + (err.message || 'Bilinmeyen hata'), 'danger');
+    }
+    e.target.value = '';
+  };
+  r.readAsArrayBuffer(f);
+}
+
+function _siGuess(label){
+  const norm = s => s.toLocaleLowerCase('tr-TR').replace(/[\s\.\:]+/g,'');
+  const t = norm(label);
+  return _siHeaders.find(col => norm(col) === t || norm(col).includes(t)) || '';
+}
+
+function _siColOpts(selected='', allowEmpty=false){
+  let html = allowEmpty ? '<option value="">— Boş Geç —</option>' : '<option value="">— Sütun Seçin —</option>';
+  _siHeaders.forEach(col => {
+    const sel = selected && col.toLocaleLowerCase('tr-TR') === selected.toLocaleLowerCase('tr-TR');
+    html += `<option value="${escapeHtml(col)}" ${sel?'selected':''}>${escapeHtml(col)}</option>`;
+  });
+  return html;
+}
+
+function _siRenderWizardStep(){
+  const step = _siWizardStep;
+  const progHtml = `<div class="ti-wizard-progress">
+    <div class="ti-wizard-step-row">
+      ${SI_WIZ_STEPS.map((s,i)=>`<div class="ti-wizard-step-label ${i===step?'is-active':i<step?'is-complete':''}">${i<step?'✓ ':''}${s.title}</div>`).join('')}
+    </div>
+    <div class="progress ti-prog-bar-wrap"><div class="progress-bar ti-prog-bar" style="width:${Math.round(((step+1)/SI_WIZ_STEPS.length)*100)}%"></div></div>
+  </div>`;
+
+  let stepHtml = '';
+
+  if(step === 0){
+    const s = _siStep1Saved;
+    stepHtml = `<div class="ti-section">
+      <div class="ti-section-head"><i class="fas fa-lock me-1"></i> Zorunlu Alanlar</div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">T.C. Kimlik No <span class="text-danger">*</span></label>
+        <select id="siColTc" class="form-select form-select-sm">${_siColOpts(s.tc||_siGuess('T.C. KİMLİK NO'))}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Adı <span class="text-muted small">(yedek)</span></label>
+        <select id="siColFirst" class="form-select form-select-sm">${_siColOpts(s.first||_siGuess('ADI'), true)}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Soyadı <span class="text-muted small">(yedek)</span></label>
+        <select id="siColLast" class="form-select form-select-sm">${_siColOpts(s.last||_siGuess('SOYADI'), true)}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Sınıf <span class="text-danger">*</span></label>
+        <select id="siColClass" class="form-select form-select-sm">${_siColOpts(s.cls||_siGuess('SINIF'))}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Gün <span class="text-danger">*</span></label>
+        <select id="siColDay" class="form-select form-select-sm">${_siColOpts(s.day||_siGuess('GÜN'))}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Ders <span class="text-danger">*</span></label>
+        <select id="siColSubject" class="form-select form-select-sm">${_siColOpts(s.subject||_siGuess('DERS'))}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Ders Saati <span class="text-danger">*</span></label>
+        <select id="siColHour" class="form-select form-select-sm">${_siColOpts(s.hour||_siGuess('DERS SAATİ'))}</select>
+      </div>
+    </div>`;
+  } else if(step === 1){
+    const s = _siStep2Saved;
+    stepHtml = `<div class="ti-section">
+      <div class="ti-section-head"><i class="fas fa-sliders-h me-1"></i> İsteğe Bağlı Alanlar</div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Başlangıç Saati</label>
+        <select id="siColStart" class="form-select form-select-sm">${_siColOpts(s.start||_siGuess('BAŞLANGIÇ'), true)}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Bitiş Saati</label>
+        <select id="siColEnd" class="form-select form-select-sm">${_siColOpts(s.end||_siGuess('BİTİŞ'), true)}</select>
+      </div>
+      <div class="ti-field-row">
+        <label class="ti-field-label">Not / Derslik</label>
+        <select id="siColNote" class="form-select form-select-sm">${_siColOpts(s.note||_siGuess('NOT'), true)}</select>
+      </div>
+    </div>`;
+  } else if(step === 2){
+    const mode = _siStep2Saved.mode || 'replace';
+    stepHtml = `<div class="ti-section">
+      <div class="ti-section-head"><i class="fas fa-database me-1"></i> İçe Aktarma Seçeneği</div>
+      <div class="ti-field-row" style="flex-direction:column;gap:10px;align-items:flex-start">
+        <label class="d-flex align-items-start gap-2 cursor-pointer">
+          <input type="radio" name="siImportMode" value="replace" ${mode==='replace'?'checked':''} style="margin-top:3px">
+          <span><strong>Mevcut programı değiştir</strong><br><small class="text-muted">Sistemdeki tüm ders kayıtları silinir, yeni kayıtlar eklenir.</small></span>
+        </label>
+        <label class="d-flex align-items-start gap-2 cursor-pointer">
+          <input type="radio" name="siImportMode" value="append" ${mode==='append'?'checked':''} style="margin-top:3px">
+          <span><strong>Mevcut programa ekle</strong><br><small class="text-muted">Mevcut kayıtlar korunur, yeni kayıtlar üstüne eklenir.</small></span>
+        </label>
+      </div>
+    </div>`;
+  }
+
+  getEl('scheduleImportWizardBody').innerHTML = progHtml + stepHtml;
+
+  const btnBack = step > 0
+    ? `<button type="button" class="btn btn-outline-secondary" onclick="siWizardNav(-1)"><i class="fas fa-arrow-left me-1"></i>Geri</button>`
+    : `<button type="button" class="btn btn-outline-secondary" onclick="cancelScheduleImport()">İptal</button>`;
+  const btnNext = step < SI_WIZ_STEPS.length - 1
+    ? `<button type="button" class="btn btn-primary ms-auto" onclick="siWizardNav(1)">İleri <i class="fas fa-arrow-right ms-1"></i></button>`
+    : `<button type="button" class="btn btn-primary ms-auto" onclick="processScheduleImport()">Önizle <i class="fas fa-eye ms-1"></i></button>`;
+
+  getEl('scheduleImportWizardFooter').innerHTML = btnBack + btnNext;
+}
+
+function siWizardNav(dir){
+  if(_siWizardStep === 0 && dir === 1){
+    if(!getEl('siColTc')?.value)      { showToast('T.C. Kimlik No sütununu seçin.','warning'); return; }
+    if(!getEl('siColClass')?.value)   { showToast('Sınıf sütununu seçin.','warning'); return; }
+    if(!getEl('siColDay')?.value)     { showToast('Gün sütununu seçin.','warning'); return; }
+    if(!getEl('siColSubject')?.value) { showToast('Ders sütununu seçin.','warning'); return; }
+    if(!getEl('siColHour')?.value)    { showToast('Ders Saati sütununu seçin.','warning'); return; }
+    _siStep1Saved = {
+      tc:      getEl('siColTc')?.value      || '',
+      first:   getEl('siColFirst')?.value   || '',
+      last:    getEl('siColLast')?.value    || '',
+      cls:     getEl('siColClass')?.value   || '',
+      day:     getEl('siColDay')?.value     || '',
+      subject: getEl('siColSubject')?.value || '',
+      hour:    getEl('siColHour')?.value    || '',
+    };
+  }
+  if(_siWizardStep === 1 && dir === 1){
+    _siStep2Saved = {
+      ..._siStep2Saved,
+      start: getEl('siColStart')?.value || '',
+      end:   getEl('siColEnd')?.value   || '',
+      note:  getEl('siColNote')?.value  || '',
+    };
+  }
+  if(_siWizardStep === 2 && dir === -1){
+    _siStep2Saved.mode = document.querySelector('input[name="siImportMode"]:checked')?.value || 'replace';
+  }
+  _siWizardStep = Math.max(0, Math.min(SI_WIZ_STEPS.length - 1, _siWizardStep + dir));
+  _siRenderWizardStep();
+}
+
+function processScheduleImport(){
+  const mode = document.querySelector('input[name="siImportMode"]:checked')?.value || 'replace';
+  const { tc, first, last, cls, day, subject, hour } = _siStep1Saved;
+  const { start, end, note } = _siStep2Saved;
+
+  const items=[], errors=[], classes=new Map(), subjects=new Map(), lessonTimes=new Map();
+  const tcSeen = new Set();
+
+  _siExcelData.forEach((row, idx) => {
+    const line = idx + 2;
+    const rawTc    = String(row[tc]      || '').replace(/\D+/g,'').trim();
+    const firstName = first ? String(row[first]   || '').trim() : '';
+    const lastName  = last  ? String(row[last]    || '').trim() : '';
+    const rawClass  = String(row[cls]    || '').trim();
+    const rawDay    = String(row[day]    || '').trim();
+    const rawHour   = Number(row[hour]   || 0);
+    const rawSubject= String(row[subject]|| '').trim();
+    const rawStart  = start ? String(row[start]  || '').trim() : '';
+    const rawEnd    = end   ? String(row[end]    || '').trim() : '';
+    const rawNote   = note  ? String(row[note]   || '').trim() : '';
+
+    if(!rawTc)              { errors.push(`${line}. satır: T.C. Kimlik No boş.`); return; }
+    if(rawTc.length !== 11) { errors.push(`${line}. satır: T.C. geçersiz (${rawTc.length} hane).`); return; }
+
+    const teacher = teacherByImportValue(rawTc, `${firstName} ${lastName}`.trim());
+    if(!teacher)            { errors.push(`${line}. satır: T.C. ${rawTc} sistemde bulunamadı.`); return; }
+
+    const className = cleanClassName(rawClass);
+    if(!className)          { errors.push(`${line}. satır: sınıf boş.`); return; }
+
+    const resolvedDay = schoolDays().find(d => plainKey(d) === plainKey(rawDay)) || '';
+    if(!resolvedDay)        { errors.push(`${line}. satır: gün tanınmadı (${rawDay||'boş'}).`); return; }
+
+    if(!Number.isFinite(rawHour)||rawHour<=0) { errors.push(`${line}. satır: ders saati geçersiz.`); return; }
+
+    if(!rawSubject)         { errors.push(`${line}. satır: ders boş.`); return; }
+    const resolvedSubject = normalizeSubjectName(rawSubject, teacher.id);
+
+    if((rawStart&&!rawEnd)||(!rawStart&&rawEnd)) { errors.push(`${line}. satır: başlangıç ve bitiş birlikte girilmeli.`); return; }
+    if(rawStart&&rawEnd&&timeToMinutes(rawStart)>=timeToMinutes(rawEnd)) { errors.push(`${line}. satır: bitiş saati başlangıçtan sonra olmalı.`); return; }
+    if(!schoolHours().includes(rawHour) && !(rawStart&&rawEnd)) { errors.push(`${line}. satır: ${rawHour}. ders sistemde yok; yeni saat için başlangıç ve bitiş girilmeli.`); return; }
+
+    if(rawStart&&rawEnd){
+      const existing = lessonTimes.get(rawHour);
+      const pair = `${rawStart}-${rawEnd}`;
+      if(existing&&existing!==pair){ errors.push(`${line}. satır: ${rawHour}. ders için farklı saat aralıkları var.`); return; }
+      lessonTimes.set(rawHour, pair);
+    }
+
+    classes.set(className, className);
+    subjects.set(plainKey(resolvedSubject), resolvedSubject);
+    const time = lessonTimeByHour(rawHour);
+    items.push({
+      id: uid('s'),
+      teacherId: teacher.id,
+      className,
+      subject: resolvedSubject,
+      day: resolvedDay,
+      hour: rawHour,
+      startTime: rawStart || time?.start || '',
+      endTime:   rawEnd   || time?.end   || '',
+      note: rawNote,
+    });
+  });
+
+  if(!_siExcelData.length) errors.push('Dosyada okunabilir satır bulunamadı.');
+
+  _siPendingData = {
+    items, errors, mode,
+    classes:    [...classes.values()],
+    subjects:   [...subjects.values()],
+    lessonTimes:[...lessonTimes.entries()].map(([h,pair])=>{ const [s,e]=pair.split('-'); return {hour:Number(h),start:s,end:e}; }),
+  };
+
+  // Çakışma kontrolü
+  const nextSchedules = mode==='append' ? [...DB.schedules, ...items] : items;
+  const conflicts = scheduleImportConflicts(nextSchedules);
+
+  // Önizleme HTML
+  let html = `<div class="ti-preview-summary">
+    <div class="ti-preview-box ti-preview-add"><strong>${items.length}</strong><span>Eklenecek Kayıt</span></div>
+    <div class="ti-preview-box ti-preview-err"><strong>${errors.length}</strong><span>Hatalı Satır</span></div>
+    <div class="ti-preview-box ${conflicts.length?'ti-preview-err':'ti-preview-upd'}"><strong>${conflicts.length}</strong><span>Çakışma</span></div>
+  </div>`;
+
+  if(items.length){
+    const preview = items.slice(0, 10);
+    const rows = preview.map(s => {
+      const t = teacherById(s.teacherId);
+      return `<tr><td>${escapeHtml(teacherName(t))}</td><td>${escapeHtml(s.className)}</td><td>${escapeHtml(s.day)}</td><td>${escapeHtml(String(s.hour))}</td><td>${escapeHtml(displaySubjectName(s.subject))}</td><td>${escapeHtml(s.startTime||'—')}</td><td>${escapeHtml(s.note||'—')}</td></tr>`;
+    }).join('');
+    html += `<div class="table-responsive mt-3"><table class="table table-sm table-hover mb-0">
+      <thead><tr><th>Öğretmen</th><th>Sınıf</th><th>Gün</th><th>Saat</th><th>Ders</th><th>Başlangıç</th><th>Not</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+    if(items.length > 10)
+      html += `<p class="text-muted small mt-2">İlk 10 kayıt gösteriliyor; toplamda ${items.length} kayıt işlenecek.</p>`;
+  }
+
+  if(errors.length){
+    html += `<div class="table-responsive mt-3"><table class="table table-sm mb-0">
+      <thead><tr><th>Satır</th><th>Hata</th></tr></thead>
+      <tbody>${errors.slice(0,10).map(e=>`<tr><td class="text-danger">${escapeHtml(e)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+    if(errors.length > 10) html += `<p class="text-muted small mt-1">İlk 10 hata gösteriliyor.</p>`;
+  }
+
+  if(conflicts.length){
+    html += `<div class="alert alert-warning mt-3"><strong>Çakışmalar:</strong><ul class="mb-0 mt-1">${conflicts.map(c=>`<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`;
+  }
+
+  getEl('scheduleImportPreviewBody').innerHTML = html;
+  bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportWizardModal')).hide();
+  bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportPreviewModal')).show();
+}
+
+function confirmScheduleImport(){
+  if(!_siPendingData){ cancelScheduleImport(); return; }
+  const { items, errors, mode, classes, subjects, lessonTimes } = _siPendingData;
+  if(errors.length && !confirm(`${errors.length} hatalı satır var. Hatasız ${items.length} kayıt yine de aktarılsın mı?`)) return;
+  const conflicts = scheduleImportConflicts(mode==='append' ? [...DB.schedules,...items] : items);
+  if(conflicts.length && !confirm(`${conflicts.length} çakışma var. Yine de devam edilsin mi?`)) return;
+  applyImportedSchedule({ items, classes, subjects, lessonTimes }, mode);
+  showToast(`${items.length} ders kaydı içe aktarıldı.`, 'success');
+  cancelScheduleImport();
+}
+
+function cancelScheduleImport(){
+  _siPendingData = null;
+  _siExcelData   = [];
+  _siHeaders     = [];
+  _siStep1Saved  = {};
+  _siStep2Saved  = {};
+  _siWizardStep  = 0;
+  bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportWizardModal')).hide();
+  bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportPreviewModal')).hide();
+}
+
+function backToScheduleImportWizard(){
+  bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportPreviewModal')).hide();
+  _siWizardStep = 2;
+  _siRenderWizardStep();
+  bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportWizardModal')).show();
+}
