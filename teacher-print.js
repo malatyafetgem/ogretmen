@@ -734,14 +734,11 @@ function printFrameAndCleanup(iframe) {
   const fallback = setTimeout(cleanup, 8000);
 
   win.focus();
-  setTimeout(() => {
-    try {
-      win.print();
-    } catch (e) {
-      cleanup();
-    }
-    // afterprint zaten tetiklenirse cleanup çalışır; tetiklenmezse fallback (8sn) devrede
-  }, 250);
+  try {
+    win.print();
+  } catch (e) {
+    cleanup();
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -856,13 +853,15 @@ function printDocument(options) {
 
     const iframe = openPrintFrame(printHtml);
 
-    iframe.onload = () => {
+    // doc.write ile doldurulan iframe'lerde onload güvenilmez (özellikle mobil).
+    // Kısa bir timeout sonra doğrudan yazdır.
+    setTimeout(() => {
       printFrameAndCleanup(iframe);
       setPrintButtonBusy(opts.button, false);
-    };
+    }, 300);
 
-    // onload bazı tarayıcılarda tetiklenmeyebilir; timeout güvencesi
-    setTimeout(() => setPrintButtonBusy(opts.button, false), 4000);
+    // Güvenlik: buton takılı kalmasın
+    setTimeout(() => setPrintButtonBusy(opts.button, false), 5000);
 
   } catch (err) {
     setPrintButtonBusy(opts.button, false);
