@@ -120,10 +120,64 @@ function printArea(id,title='Yazdir'){
     ? `calc((100% - ${nameColW}) / ${cellCount})`
     : `calc((100% - ${nameColW}) / 40)`;
 
-  /* ── Yazdırma tarihi ── */
+  /* ── Yazdırma başlığı: ne yazdırıldığı + filtre bilgisi ── */
   const printDate = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
 
+  function printHeaderHtml(){
+    // Öğretmen profili — DB'den doğrudan al (card-header yok)
+    if(isProfile && typeof selectedTeacherId !== 'undefined' && !a.querySelector('.card-header')){
+      const t = typeof teacherById === 'function' ? teacherById(selectedTeacherId) : null;
+      const name   = t ? (typeof teacherName === 'function' ? teacherName(t) : '') : 'Öğretmen Profili';
+      const branch = t ? (t.branch||'') : '';
+      return `<div class="ph-wrap"><div class="ph-title"><strong>${escapeHtml(name)}</strong>${branch?`<span>${escapeHtml(branch)}</span>`:''}</div><span class="ph-date">${printDate}</span></div>`;
+    }
+    // Sınıf profili — card-header'dan al (zaten var)
+    if(isProfile){
+      const h = a.querySelector('.card-header .card-title');
+      const title = h ? h.textContent.trim().replace(/^.\s*/,'') : 'Sınıf Profili';
+      return `<div class="ph-wrap"><div class="ph-title"><strong>${escapeHtml(title)}</strong></div><span class="ph-date">${printDate}</span></div>`;
+    }
+    // Program görünümleri — başlık + aktif filtreler
+    if(isSheet || isProgramList || isEntryList || isFree){
+      const titleEl = a.querySelector('.card-title');
+      const title   = titleEl ? titleEl.textContent.trim().replace(/^.\s*/,'') : 'Ders Programı';
+      // scheduleFilterDescriptors global fonksiyonu varsa filtre özetini al
+      let filterText = '';
+      if(typeof scheduleFilterDescriptors === 'function' && typeof scheduleFilters === 'function'){
+        const f = scheduleFilters();
+        const parts = scheduleFilterDescriptors(f).filter(d=>d.value);
+        filterText = parts.map(d=>`${d.label}: ${d.value}`).join(' · ');
+      }
+      return `<div class="ph-wrap"><div class="ph-title"><strong>${escapeHtml(title)}</strong>${filterText?`<span>${escapeHtml(filterText)}</span>`:''}</div><span class="ph-date">${printDate}</span></div>`;
+    }
+    // Diğerleri (nöbet, görev listesi, öğretmen listesi) — card-title'dan al
+    const titleEl = a.querySelector('.card-title');
+    const title   = titleEl ? titleEl.textContent.trim().replace(/^.\s*/,'') : '';
+    return `<div class="ph-wrap"><div class="ph-title"><strong>${escapeHtml(title)}</strong></div><span class="ph-date">${printDate}</span></div>`;
+  }
+
+  const metaHtml = printHeaderHtml();
+
   const printStyle = `
+/* ── CSS değişkenleri (iframe'de teacher-style.css yüklü değil) ── */
+:root {
+  --c-ink:       #111827;
+  --c-ink-2:     #374151;
+  --c-muted:     #6b7280;
+  --c-blue:      #1a56db;
+  --c-orange:    #f59e0b;
+  --c-green:     #057a55;
+  --c-red:       #e02424;
+  --c-bg:        #f9fafb;
+  --c-surface:   #ffffff;
+  --c-border:    #e5e7eb;
+  --border-ink:       2px solid #111827;
+  --border-ink-thick: 2.5px solid #111827;
+  --border-light:     1px solid #e5e7eb;
+  --border-dashed:    1.5px dashed #9ca3af;
+  --r:   4px;
+  --r-sm: 2px;
+}
 @page { size:${pageSize}; margin:10mm; }
 *  { box-sizing:border-box; }
 html,body { margin:0; padding:0; }
@@ -142,6 +196,15 @@ a  { color:#0f172a; text-decoration:none; }
 button:not(.print-keep) { display:none!important; }
 .slot-span-note { display:none!important; }
 .print-meta { font-size:7.5pt; color:#64748b; text-align:right; margin-bottom:3mm; }
+
+/* ── Yazdırma başlık bandı ── */
+.ph-wrap {
+  display:flex; justify-content:space-between; align-items:baseline;
+  border-bottom:2pt solid #111827; margin-bottom:5mm; padding-bottom:2mm;
+}
+.ph-title strong { font-size:13pt; font-weight:800; display:block; }
+.ph-title span   { font-size:8.5pt; color:#475569; display:block; margin-top:1mm; }
+.ph-date         { font-size:8pt; color:#64748b; white-space:nowrap; }
 
 /* ── Disclosure (tüm modlar) ── */
 .content-disclosure { display:block!important; border-top:1px solid #dbe3ef; }
@@ -302,8 +365,6 @@ button:not(.print-keep) { display:none!important; }
   const iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0';
   document.body.appendChild(iframe);
-
-  const metaHtml = `<p class="print-meta">${escapeHtml(printDate)}</p>`;
 
   iframe.onload = () => {
     const win = iframe.contentWindow;
