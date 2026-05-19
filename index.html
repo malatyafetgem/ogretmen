@@ -177,7 +177,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               <div class="teacher-action-row">
                 <button class="btn teacher-action-btn" onclick="openTeacherModal()"><i class="fas fa-user-plus me-1"></i>Ekle</button>
                 <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherEditBtn" style="display:none" onclick="openTeacherModal(selectedTeacherId)"><i class="fas fa-pen me-1"></i>Düzenle</button>
-                <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherPrintBtn" style="display:none" onclick="printArea('teacherProfile','Ogretmen_Profili')"><i class="fas fa-print me-1"></i>Yazdır</button>
+                <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherPrintBtn" style="display:none" onclick="printDocument({sourceId:'teacherProfile',type:'teacher-profile',title:'Öğretmen Profili',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button>
               </div>
             </div>
           </div>
@@ -198,7 +198,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               <div class="row g-2 align-items-end">
                 <div class="col-md-4"><label class="form-label">Sınıf</label><select id="classProfileSelect" class="form-select" onchange="renderClasses()"></select></div>
                 <div class="col-md-4"><label class="form-label">Günlük Program Günü</label><select id="classProfileDay" class="form-select" onchange="renderClasses()"></select></div>
-                <div class="col-md-4"><button class="btn btn-outline-secondary w-100" onclick="printArea('classProfilePrintArea','Sinif_Profili')"><i class="fas fa-print me-1"></i>Yazdır</button></div>
+                <div class="col-md-4"><button class="btn btn-outline-secondary w-100" onclick="printDocument({sourceId:'classProfilePrintArea',type:'class-profile',title:'Sınıf Profili',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button></div>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
                     </select>
                   </div>
                   <div id="scheduleFilterSummary" class="schedule-filter-summary" aria-live="polite"></div>
-                  <button class="btn btn-outline-secondary schedule-print-btn" onclick="printArea('schedulePrintArea','Ders_Programi')">
+                  <button class="btn btn-outline-secondary schedule-print-btn" onclick="printSchedule(this)">
                     <i class="fas fa-print me-1"></i>Yazdır
                   </button>
                 </div>
@@ -266,7 +266,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <!-- Öğretmen Listesi -->
           <div id="reportPane-teachers" class="report-pane d-none">
             <div class="page-actions mb-3 no-print">
-              <button class="btn btn-outline-secondary btn-sm" onclick="printArea('reportTeacherPrintArea','Ogretmen_Listesi')"><i class="fas fa-print me-1"></i>Listeyi Yazdır</button>
+              <button class="btn btn-outline-secondary btn-sm" onclick="printDocument({sourceId:'reportTeacherPrintArea',type:'teachers',title:'Öğretmen Listesi',button:this})"><i class="fas fa-print me-1"></i>Listeyi Yazdır</button>
             </div>
             <div id="reportTeacherPrintArea"><div id="reportTeacherListContent"></div></div>
           </div>
@@ -274,7 +274,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <!-- Nöbet -->
           <div id="reportPane-duty" class="report-pane d-none">
             <div class="page-actions mb-3 no-print">
-              <button class="btn btn-outline-secondary btn-sm" onclick="printArea('dutyPrintArea','Nobet_Listesi')"><i class="fas fa-print me-1"></i>Nöbeti Yazdır</button>
+              <button class="btn btn-outline-secondary btn-sm" onclick="printDocument({sourceId:'dutyPrintArea',type:'duty',title:'Nöbet Çizelgesi',button:this})"><i class="fas fa-print me-1"></i>Nöbeti Yazdır</button>
             </div>
             <div id="dutyPrintArea"><div id="dutyContent"></div></div>
           </div>
@@ -282,7 +282,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <!-- Görevler -->
           <div id="reportPane-tasks" class="report-pane d-none">
             <div class="page-actions mb-3 no-print">
-              <button class="btn btn-outline-secondary btn-sm" onclick="printArea('tasksPrintArea','Ogretmen_Gorevleri')"><i class="fas fa-print me-1"></i>Görevleri Yazdır</button>
+              <button class="btn btn-outline-secondary btn-sm" onclick="printDocument({sourceId:'tasksPrintArea',type:'tasks',title:'Görev Listesi',button:this})"><i class="fas fa-print me-1"></i>Görevleri Yazdır</button>
             </div>
             <div class="card obs-panel mb-3 no-print">
               <div class="card-body">
@@ -592,5 +592,6 @@ if(!window.bootstrap||!window.bootstrap.Modal){
 <script src="./teacher-schedule.js"></script>
 <script src="./teacher-duty.js"></script>
 <script src="./teacher-settings.js"></script>
+<script src="./teacher-print.js"></script>
 </body>
 </html>

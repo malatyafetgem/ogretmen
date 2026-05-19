@@ -14,6 +14,7 @@ const ASSETS = [
   '/ogretmen/teacher-schedule.js',
   '/ogretmen/teacher-duty.js',
   '/ogretmen/teacher-settings.js',
+  '/ogretmen/teacher-print.js',
   '/ogretmen/manifest.json',
   '/ogretmen/icon.png'
 ];
@@ -33,6 +34,7 @@ function isAppAsset(url) {
     'teacher-schedule.js',
     'teacher-duty.js',
     'teacher-settings.js',
+    'teacher-print.js',
     'manifest.json',
     'icon.png',
     'sw.js'
