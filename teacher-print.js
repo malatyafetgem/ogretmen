@@ -127,7 +127,7 @@ function openDisclosureForPrint(root) {
 function getSchedulePrintMetaSafe() {
   try {
     const titleEl = document.querySelector('#schedulePrintArea .card-title');
-    const title   = titleEl ? titleEl.textContent.trim().replace(/^.\s*/, '') : 'Ders Programı';
+    const title   = titleEl ? titleEl.textContent.trim() : 'Ders Programı';
     let filterText = '';
     if (typeof scheduleFilterDescriptors === 'function' && typeof scheduleFilters === 'function') {
       const f     = scheduleFilters();
@@ -158,7 +158,7 @@ function getTeacherProfileMetaSafe(root) {
     }
     // card-header varsa → sınıf profili
     const h = root ? root.querySelector('.card-header .card-title') : null;
-    return { name: h ? h.textContent.trim().replace(/^.\s*/, '') : 'Profil', branch: '' };
+    return { name: h ? h.textContent.trim() : 'Profil', branch: '' };
   } catch (e) {
     return { name: 'Profil', branch: '' };
   }
@@ -187,7 +187,7 @@ function getAutoMetaSafe(type, sourceId, root) {
     }
     // Diğerleri: card-title'dan al
     const titleEl = root ? root.querySelector('.card-title') : null;
-    return { title: titleEl ? titleEl.textContent.trim().replace(/^.\s*/, '') : '', sub: '' };
+    return { title: titleEl ? titleEl.textContent.trim() : '', sub: '' };
   } catch (e) {
     return { title: '', sub: '' };
   }
@@ -375,7 +375,7 @@ function buildPrintTypeCss(type, root, opts) {
   if (type === 'teacher-sheet' || type === 'class-sheet') return buildSheetPrintCss(type, root, opts);
   if (type === 'entry-list')                               return buildListPrintCss(type, root, opts);
   if (type === 'program-list')                             return buildWeeklyProgramPrintCss(type, root, opts);
-  if (type === 'teacher-profile' || type === 'class-profile') return buildProfilePrintCss(type, root, opts);
+  if (type === 'teacher-profile' || type === 'class-profile' || type === 'teachers') return buildProfilePrintCss(type, root, opts);
   if (type === 'duty')                                     return buildDutyPrintCss(type, root, opts);
   if (type === 'tasks')                                    return buildTasksPrintCss(type, root, opts);
   if (type === 'free')                                     return buildFreePrintCss(type, root, opts);
@@ -563,6 +563,18 @@ function buildProfilePrintCss(type, root, opts) {
 }
 .profile-print .duty-profile-box span   { display:block; font-size:7.5pt; color:#64748b; }
 .profile-print .duty-profile-box strong { display:block; font-size:9pt; }
+/* teachers type — öğretmen listesi tablosu */
+.profile-print .table { width:100%; border-collapse:collapse; font-size:8.5pt; }
+.profile-print .table th,.profile-print .table td {
+  border:0.8pt solid #334155!important; padding:2px 5px!important; vertical-align:middle;
+}
+.profile-print .table thead th {
+  background:#e2e8f0!important; font-weight:700;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.profile-print .table thead { display:table-header-group; }
+.profile-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
+.profile-print .table-responsive { overflow:visible!important; }
 `;
 }
 
@@ -718,8 +730,8 @@ function printFrameAndCleanup(iframe) {
     win.addEventListener('afterprint', cleanup, { once: true });
   } catch (e) { /* eski tarayıcılarda afterprint yoksa timeout yeterli */ }
 
-  // Timeout fallback: afterprint tetiklenmese bile 3 saniyede temizle
-  const fallback = setTimeout(cleanup, 3000);
+  // Timeout fallback: afterprint tetiklenmese bile 8 saniyede temizle
+  const fallback = setTimeout(cleanup, 8000);
 
   win.focus();
   setTimeout(() => {
@@ -728,8 +740,7 @@ function printFrameAndCleanup(iframe) {
     } catch (e) {
       cleanup();
     }
-    // afterprint zaten tetiklenirse cleanup çalışır; tetiklenmezse fallback devrede
-    setTimeout(() => { clearTimeout(fallback); cleanup(); }, 1500);
+    // afterprint zaten tetiklenirse cleanup çalışır; tetiklenmezse fallback (8sn) devrede
   }, 250);
 }
 
