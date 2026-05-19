@@ -276,7 +276,8 @@ function buildTeacherSheet(){
     }).join('');
     return `<tr><th class="sheet-name" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}">${escapeHtml(sheetTeacherCode(t))}<small>(${escapeHtml(sheetSubjectCode(t.branch))})</small></th>${cells}</tr>`;
   }).join('');
-  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet teacher-sheet"><thead><tr><th rowspan="2">Öğretmen</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const cellCount=days.length*hours.length;
+  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet teacher-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Öğretmen</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function buildClassSheet(){
@@ -312,7 +313,8 @@ function buildClassSheet(){
     }).join('');
     return `<tr><th class="sheet-name">${cls}</th>${cells}</tr>`;
   }).join('');
-  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet class-sheet"><thead><tr><th rowspan="2">Sınıf</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  const cellCount=days.length*hours.length;
+  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet class-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Sınıf</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function scheduleSlotSignature(slot){
