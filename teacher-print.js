@@ -320,14 +320,35 @@ function buildSheetCellCss(type, root) {
 
 /**
  * CSS bağlantılarını mevcut sayfadaki <link> elementlerinden toplar.
- * Bootstrap, Font-Awesome ve teacher-style.css otomatik dahil edilir.
+ * Göreli URL'ler (teacher-style.css gibi) yeni pencerede erişilemez
+ * olabileceğinden bu dosyalar dışarıda bırakılır; içerikleri ayrıca
+ * inlineTeacherCss() ile inline olarak enjekte edilir.
  * @returns {string}
  */
 function collectPageStylesheets() {
   return Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-    .map(l => l.href ? `<link rel="stylesheet" href="${l.href}">` : '')
-    .filter(Boolean)
+    .filter(l => l.href && /^https?:\/\//.test(l.href))
+    .map(l => `<link rel="stylesheet" href="${l.href}">`)
     .join('\n');
+}
+
+/**
+ * teacher-style.css içeriğini sayfadan alıp inline <style> olarak döndürür.
+ * Göreli kaynak olduğu için yeni pencerede link olarak bağlanamaz.
+ * @returns {Promise<string>}
+ */
+async function inlineTeacherCss() {
+  try {
+    const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .find(l => l.href && l.href.includes('teacher-style'));
+    if (!link) return '';
+    const res = await fetch(link.href);
+    if (!res.ok) return '';
+    const css = await res.text();
+    return `<style>${css}</style>`;
+  } catch (e) {
+    return '';
+  }
 }
 
 /**
@@ -341,13 +362,21 @@ function openPrintWindow(printHtml) {
   const win = window.open('', '_blank', 'width=900,height=820,scrollbars=yes');
   if (!win) return null;
   // Mobil popup blocker bypass için önce geçici içerik yaz
-  win.document.write('<!doctype html><html><head><meta charset="utf-8"></head>'
-    + '<body style="font-family:Arial,sans-serif;padding:20px">Önizleme hazırlanıyor\u2026</body></html>');
-  win.document.close();
+  try {
+    win.document.write('<!doctype html><html><head><meta charset="utf-8"></head>'
+      + '<body style="font-family:Arial,sans-serif;padding:20px">\u00d6nizleme haz\u0131rlan\u0131yor\u2026</body></html>');
+    win.document.close();
+  } catch (e) { /* sessiz */ }
   // Asıl içeriği yaz (printHtml içinde inline yazdırma scripti vardır)
-  win.document.open();
-  win.document.write(printHtml);
-  win.document.close();
+  try {
+    win.document.open();
+    win.document.write(printHtml);
+    win.document.close();
+  } catch (e) {
+    console.error('[teacher-print] Pencere yazma hatası:', e);
+    try { win.close(); } catch (_) {}
+    return null;
+  }
   return win;
 }
 
@@ -411,7 +440,7 @@ function notifyPrintError(message) {
  *
  * @param {Object} options
  */
-function printDocument(options) {
+async function printDocument(options) {
   const opts = normalizePrintOptions(options);
 
   const root = opts.sourceId
@@ -471,8 +500,9 @@ function printDocument(options) {
       ? buildSheetCellCss(opts.type, rootClone)
       : `@page { size:${orientation}; margin:10mm; }`;
 
-    const stylesheets = collectPageStylesheets();
-    const headerHtml  = buildPrintHeader(meta);
+    const stylesheets  = collectPageStylesheets();
+    const teacherCss   = await inlineTeacherCss();
+    const headerHtml   = buildPrintHeader(meta);
 
     const esc        = (typeof escapeHtml === 'function') ? escapeHtml : s => String(s);
     const printTitle = esc(meta.title || opts.title || 'Yazdır');
@@ -492,6 +522,7 @@ function printDocument(options) {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${printTitle}</title>
   ${stylesheets}
+  ${teacherCss}
   <style>${extraCss}</style>
 </head>
 <body class="${[bodyClass, deviceClass].filter(Boolean).join(' ')}">
@@ -551,7 +582,7 @@ function printDocument(options) {
  *
  * @param {Element|null} button
  */
-function printSchedule(button) {
+async function printSchedule(button) {
   try {
     const viewMode = (typeof getEl === 'function' && getEl('scheduleViewMode'))
       ? getEl('scheduleViewMode').value
@@ -577,7 +608,7 @@ function printSchedule(button) {
       title    = 'Ders Programı';
     }
 
-    printDocument({ sourceId, type, title, button });
+    await printDocument({ sourceId, type, title, button });
 
   } catch (err) {
     notifyPrintError('Ders programı yazdırılamadı.');
