@@ -332,49 +332,43 @@ function collectPageStylesheets() {
 
 /**
  * Yeni yazdırma penceresi açar, içeriği yazar ve döndürür.
+ * Mobil tarayıcılarda cross-window load event dinlemesi güvenilmez
+ * olduğundan printHtml içinde inline script ile tetikleme yapılır.
  * @param {string} printHtml
  * @returns {Window|null}
  */
 function openPrintWindow(printHtml) {
   const win = window.open('', '_blank', 'width=900,height=820,scrollbars=yes');
   if (!win) return null;
+  // Mobil popup blocker bypass için önce geçici içerik yaz
+  win.document.write('<!doctype html><html><head><meta charset="utf-8"></head>'
+    + '<body style="font-family:Arial,sans-serif;padding:20px">Önizleme hazırlanıyor\u2026</body></html>');
+  win.document.close();
+  // Asıl içeriği yaz (printHtml içinde inline yazdırma scripti vardır)
+  win.document.open();
   win.document.write(printHtml);
   win.document.close();
   return win;
 }
 
 /**
- * Pencereyi yazdırır; yükleme tamamlandıktan sonra tetikler.
+ * Yazdırma penceresi kapanma yönetimi.
+ * Yazdırmayı tetiklemez — tetikleme printHtml içindeki inline script üstlenir.
+ * Bu fonksiyon yalnızca afterprint / timeout ile pencereyi kapatır.
  * @param {Window} win
  */
 function printWindowAndCleanup(win) {
   if (!win) return;
-
-  function doPrint() {
-    try {
-      win.focus();
-      win.print();
-    } catch (e) {
-      console.warn('[teacher-print] print() hatası:', e);
-    }
-    let closed = false;
-    function closeWin() {
-      if (closed) return;
-      closed = true;
-      try { win.close(); } catch (e) { /* sessiz */ }
-    }
-    try {
-      win.addEventListener('afterprint', closeWin, { once: true });
-    } catch (e) { /* eski tarayıcı */ }
-    setTimeout(closeWin, 10000);
+  let closed = false;
+  function closeWin() {
+    if (closed) return;
+    closed = true;
+    try { win.close(); } catch (e) { /* sessiz */ }
   }
-
-  if (win.document.readyState === 'complete') {
-    setTimeout(doPrint, 350);
-  } else {
-    win.addEventListener('load', () => setTimeout(doPrint, 200));
-    setTimeout(doPrint, 1500); // fallback
-  }
+  try {
+    win.addEventListener('afterprint', closeWin, { once: true });
+  } catch (e) { /* eski tarayıcı */ }
+  setTimeout(closeWin, 10000);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -504,6 +498,25 @@ function printDocument(options) {
   ${mobileNote}
   ${headerHtml}
   ${rootClone.outerHTML}
+  <script>
+(function(){
+  var printed = false;
+  function doPrint(){ if(printed) return; printed = true; window.focus(); window.print(); }
+  function waitImages(){
+    return Promise.all(Array.prototype.slice.call(document.images).map(function(img){
+      if(img.complete) return Promise.resolve();
+      return new Promise(function(res){ img.onload = res; img.onerror = res; });
+    }));
+  }
+  function waitFonts(){
+    return document.fonts && document.fonts.ready ? document.fonts.ready.catch(function(){}) : Promise.resolve();
+  }
+  window.addEventListener('load', function(){
+    Promise.all([waitImages(), waitFonts()]).then(function(){ setTimeout(doPrint, 250); });
+    setTimeout(doPrint, 2500);
+  });
+})();
+  <\/script>
 </body>
 </html>`;
 
@@ -517,7 +530,6 @@ function printDocument(options) {
 
     printWindowAndCleanup(win);
     setTimeout(() => setPrintButtonBusy(opts.button, false), 500);
-    setTimeout(() => setPrintButtonBusy(opts.button, false), 6000); // güvenlik
 
   } catch (err) {
     setPrintButtonBusy(opts.button, false);
