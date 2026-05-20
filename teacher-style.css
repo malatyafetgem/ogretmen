@@ -1212,7 +1212,28 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   /* ── Görev listesi ── */
   .table-actions { display:none !important; }
 
+  /* ── Yazdırma başlık bandı (.ph-wrap) ── */
+  .ph-wrap {
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:2pt solid #111827; margin-bottom:5mm; padding-bottom:2mm;
+    break-after:avoid; page-break-after:avoid;
+  }
+  .ph-title strong { font-size:13pt; font-weight:800; display:block; }
+  .ph-title span   { font-size:8.5pt; color:#475569; display:block; margin-top:1mm; }
+  .ph-date         { font-size:8pt; color:#64748b; white-space:nowrap; }
+
+  /* ── print-title-row: her tabloda sayfa başında başlık tekrarı ── */
+  tr.print-title-row { display:table-row !important; }
+  tr.print-title-row th,
+  tr.print-title-row td {
+    background:#f1f5f9 !important;
+    font-weight:700;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
   /* ── Çarşaf tabloları (landscape @page override yapılamaz, kullanıcı tarayıcıdan ayarlar) ── */
+
   .schedule-sheet { width:100%; table-layout:fixed; border-collapse:collapse; }
   .schedule-sheet th,.schedule-sheet td { padding:.35mm .4mm !important; white-space:normal; overflow:hidden; text-align:center; break-inside:avoid; }
   .schedule-sheet thead { display:table-header-group; }
@@ -1226,6 +1247,49 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .class-sheet tbody small { font-size:4.45pt; }
   .sheet-filled,.sheet-empty { min-width:0 !important; }
   .duty-sheet { box-shadow:inset 0 0 0 .6pt #d97706; }
+}
+
+/* ─── YAZDIRMA — TABLET MODU (≤768px ekrandan yazdırma) ─── */
+/* body'ye .print-tablet class'ı teacher-print.js tarafından eklenir */
+@media print {
+  body.print-tablet                               { font-size:8.5pt !important; }
+  body.print-tablet .table th,
+  body.print-tablet .table td                     { font-size:7pt !important; padding:2px 3px !important; }
+  body.print-tablet .schedule-sheet th,
+  body.print-tablet .schedule-sheet td            { font-size:3.8pt !important; padding:.25mm .3mm !important; }
+  body.print-tablet .teacher-program-board,
+  body.print-tablet .class-program-board          { font-size:6.5pt !important; }
+  body.print-tablet .duty-matrix th,
+  body.print-tablet .duty-matrix td               { padding:1.5mm 2mm !important; font-size:7.5pt !important; }
+  body.print-tablet .prog-table th,
+  body.print-tablet .prog-table td                { font-size:6.5pt !important; padding:1px 2px !important; }
+  body.print-tablet .ph-title strong              { font-size:11pt !important; }
+  body.print-tablet .content-disclosure > summary { padding:1.5mm 0 1mm !important; }
+  body.print-tablet .daily-program-grid           { grid-template-columns:repeat(2,1fr) !important; }
+}
+
+/* ─── YAZDIRMA — TELEFON MODU (≤480px ekrandan yazdırma) ─── */
+/* body'ye .print-phone class'ı teacher-print.js tarafından eklenir */
+@media print {
+  body.print-phone                                { font-size:7.5pt !important; }
+  body.print-phone .table th,
+  body.print-phone .table td                      { font-size:6.5pt !important; padding:1.5px 2.5px !important; }
+  body.print-phone .schedule-sheet               { font-size:3.2pt !important; }
+  body.print-phone .schedule-sheet th,
+  body.print-phone .schedule-sheet td             { font-size:3.2pt !important; padding:.2mm .25mm !important; }
+  body.print-phone .teacher-program-board,
+  body.print-phone .class-program-board           { font-size:5.5pt !important; }
+  body.print-phone .duty-matrix th,
+  body.print-phone .duty-matrix td                { padding:1mm 1.5mm !important; font-size:6.5pt !important; }
+  body.print-phone .prog-table th,
+  body.print-phone .prog-table td                 { font-size:5.8pt !important; padding:1px 1.5px !important; }
+  body.print-phone .ph-title strong               { font-size:10pt !important; }
+  body.print-phone .daily-program-grid            { grid-template-columns:1fr 1fr !important; gap:2mm !important; }
+  body.print-phone .table-responsive              { overflow:visible !important; max-width:100% !important; }
+  body.print-phone .teacher-weekly-scroll,
+  body.print-phone .sheet-scroll                  { overflow:visible !important; }
+  body.print-phone .free-query-grid               { flex-direction:column !important; }
+  body.print-phone .duty-profile-box              { flex-direction:column !important; gap:2mm !important; }
 }
 
 /* ─── 37. MOBİL RESPONSIVE (≤991px) ─── */
