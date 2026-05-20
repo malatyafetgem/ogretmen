@@ -1111,67 +1111,17 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 
 /* ─── 36. YAZDIRMA ─── */
 @media print {
-  /* ── Uygulama kabuğu ve gezinti ── */
-  .app-header,
-  .app-sidebar,
-  .app-footer,
-  .bottom-nav            { display:none !important; }
-
-  /* ── Genel yardımcı sınıflar ── */
-  .no-print              { display:none !important; }
-  .print-only            { display:block !important; }
-  .tc-print-full         { display:block !important; }
-  .tc-screen-mask        { display:none !important; }
-  .tc-print-col          { display:table-cell !important; }
-
-  /* ── Butonlar: print-keep olmayanlar gizlenir ── */
+  /* ── Uygulama kabuğu ve işlem öğeleri ── */
+  .app-header,.app-sidebar,.bottom-nav,.page-actions,.schedule-health,.obs-toast { display:none !important; }
+  .no-print { display:none !important; }
+  .print-only { display:block !important; }
+  .tc-print-full { display:block !important; }
+  .tc-screen-mask { display:none !important; }
+  .tc-print-col { display:table-cell !important; }
+  /* Butonlar: yalnızca işlem/navigasyon butonları gizlenir; içerik butonları (print-keep) korunur */
   button:not(.print-keep) { display:none !important; }
-
-  /* ── Arama kutuları ve arama sonuçları ── */
-  .dashboard-search-card,
-  .dashboard-search-results,
-  #teacherSearch,
-  #dashboardSearch       { display:none !important; }
-
-  /* ── Filtre araç çubukları ve filtre detayları ── */
-  .schedule-toolbar-card,
-  .schedule-filter-details,
-  .task-filter-details,
-  .schedule-filter-reset,
-  .schedule-filter-summary,
-  #taskFilterSummary     { display:none !important; }
-
-  /* ── Rapor mod seçici ve görünüm kontrolleri ── */
-  .report-switch,
-  .schedule-view-control { display:none !important; }
-
-  /* ── Sınıf / öğretmen profil seçicileri ── */
-  #classProfileSelect,
-  #classProfileDay,
-  #teacherProfileSelect,
-  #teacherProfileDay     { display:none !important; }
-
-  /* ── İçerik alanı aksiyonları ve chip'ler ── */
-  .schedule-health,
-  .obs-toast,
-  .chip-wrap,
-  .section-body-actions,
-  .table-actions,
-  .page-actions          { display:none !important; }
-
-  /* ── Modal, login ve toast container ── */
-  .modal,
-  #loginScreen,
-  #toastContainer        { display:none !important; }
-
-  /* ── Slot notu ve TC alanları ── */
-  .slot-span-note        { display:none !important; }
-  .btn-tc-reveal         { display:none !important; }
-  .tc-field .tc-display  { display:none !important; }
-
-  /* ── Layout düzeltmeleri ── */
-  .app-main              { margin:0 !important; }
-  .app-content           { padding:0 !important; }
+  .app-main   { margin:0 !important; }
+  .app-content { padding:0 !important; }
 
   /* ── Genel bileşenler ── */
   @page { size:A4 portrait; margin:10mm; }
@@ -1262,28 +1212,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   /* ── Görev listesi ── */
   .table-actions { display:none !important; }
 
-  /* ── Yazdırma başlık bandı (.ph-wrap) ── */
-  .ph-wrap {
-    display:flex; justify-content:space-between; align-items:baseline;
-    border-bottom:2pt solid #111827; margin-bottom:5mm; padding-bottom:2mm;
-    break-after:avoid; page-break-after:avoid;
-  }
-  .ph-title strong { font-size:13pt; font-weight:800; display:block; }
-  .ph-title span   { font-size:8.5pt; color:#475569; display:block; margin-top:1mm; }
-  .ph-date         { font-size:8pt; color:#64748b; white-space:nowrap; }
-
-  /* ── print-title-row: her tabloda sayfa başında başlık tekrarı ── */
-  tr.print-title-row { display:table-row !important; }
-  tr.print-title-row th,
-  tr.print-title-row td {
-    background:#f1f5f9 !important;
-    font-weight:700;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact;
-  }
-
   /* ── Çarşaf tabloları (landscape @page override yapılamaz, kullanıcı tarayıcıdan ayarlar) ── */
-
   .schedule-sheet { width:100%; table-layout:fixed; border-collapse:collapse; }
   .schedule-sheet th,.schedule-sheet td { padding:.35mm .4mm !important; white-space:normal; overflow:hidden; text-align:center; break-inside:avoid; }
   .schedule-sheet thead { display:table-header-group; }
@@ -1297,49 +1226,6 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .class-sheet tbody small { font-size:4.45pt; }
   .sheet-filled,.sheet-empty { min-width:0 !important; }
   .duty-sheet { box-shadow:inset 0 0 0 .6pt #d97706; }
-}
-
-/* ─── YAZDIRMA — TABLET MODU (≤768px ekrandan yazdırma) ─── */
-/* body'ye .print-tablet class'ı teacher-print.js tarafından eklenir */
-@media print {
-  body.print-tablet                               { font-size:8.5pt !important; }
-  body.print-tablet .table th,
-  body.print-tablet .table td                     { font-size:7pt !important; padding:2px 3px !important; }
-  body.print-tablet .schedule-sheet th,
-  body.print-tablet .schedule-sheet td            { font-size:3.8pt !important; padding:.25mm .3mm !important; }
-  body.print-tablet .teacher-program-board,
-  body.print-tablet .class-program-board          { font-size:6.5pt !important; }
-  body.print-tablet .duty-matrix th,
-  body.print-tablet .duty-matrix td               { padding:1.5mm 2mm !important; font-size:7.5pt !important; }
-  body.print-tablet .prog-table th,
-  body.print-tablet .prog-table td                { font-size:6.5pt !important; padding:1px 2px !important; }
-  body.print-tablet .ph-title strong              { font-size:11pt !important; }
-  body.print-tablet .content-disclosure > summary { padding:1.5mm 0 1mm !important; }
-  body.print-tablet .daily-program-grid           { grid-template-columns:repeat(2,1fr) !important; }
-}
-
-/* ─── YAZDIRMA — TELEFON MODU (≤480px ekrandan yazdırma) ─── */
-/* body'ye .print-phone class'ı teacher-print.js tarafından eklenir */
-@media print {
-  body.print-phone                                { font-size:7.5pt !important; }
-  body.print-phone .table th,
-  body.print-phone .table td                      { font-size:6.5pt !important; padding:1.5px 2.5px !important; }
-  body.print-phone .schedule-sheet               { font-size:3.2pt !important; }
-  body.print-phone .schedule-sheet th,
-  body.print-phone .schedule-sheet td             { font-size:3.2pt !important; padding:.2mm .25mm !important; }
-  body.print-phone .teacher-program-board,
-  body.print-phone .class-program-board           { font-size:5.5pt !important; }
-  body.print-phone .duty-matrix th,
-  body.print-phone .duty-matrix td                { padding:1mm 1.5mm !important; font-size:6.5pt !important; }
-  body.print-phone .prog-table th,
-  body.print-phone .prog-table td                 { font-size:5.8pt !important; padding:1px 1.5px !important; }
-  body.print-phone .ph-title strong               { font-size:10pt !important; }
-  body.print-phone .daily-program-grid            { grid-template-columns:1fr 1fr !important; gap:2mm !important; }
-  body.print-phone .table-responsive              { overflow:visible !important; max-width:100% !important; }
-  body.print-phone .teacher-weekly-scroll,
-  body.print-phone .sheet-scroll                  { overflow:visible !important; }
-  body.print-phone .free-query-grid               { flex-direction:column !important; }
-  body.print-phone .duty-profile-box              { flex-direction:column !important; gap:2mm !important; }
 }
 
 /* ─── 37. MOBİL RESPONSIVE (≤991px) ─── */
