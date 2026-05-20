@@ -274,7 +274,7 @@ function buildTeacherSheet(){
       }
       return dayCells.join('');
     }).join('');
-    return `<tr><th class="sheet-name" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}">${escapeHtml(sheetTeacherCode(t))}<small>(${escapeHtml(sheetSubjectCode(t.branch))})</small></th>${cells}</tr>`;
+    return `<tr><th class="sheet-name" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}"><strong class="sheet-teacher-code">${escapeHtml(compactTeacherCode(t))}</strong></th>${cells}</tr>`;
   }).join('');
   const cellCount=days.length*hours.length;
   return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet teacher-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Öğretmen</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -302,7 +302,7 @@ function buildClassSheet(){
             span++;
           }
         }
-      const names=[...new Set(slot.map(s=>sheetTeacherCode(teacherById(s.teacherId))))].join(', ');
+      const names=[...new Set(slot.map(s=>compactTeacherCode(teacherById(s.teacherId))))].join(', ');
       const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
       const title=slot.map(s=>`${s.subject} · ${teacherName(teacherById(s.teacherId))}`).join(' | ');
         const hasDuty=slot.some(s=>teacherById(s.teacherId)?.dutyDay===d);

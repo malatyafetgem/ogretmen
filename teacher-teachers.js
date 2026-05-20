@@ -10,21 +10,40 @@ function renderDashboard(){
   const today=todayName(), duty=today?teachers.filter(t=>t.dutyDay===today).length:0;
   const active=activeLessonsNow().slice().sort((a,b)=>classCompare(a,b)||teacherCompare(teacherById(a.teacherId),teacherById(b.teacherId))), slot=currentLessonSlot();
   const slotText=slot?`${slot.hour}. Saat`:'Ders saati dışında';
+  const dailyPanelsOpen=isDashboardSchoolDayOpen();
   const schedulableFree=today?teachers.filter(t=>isSchedulableTeacher(t)&&isTeacherFreeAllDay(t.id,today)).length:0;
   getEl('dashboardCards').innerHTML=[
     dashboardCard('Öğretmen',DB.teachers.length,'fas fa-user-tie','primary',`${branchList().length} branş`),
-    dashboardCard('Şu Anda Dersi Olan',active.length,'fas fa-chalkboard-user','info',slotText),
+    dashboardCard('Şu Anda Dersi Olan',active.length,'fas fa-chalkboard-user','primary',slotText),
     dashboardCard('Bugün Nöbetçi',duty,'fas fa-clipboard-check','warning',today||'Hafta sonu'),
-    dashboardCard('Bugün Boş Günü',schedulableFree,'fas fa-calendar-minus','info',today||'Hafta sonu')
+    dashboardCard('Bugün Boş Günü',schedulableFree,'fas fa-calendar-minus','primary',today||'Hafta sonu')
   ].join('');
   const rows=today?DB.teachers.filter(t=>t.dutyDay===today).sort(sortByDutyPlace).map(t=>`<tr><td>${teacherLink(t)}</td><td>${escapeHtml(t.branch)}</td><td>${escapeHtml(t.dutyPlace||'—')}</td></tr>`).join(''):'';
-  getEl('todayPanel').innerHTML=rows?`<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Öğretmen</th><th>Branş</th><th>Nöbet Yeri</th></tr></thead><tbody>${rows}</tbody></table></div>`:emptyState(today?'Bugün için nöbet kaydı yok.':'Hafta sonu için nöbet gösterilmiyor.');
+  getEl('todayPanel').innerHTML=dailyPanelsOpen
+    ? (rows?`<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Öğretmen</th><th>Branş</th><th>Nöbet Yeri</th></tr></thead><tbody>${rows}</tbody></table></div>`:emptyState('Bugün için nöbet kaydı yok.'))
+    : dashboardOutOfLessonState('Ders saati dışında. Bugünün nöbet bilgisi ders günü içinde gösterilir.');
   const activeRows=active.map(s=>{ const t=teacherById(s.teacherId); return `<tr><td>${teacherLink(t)}</td><td>${escapeHtml(s.className)}</td><td>${escapeHtml(displaySubjectName(s.subject))}</td></tr>`; }).join('');
   const freeRows=today?teachers.filter(t=>isSchedulableTeacher(t)&&isTeacherFreeAllDay(t.id,today)&&teacherLessons(t.id).length>0).map(t=>`<span class="soft-chip">${teacherLink(t)}</span>`).join(''):'';
   const currentFreeRows=today&&slot?teachers.filter(t=>isSchedulableTeacher(t)&&teacherLessons(t.id).some(s=>s.day===today)&&isTeacherFreeAt(t.id,today,slot.hour)).map(t=>`<span class="soft-chip">${teacherLink(t)}</span>`).join(''):'';
   getEl('quickQueryPanel').innerHTML=`<div class="quick-section"><strong>Şu anda dersi olanlar${slot?` (${slot.hour}. Saat)`:''}</strong>${activeRows?`<div class="table-responsive mt-2"><table class="table table-sm mb-0"><thead><tr><th>Öğretmen</th><th>Sınıf</th><th>Ders</th></tr></thead><tbody>${activeRows}</tbody></table></div>`:emptyState(slot?'Bu ders saatinde kayıt yok.':'Şu an ders saati dışında.')}</div>`;
-  getEl('freeDayPanel').innerHTML=`${slot?`<div class="quick-section"><strong>Şu an müsait olanlar (${slot.hour}. Saat)</strong><p class="text-muted small mb-1">Bu saatte boş, ama bugün dersi olan öğretmenler</p><div class="chip-wrap">${currentFreeRows||'<span class="text-muted">Kayıt yok.</span>'}</div></div>`:''}<div class="quick-section${slot?' mt-3':''}"><strong>${escapeHtml(today||'Hafta sonu')}</strong> boş günü olanlar<div class="chip-wrap">${freeRows||'<span class="text-muted">Kayıt yok.</span>'}</div></div>`;
+  getEl('freeDayPanel').innerHTML=dailyPanelsOpen
+    ? `${slot?`<div class="quick-section"><strong>Şu an müsait olanlar (${slot.hour}. Saat)</strong><p class="text-muted small mb-1">Bu saatte boş, ama bugün dersi olan öğretmenler</p><div class="chip-wrap">${currentFreeRows||'<span class="text-muted">Kayıt yok.</span>'}</div></div>`:''}<div class="quick-section${slot?' mt-3':''}"><strong>${escapeHtml(today||'Hafta sonu')}</strong> boş günü olanlar<div class="chip-wrap">${freeRows||'<span class="text-muted">Kayıt yok.</span>'}</div></div>`
+    : dashboardOutOfLessonState('Ders saati dışında. Müsaitlik ve boş gün bilgileri ders günü içinde gösterilir.');
   renderDashboardSearch();
+}
+
+function isDashboardSchoolDayOpen(date=new Date()){
+  if(!todayName()) return false;
+  const times=(DB.settings?.lessonTimes||LESSON_TIMES).filter(t=>t.end);
+  if(!times.length) return true;
+  const lastEnd=Math.max(...times.map(t=>timeToMinutes(t.end)).filter(Number.isFinite));
+  if(!Number.isFinite(lastEnd)) return true;
+  const now=date.getHours()*60+date.getMinutes();
+  return now<=lastEnd;
+}
+
+function dashboardOutOfLessonState(text){
+  return `<div class="empty-state dashboard-time-state"><i class="fas fa-clock"></i><span>${escapeHtml(text)}</span></div>`;
 }
 
 function renderDashboardSearch(){
@@ -95,9 +114,10 @@ function renderTeachers(){
 }
 function teacherTableHtml(rows,{actions=false}={}){
   if(!rows.length) return `<tbody><tr><td>${emptyState('Kayıt bulunamadı.')}</td></tr></tbody>`;
-  return `<thead><tr><th>#</th><th>Ad Soyad</th><th>Branş</th><th>Telefon</th><th>E-posta</th><th>Sınıf</th><th>Nöbet</th><th>Ders</th><th>Görev</th>${actions?'<th class="no-print">İşlem</th>':''}</tr></thead><tbody>${rows.map((t,i)=>{
+  return `<thead><tr><th>#</th><th>Ad Soyad</th><th class="tc-print-col">T.C. Kimlik No</th><th>Branş</th><th>Telefon</th><th>E-posta</th><th>Sınıf</th><th>Nöbet</th><th>Ders</th><th>Görev</th>${actions?'<th class="no-print">İşlem</th>':''}</tr></thead><tbody>${rows.map((t,i)=>{
     const lessons=teacherLessons(t.id), tasks=teacherTasks(t.id), selected=t.id===selectedTeacherId?' selected-row':'';
-    return `<tr class="teacher-row${selected}" data-teacher-id="${escapeHtml(t.id)}" onclick="goTeacherProfile(this.dataset.teacherId)"><td>${i+1}</td><td><strong>${teacherLink(t)}</strong><br><small>${escapeHtml(maskTc(t._tcRaw||''))}</small></td><td>${escapeHtml(t.branch)}</td><td>${formatPhone(t.phone)}</td><td>${formatEmail(t.email)}</td><td>${escapeHtml(t.classAdvisor||'—')}</td><td>${escapeHtml([t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'—')}</td><td>${lessons.length}</td><td>${tasks.length}</td>${actions?`<td class="no-print table-actions"><button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();openTeacherModal(this.closest('tr').dataset.teacherId)"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();deleteTeacher(this.closest('tr').dataset.teacherId)"><i class="fas fa-trash"></i></button></td>`:''}</tr>`;
+    const tcRaw=t._tcRaw||'';
+    return `<tr class="teacher-row${selected}" data-teacher-id="${escapeHtml(t.id)}" onclick="goTeacherProfile(this.dataset.teacherId)"><td>${i+1}</td><td><strong>${teacherLink(t)}</strong><br><small class="tc-screen-mask">${escapeHtml(maskTc(tcRaw))}</small></td><td class="tc-print-col">${escapeHtml(tcRaw||'—')}</td><td>${escapeHtml(t.branch)}</td><td>${formatPhone(t.phone)}</td><td>${formatEmail(t.email)}</td><td>${escapeHtml(t.classAdvisor||'—')}</td><td>${escapeHtml([t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'—')}</td><td>${lessons.length}</td><td>${tasks.length}</td>${actions?`<td class="no-print table-actions"><button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();openTeacherModal(this.closest('tr').dataset.teacherId)"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();deleteTeacher(this.closest('tr').dataset.teacherId)"><i class="fas fa-trash"></i></button></td>`:''}</tr>`;
   }).join('')}</tbody>`;
 }
 function renderTeacherReport(){

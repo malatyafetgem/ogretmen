@@ -41,7 +41,7 @@ function resolveBodyClass(type) {
     'class-sheet':     'sheet-print',
     'teacher-profile': 'profile-print',
     'class-profile':   'profile-print',
-    'teachers':        'profile-print',      // öğretmen listesi
+    'teachers':        'teacher-list-print',
     'duty':            'duty-print',
     'tasks':           'tasks-print',
     'entry-list':      'entry-print',
@@ -66,12 +66,44 @@ function resolvePrintOrientation(type, requested, root, sourceId) {
   if (requested === 'landscape') return 'A4 landscape';
 
   // type ile kesin karar
-  if (type === 'teacher-sheet' || type === 'class-sheet') return 'A4 landscape';
+  if (type === 'teacher-profile') {
+    const mode = (typeof currentProgramMode !== 'undefined') ? currentProgramMode : '';
+    if (mode !== 'day') return 'A4 landscape';
+  }
+  if ([
+    'teacher-sheet',
+    'class-sheet',
+    'program-list',
+    'entry-list',
+    'teachers',
+    'duty',
+    'tasks',
+    'class-profile'
+  ].includes(type)) return 'A4 landscape';
 
   // DOM'da .schedule-sheet varsa çarşaf → landscape
   if (root && root.querySelector('.schedule-sheet')) return 'A4 landscape';
+  if (root && shouldUseLandscapeForPrint(root)) return 'A4 landscape';
 
   return 'A4 portrait';
+}
+
+/**
+ * DOM geniş tablo/program içeriyorsa otomatik landscape seçer.
+ * @param {Element} root
+ * @returns {boolean}
+ */
+function shouldUseLandscapeForPrint(root) {
+  if (!root) return false;
+  if (root.querySelector('.prog-table, .teacher-program-board, .class-program-board, .duty-matrix')) return true;
+  const tables = Array.from(root.querySelectorAll('table'));
+  return tables.some(table => {
+    const headRow = table.querySelector('thead tr:last-child') || table.querySelector('tr');
+    if (!headRow) return false;
+    const cells = Array.from(headRow.children);
+    const count = cells.reduce((sum, cell) => sum + Number(cell.getAttribute('colspan') || 1), 0);
+    return count >= 5;
+  });
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -113,6 +145,63 @@ function openDisclosureForPrint(root) {
   if (!root) return;
   root.querySelectorAll('details.content-disclosure').forEach(el => {
     el.setAttribute('open', '');
+  });
+}
+
+/**
+ * Profil çıktılarında program bölümünü niyete göre hazırlar.
+ * Öğretmen/sınıf için gün açıkça seçilmediyse haftalık program basılır.
+ * @param {Element} root
+ * @param {Object} opts
+ */
+function prepareProfileProgramForPrint(root, opts) {
+  if (!root || !opts) return;
+  try {
+    if (opts.type === 'teacher-profile') {
+      const section = root.querySelector('#teacherProgramSection');
+      const id = (typeof selectedTeacherId !== 'undefined') ? selectedTeacherId : '';
+      const t = id && typeof teacherById === 'function' ? teacherById(id) : null;
+      const mode = (typeof currentProgramMode !== 'undefined') ? currentProgramMode : '';
+      if (section && t && mode !== 'day' && typeof buildTeacherProfileSchedule === 'function' && typeof teacherLessons === 'function') {
+        section.innerHTML = `<div class="program-section-content">${buildTeacherProfileSchedule(t, teacherLessons(id))}</div>`;
+        const meta = section.closest('details')?.querySelector('.disclosure-meta');
+        if (meta) meta.textContent = 'Haftalık Program';
+      }
+      root.querySelectorAll('.program-filter-inline, .program-mode-btns').forEach(el => el.classList.add('print-hidden'));
+      return;
+    }
+
+    if (opts.type === 'class-profile') {
+      const daily = root.querySelector('details.content-disclosure[data-section-key*="-daily-"]');
+      const weekly = root.querySelector('details.content-disclosure[data-section-key*="-weekly"]');
+      if (weekly) weekly.setAttribute('open', '');
+      if (daily) daily.classList.add('print-hidden');
+    }
+  } catch (e) {
+    console.warn('[teacher-print] profil program hazırlığı atlandı:', e);
+  }
+}
+
+function normalizePrintHeadingText(text) {
+  const value = String(text || '').replace(/\s+/g, ' ').trim();
+  if (typeof plainKey === 'function') return plainKey(value);
+  return value.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
+/**
+ * Üst yazdırma başlığı ile aynı olan iç kart başlıklarını gizler.
+ * @param {Element} root
+ * @param {{ title:string }} meta
+ */
+function dedupePrintHeadings(root, meta) {
+  if (!root || !meta || !meta.title) return;
+  const printTitleKey = normalizePrintHeadingText(meta.title);
+  if (!printTitleKey) return;
+  root.querySelectorAll('.card-header').forEach(header => {
+    const title = header.querySelector('.card-title');
+    if (title && normalizePrintHeadingText(title.textContent) === printTitleKey) {
+      header.classList.add('print-hidden');
+    }
   });
 }
 
@@ -263,7 +352,7 @@ body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
 a { color:#0f172a; text-decoration:none; }
 
 /* ── Ortak bileşenler ── */
-.card        { border:0; break-inside:avoid; }
+.card        { border:0; break-inside:auto; page-break-inside:auto; }
 .card-header { padding:3px 0; }
 .card-body   { padding:0; }
 .card-title  { margin:0; font-size:11pt; }
@@ -272,6 +361,9 @@ a { color:#0f172a; text-decoration:none; }
 .table th { background:#f1f5f9!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 thead { display:table-header-group; }
 .no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden { display:none!important; }
+.print-only,.tc-print-full { display:block!important; }
+.screen-only,.tc-screen-mask { display:none!important; }
+.tc-print-col { display:table-cell!important; }
 button:not(.print-keep) { display:none!important; }
 .slot-span-note { display:none!important; }
 .print-meta { font-size:7.5pt; color:#64748b; text-align:right; margin-bottom:3mm; }
@@ -280,6 +372,7 @@ button:not(.print-keep) { display:none!important; }
 .ph-wrap {
   display:flex; justify-content:space-between; align-items:baseline;
   border-bottom:2pt solid #111827; margin-bottom:5mm; padding-bottom:2mm;
+  break-after:avoid; page-break-after:avoid;
 }
 .ph-title strong { font-size:13pt; font-weight:800; display:block; }
 .ph-title span   { font-size:8.5pt; color:#475569; display:block; margin-top:1mm; }
@@ -288,7 +381,16 @@ button:not(.print-keep) { display:none!important; }
 /* ── Disclosure (tüm modlar) ── */
 .content-disclosure { display:block!important; border-top:1px solid #dbe3ef; }
 .content-disclosure:first-child { border-top:0; }
-.content-disclosure > summary { display:none!important; }
+.content-disclosure > summary {
+  display:flex!important; align-items:center; justify-content:space-between; gap:4mm;
+  padding:2mm 0 1.5mm; margin:0; break-after:avoid; page-break-after:avoid;
+  list-style:none;
+}
+.content-disclosure > summary::-webkit-details-marker { display:none!important; }
+.content-disclosure > summary::after { display:none!important; }
+.content-disclosure > summary .disclosure-title { display:flex; align-items:center; gap:2mm; font-weight:700; }
+.content-disclosure > summary .disclosure-title i { display:none!important; }
+.content-disclosure > summary .disclosure-meta { color:#64748b; font-size:7.5pt; }
 .content-disclosure > .disclosure-body,
 .content-disclosure:not([open]) > .disclosure-body { display:block!important; padding:3mm 0; }
 
@@ -338,8 +440,10 @@ button:not(.print-keep) { display:none!important; }
 }
 
 /* ── Sayfa geçişi kuralları ── */
-.content-disclosure { break-inside:avoid; page-break-inside:avoid; }
-.profile-card       { break-inside:avoid; page-break-inside:avoid; }
+.content-disclosure { break-inside:auto; page-break-inside:auto; }
+.profile-card       { break-inside:auto; page-break-inside:auto; }
+.card-header,
+.section-title-row,
 h3,h4               { break-after:avoid; page-break-after:avoid; }
 
 /* ── Günlük program ── */
@@ -375,7 +479,8 @@ function buildPrintTypeCss(type, root, opts) {
   if (type === 'teacher-sheet' || type === 'class-sheet') return buildSheetPrintCss(type, root, opts);
   if (type === 'entry-list')                               return buildListPrintCss(type, root, opts);
   if (type === 'program-list')                             return buildWeeklyProgramPrintCss(type, root, opts);
-  if (type === 'teacher-profile' || type === 'class-profile' || type === 'teachers') return buildProfilePrintCss(type, root, opts);
+  if (type === 'teachers')                                 return buildTeacherListPrintCss(type, root, opts);
+  if (type === 'teacher-profile' || type === 'class-profile') return buildProfilePrintCss(type, root, opts);
   if (type === 'duty')                                     return buildDutyPrintCss(type, root, opts);
   if (type === 'tasks')                                    return buildTasksPrintCss(type, root, opts);
   if (type === 'free')                                     return buildFreePrintCss(type, root, opts);
@@ -395,7 +500,7 @@ function buildSheetPrintCss(type, root, opts) {
   const sheetTable     = root ? root.querySelector('.schedule-sheet') : null;
   const cellCount      = sheetTable ? Number(sheetTable.dataset.cellCount || 0) : 0;
   const isTeacherSheet = root ? !!root.querySelector('.teacher-sheet') : (type === 'teacher-sheet');
-  const nameColW       = isTeacherSheet ? '28mm' : '15mm';
+  const nameColW       = isTeacherSheet ? '22mm' : '15mm';
   const cellW          = cellCount > 0
     ? `calc((100% - ${nameColW}) / ${cellCount})`
     : `calc((100% - ${nameColW}) / 40)`;
@@ -417,17 +522,29 @@ function buildSheetPrintCss(type, root, opts) {
   padding:.35mm .4mm!important; line-height:.92; height:auto;
   white-space:normal; overflow:hidden; text-align:center; break-inside:avoid;
 }
+.sheet-print .sheet-cell-content strong,
+.sheet-print .sheet-cell-content span {
+  display:block; line-height:1.04; white-space:normal; overflow:hidden;
+}
+.sheet-print .sheet-cell-content strong { font-size:4.25pt; font-weight:800; }
+.sheet-print .sheet-cell-content span   { font-size:3.95pt; font-weight:700; margin-top:.15mm; }
 .sheet-print .schedule-sheet thead { display:table-header-group; }
-.sheet-print .schedule-sheet thead br,
-.sheet-print .teacher-sheet br { display:none; }
+.sheet-print .schedule-sheet thead br { display:none; }
 .sheet-print .schedule-sheet small { font-size:4.25pt; display:inline; color:#111; margin-left:1px; }
-.sheet-print .teacher-sheet { font-size:4.35pt; }
+.sheet-print .teacher-sheet { font-size:4.15pt; }
 .sheet-print .class-sheet   { font-size:4.8pt; }
 .sheet-print .class-sheet tbody br    { display:block; }
 .sheet-print .class-sheet tbody small { display:block; margin-left:0; font-size:4.45pt; }
 .sheet-print .teacher-sheet .sheet-name {
   width:${nameColW}!important; min-width:${nameColW}!important; max-width:${nameColW}!important;
-  text-align:left;
+  text-align:left; white-space:normal; overflow:hidden; line-height:1.03;
+  overflow-wrap:anywhere; word-break:normal;
+}
+.sheet-print .teacher-sheet .sheet-name .sheet-teacher-code {
+  display:block; max-width:100%; white-space:normal; overflow:hidden; text-overflow:clip;
+}
+.sheet-print .teacher-sheet .sheet-name .sheet-teacher-code {
+  font-size:4.25pt; line-height:1.05; font-weight:800;
 }
 .sheet-print .class-sheet .sheet-name {
   width:${nameColW}!important; min-width:${nameColW}!important; max-width:${nameColW}!important;
@@ -464,6 +581,7 @@ function buildWeeklyProgramPrintCss(type, root, opts) {
 .program-list-print .class-program-list { display:flex; flex-direction:column; gap:0; }
 .program-list-print .content-disclosure {
   break-inside:avoid; page-break-inside:avoid; border-top:1px solid #dbe3ef;
+  padding-top:1mm; margin-bottom:3mm;
 }
 .program-list-print .content-disclosure:first-child { border-top:0; }
 .program-list-print .table-responsive { overflow:visible!important; }
@@ -527,6 +645,38 @@ function buildListPrintCss(type, root, opts) {
 }
 
 /**
+ * Öğretmen listesi (teacher-list-print) CSS.
+ */
+function buildTeacherListPrintCss(type, root, opts) {
+  return `
+/* ════════════════════════════════════════
+   ÖĞRETMEN LİSTESİ (teacher-list-print) — yatay A4
+   ════════════════════════════════════════ */
+.teacher-list-print { font-size:8pt; }
+.teacher-list-print .card { border:0; break-inside:auto; page-break-inside:auto; }
+.teacher-list-print .card-header {
+  padding:0 0 2mm; margin-bottom:2mm; border-bottom:1.5pt solid #111827;
+}
+.teacher-list-print .card-title { font-size:10.5pt; font-weight:800; }
+.teacher-list-print .table-responsive { overflow:visible!important; }
+.teacher-list-print .table {
+  width:100%; border-collapse:collapse; table-layout:auto; font-size:7.8pt;
+}
+.teacher-list-print .table th,
+.teacher-list-print .table td {
+  border:0.7pt solid #334155!important; padding:1.4px 3px!important;
+  vertical-align:middle; line-height:1.15;
+}
+.teacher-list-print .table thead th {
+  background:#e2e8f0!important; font-weight:700; text-align:left;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.teacher-list-print .table thead { display:table-header-group; }
+.teacher-list-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
+`;
+}
+
+/**
  * Öğretmen / Sınıf profili (profile-print) CSS.
  */
 function buildProfilePrintCss(type, root, opts) {
@@ -535,9 +685,10 @@ function buildProfilePrintCss(type, root, opts) {
    PROFİL (profile-print) — dikey A4
    ════════════════════════════════════════ */
 .profile-print { font-size:9pt; }
-.profile-print .profile-card    { border:0; break-inside:avoid; }
+.profile-print .profile-card    { border:0; break-inside:auto; page-break-inside:auto; }
 .profile-print .profile-header  { margin-bottom:3mm; }
 .profile-print .profile-disclosures { padding:0 2mm!important; }
+.profile-print .content-disclosure { break-inside:avoid; page-break-inside:avoid; }
 .profile-print .info-line       { margin-bottom:2mm; break-inside:avoid; }
 .profile-print .info-line span  { font-size:7.5pt; color:#64748b; display:block; }
 .profile-print .info-line strong { font-size:9pt; display:block; }
@@ -584,13 +735,13 @@ function buildProfilePrintCss(type, root, opts) {
 function buildDutyPrintCss(type, root, opts) {
   return `
 /* ════════════════════════════════════════
-   NÖBET ÇİZELGESİ (duty-print) — dikey A4
+   NÖBET ÇİZELGESİ (duty-print) — yatay A4
    ════════════════════════════════════════ */
-.duty-print { font-size:9pt; }
+.duty-print { font-size:8.7pt; }
 .duty-print .duty-matrix { width:100%; border-collapse:collapse; }
 .duty-print .duty-matrix th,
 .duty-print .duty-matrix td {
-  border:1pt solid #334155!important; padding:2.5mm 3mm!important; vertical-align:middle;
+  border:1pt solid #334155!important; padding:2mm 2.6mm!important; vertical-align:middle;
 }
 .duty-print .duty-matrix thead th {
   background:#e2e8f0!important; font-size:9pt; font-weight:700; text-align:center;
@@ -612,13 +763,13 @@ function buildDutyPrintCss(type, root, opts) {
 function buildTasksPrintCss(type, root, opts) {
   return `
 /* ════════════════════════════════════════
-   GÖREV LİSTESİ (tasks-print) — dikey A4
+   GÖREV LİSTESİ (tasks-print) — yatay A4
    ════════════════════════════════════════ */
-.tasks-print { font-size:9pt; }
+.tasks-print { font-size:8.3pt; }
 .tasks-print .chip-wrap,.tasks-print .obs-panel:first-child { display:none!important; }
 .tasks-print .table { width:100%; border-collapse:collapse; }
 .tasks-print .table th,.tasks-print .table td {
-  border:0.8pt solid #334155!important; font-size:8pt; padding:2px 4px!important; vertical-align:middle;
+  border:0.8pt solid #334155!important; font-size:7.6pt; padding:1.6px 3px!important; vertical-align:middle;
 }
 .tasks-print .table thead th {
   background:#e2e8f0!important; font-weight:700;
@@ -835,6 +986,7 @@ function printDocument(options) {
 
     // Başlık meta
     const meta = getAutoMetaSafe(opts.type, opts.sourceId, root);
+    if (opts.title && ['tasks', 'teachers'].includes(opts.type)) meta.title = opts.title;
     if (!meta.title && opts.title) meta.title = opts.title;
     const headerHtml = buildPrintHeader(meta, root);
 
@@ -843,6 +995,8 @@ function printDocument(options) {
     const rootClone = root.cloneNode(true);
     expandScrollableAreas(rootClone);
     openDisclosureForPrint(rootClone);
+    prepareProfileProgramForPrint(rootClone, opts);
+    dedupePrintHeadings(rootClone, meta);
     markHiddenForPrint(rootClone);
 
     // Güvenli escapeHtml

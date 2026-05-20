@@ -72,7 +72,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
       <!-- Mobil marka -->
       <li class="nav-item d-flex d-lg-none align-items-center">
         <a href="#dashboard" class="top-mobile-brand" onclick="return sTab('dashboard')" aria-label="Ana Sayfa">
-          <span class="top-mobile-icon-wrap"><i class="fas fa-chalkboard-user"></i></span>
+          <span class="top-mobile-icon-wrap"><img src="./icon.png" alt="" class="top-mobile-icon"></span>
           <span class="top-mobile-title">Öğretmen Bilgi Sistemi</span>
         </a>
       </li>
@@ -138,21 +138,17 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
             </div>
           </div>
           <div class="dashboard-bottom-row">
-            <div class="dashboard-bottom-col col-lg-5">
-              <div class="card obs-panel">
-                <div class="card-header"><h3 class="card-title"><i class="fas fa-calendar-day me-2"></i>Bugün</h3></div>
-                <div class="card-body" id="todayPanel"></div>
-              </div>
-              <div class="card obs-panel mt-3">
-                <div class="card-header"><h3 class="card-title"><i class="fas fa-calendar-minus me-2"></i>Müsait Öğretmenler</h3></div>
-                <div class="card-body" id="freeDayPanel"></div>
-              </div>
+            <div class="card obs-panel dashboard-today-card">
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-calendar-day me-2"></i>Bugün</h3></div>
+              <div class="card-body" id="todayPanel"></div>
             </div>
-            <div class="dashboard-bottom-col col-lg-7">
-              <div class="card obs-panel">
-                <div class="card-header"><h3 class="card-title"><i class="fas fa-magnifying-glass-chart me-2"></i>Hızlı Sorgu</h3></div>
-                <div class="card-body" id="quickQueryPanel"></div>
-              </div>
+            <div class="card obs-panel dashboard-quick-card">
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-magnifying-glass-chart me-2"></i>Hızlı Sorgu</h3></div>
+              <div class="card-body" id="quickQueryPanel"></div>
+            </div>
+            <div class="card obs-panel dashboard-free-card">
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-calendar-minus me-2"></i>Müsait Öğretmenler</h3></div>
+              <div class="card-body" id="freeDayPanel"></div>
             </div>
           </div>
         </section>
@@ -197,7 +193,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
             <div class="card-body">
               <div class="row g-2 align-items-end">
                 <div class="col-md-4"><label class="form-label">Sınıf</label><select id="classProfileSelect" class="form-select" onchange="renderClasses()"></select></div>
-                <div class="col-md-4"><label class="form-label">Günlük Program Günü</label><select id="classProfileDay" class="form-select" onchange="renderClasses()"></select></div>
+                <div class="col-md-4"><label class="form-label">Program Görünümü</label><select id="classProfileDay" class="form-select" onchange="this.dataset.userSelected='1'; renderClasses()"></select></div>
                 <div class="col-md-4"><button class="btn btn-outline-secondary w-100" onclick="printDocument({sourceId:'classProfilePrintArea',type:'class-profile',title:'Sınıf Profili',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button></div>
               </div>
             </div>

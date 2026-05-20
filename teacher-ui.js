@@ -4,7 +4,12 @@ function hydrateStaticSelects(){
   ['tFreeDay','tDutyDay','sDay'].forEach(id=>{ const el=getEl(id); if(el) el.innerHTML=dayBlank; });
   const dayFilter=getEl('scheduleDayFilter'); if(dayFilter) dayFilter.innerHTML='<option value="">Tüm Günler</option>'+days.map(d=>`<option value="${d}">${d}</option>`).join('');
   const teacherDay=getEl('teacherProfileDay'), teacherDayValue=teacherDay?.value||todayName()||days[0]; if(teacherDay) teacherDay.innerHTML=days.map(d=>`<option value="${d}" ${d===teacherDayValue?'selected':''}>${d}</option>`).join('');
-  const classDay=getEl('classProfileDay'); if(classDay) classDay.innerHTML=days.map(d=>`<option value="${d}" ${d===(todayName()||days[0])?'selected':''}>${d}</option>`).join('');
+  const classDay=getEl('classProfileDay');
+  if(classDay){
+    const current=classDay.value||'weekly';
+    classDay.innerHTML='<option value="weekly">Haftalık</option>'+days.map(d=>`<option value="${d}">${d}</option>`).join('');
+    classDay.value=[...classDay.options].some(o=>o.value===current)?current:'weekly';
+  }
   const hourEl=getEl('sHour'); if(hourEl) hourEl.innerHTML=hours.map(h=>`<option value="${h}">${h}. Ders</option>`).join('');
   const hourFilter=getEl('scheduleHourFilter'); if(hourFilter) hourFilter.innerHTML='<option value="">Tüm Saatler</option>'+hours.map(h=>`<option value="${h}">${h}. Ders</option>`).join('');
   fillDynamicSelects();
