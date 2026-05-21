@@ -67,6 +67,10 @@ function clearTaskFilters(){
 }
 
 function openTaskModal(id=''){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Görev ekleme/düzenleme için admin yetkisi gerekir.','warning');
+    return;
+  }
   fillDynamicSelects();
   const task=(DB.tasks||[]).find(t=>t.id===id)||null;
   getEl('taskModalTitle').textContent=task?'Görev Düzenle':'Görev Ekle';
@@ -82,6 +86,10 @@ function openTaskModal(id=''){
 }
 
 function saveTaskForm(){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Görev kaydetmek için admin yetkisi gerekir.','warning');
+    return;
+  }
   const id=getEl('taskId').value||uid('g');
   const task={id,teacherId:getEl('taskTeacher').value,kind:getEl('taskKind').value.trim()||'Genel',title:getEl('taskTitle').value.trim(),description:getEl('taskDescription').value.trim(),details:getEl('taskDetails').value.trim(),startDate:getEl('taskStart').value,endDate:getEl('taskEnd').value};
   if(!task.teacherId||!task.title){ showToast('Öğretmen ve görev tanımı zorunlu.','warning'); return; }
@@ -95,6 +103,10 @@ function saveTaskForm(){
 }
 
 function deleteTask(id){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Görev silmek için admin yetkisi gerekir.','warning');
+    return;
+  }
   const task=(DB.tasks||[]).find(t=>t.id===id);
   if(!task||!confirm('Bu görev kaydı silinsin mi?')) return;
   DB.tasks=DB.tasks.filter(t=>t.id!==id);

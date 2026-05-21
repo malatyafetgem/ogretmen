@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'ogretmenBilgiDB.v1';
 const REMOTE_DB_PATH = 'ogretmenSistemi/main';
+const ADMIN_UID = 'QO8oNRYiKXgv9KcfH4n8CWdzRw82';
 // Seed dosyaları kaldırıldı — veriler yalnızca Firebase'den gelir
 const DAY_NAMES = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
 const HOURS = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -86,6 +87,8 @@ let REMOTE_READY = false;
 let REMOTE_SAVE_TIMER = null;
 let REMOTE_SAVE_PENDING = false;
 let APP_STARTED = false;
+let CURRENT_USER = null;
+let CURRENT_ROLE = 'guest';
 
 let DB = loadDB();
 
@@ -218,7 +221,43 @@ function dbForStorage(db){
   // Güvenlik notu: TC verisi Firebase güvenlik kurallarıyla korunmalı
   return {...db, teachers: db.teachers.map(t=>({...t}))};
 }
-function saveDB(){ normalizeDB(DB); writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB))); queueRemoteSave(); }
+function isAdminUser(){ return CURRENT_ROLE === 'admin'; }
+function restoreDBFromStorage(){
+  try{
+    const d=JSON.parse(readStorage(STORAGE_KEY)||'null');
+    if(d&&Array.isArray(d.teachers)&&Array.isArray(d.schedules)){
+      DB=normalizeDB(d);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function applyAuthUiState(){
+  const isAdmin=isAdminUser(), isReadOnly=!isAdmin;
+  document.body.classList.toggle('role-admin', isAdmin);
+  document.body.classList.toggle('role-user', isReadOnly);
+  document.body.dataset.authRole=CURRENT_ROLE;
+  ['nav-settings','bnav-settings'].forEach(id=>{
+    const el=getEl(id);
+    if(!el) return;
+    const wrapper=el.closest?.('.nav-item') || el;
+    wrapper.classList.toggle('d-none', !isAdmin);
+    el.setAttribute('aria-disabled', isAdmin ? 'false' : 'true');
+    el.tabIndex=isAdmin ? 0 : -1;
+  });
+}
+function saveDB(){
+  if(!isAdminUser()){
+    restoreDBFromStorage();
+    showToast('Bu işlem için admin yetkisi gerekir. Değişiklik kaydedilmedi.','warning');
+    renderAll();
+    return false;
+  }
+  normalizeDB(DB);
+  writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
+  queueRemoteSave();
+  return true;
+}
 function hasFirebaseConfig(){ return !!window.OGRETMEN_FIREBASE_CONFIG?.databaseURL; }
 function initFirebase(){
   if(!window.firebase||!hasFirebaseConfig()) return false;
@@ -229,13 +268,13 @@ function initFirebase(){
 }
 function remoteRef(){ return FIREBASE_DB?.ref(REMOTE_DB_PATH); }
 function queueRemoteSave(){
-  if(!REMOTE_READY||!remoteRef()) return;
+  if(!isAdminUser()||!REMOTE_READY||!remoteRef()) return;
   REMOTE_SAVE_PENDING=true;
   clearTimeout(REMOTE_SAVE_TIMER);
   REMOTE_SAVE_TIMER=setTimeout(pushRemoteDB,350);
 }
 function pushRemoteDB(){
-  if(!REMOTE_READY||!remoteRef()||!REMOTE_SAVE_PENDING) return Promise.resolve();
+  if(!isAdminUser()||!REMOTE_READY||!remoteRef()||!REMOTE_SAVE_PENDING) return Promise.resolve();
   REMOTE_SAVE_PENDING=false;
   return remoteRef().set(dbForStorage(DB)).catch(()=>{
     REMOTE_SAVE_PENDING=true;
@@ -257,12 +296,12 @@ async function hydrateRemoteDB(){
     DB=normalizeDB(remote);
     writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
     // Versiyon eskiyse normalize edilmiş veriyi Firebase'e geri yaz (bir kez)
-    if(needsMigration) await remoteRef().set(dbForStorage(DB)).catch(()=>{});
+    if(needsMigration&&isAdminUser()) await remoteRef().set(dbForStorage(DB)).catch(()=>{});
   }else{
     // Firebase'de veri yok — boş veritabanıyla başla, seed yükleme yok
     DB=makeEmptyDB();
     writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
-    await remoteRef().set(dbForStorage(DB));
+    if(isAdminUser()) await remoteRef().set(dbForStorage(DB));
   }
   REMOTE_READY=true;
   showSyncState('Bulut bağlı','success');
@@ -550,6 +589,9 @@ async function logout(){
   clearSession();
   APP_STARTED=false;
   REMOTE_READY=false;
+  CURRENT_USER=null;
+  CURRENT_ROLE='guest';
+  applyAuthUiState();
   showSyncState('');
   if(initFirebase()) await FIREBASE_AUTH.signOut().catch(()=>{});
   DB=makeEmptyDB();
@@ -561,7 +603,8 @@ function togglePassword(){ const i=getEl('loginPass'), icon=getEl('togglePassIco
 function startApp(){
   getEl('loginScreen').style.display='none';
   getEl('mainApp').style.display='block';
-  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB25';
+  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB27';
+  applyAuthUiState();
   hydrateStaticSelects();
   renderDashboard();
   sTab((location.hash||'#dashboard').slice(1));
@@ -572,10 +615,16 @@ async function handleAuthUser(user){
     clearSession();
     APP_STARTED=false;
     REMOTE_READY=false;
+    CURRENT_USER=null;
+    CURRENT_ROLE='guest';
+    applyAuthUiState();
     getEl('mainApp').style.display='none';
     getEl('loginScreen').style.display='flex';
     return;
   }
+  CURRENT_USER=user;
+  CURRENT_ROLE=user.uid===ADMIN_UID ? 'admin' : 'user';
+  applyAuthUiState();
   writeSession();
   const hasLocalData=Array.isArray(DB.teachers)&&DB.teachers.length>0;
   if(!APP_STARTED&&hasLocalData) startApp();

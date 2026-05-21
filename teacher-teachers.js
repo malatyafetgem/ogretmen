@@ -218,6 +218,10 @@ function clearTeacherSearch(){
   const table=getEl('teacherTable'); if(table) table.innerHTML=teacherTableHtml(filteredTeachers(),{actions:true});
 }
 function openTeacherModal(id=''){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Öğretmen ekleme/düzenleme için admin yetkisi gerekir.','warning');
+    return;
+  }
   const t=id?teacherById(id):null, nameParts=t?teacherNameParts(t):null;
   getEl('teacherModalTitle').textContent=t?'Öğretmen Düzenle':'Öğretmen Ekle';
   getEl('teacherId').value=t?.id||'';
@@ -255,6 +259,10 @@ function renderTeacherSubjectsList(subjects){
     : '<span class="text-muted small">Sistemde kayıtlı ders bulunamadı.</span>';
 }
 function saveTeacherForm(){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Öğretmen kaydetmek için admin yetkisi gerekir.','warning');
+    return;
+  }
   const oldId=getEl('teacherId').value, rawTc=getEl('tIdentityNo').value.trim().replace(/\D+/g,'');
   const hashed=rawTc?tcHash(rawTc):'';
   const id=hashed||oldId||uid('t');
@@ -272,7 +280,13 @@ function saveTeacherForm(){
   bootstrap.Modal.getInstance(getEl('teacherModal')).hide();
   renderAll(); showTeacherProfile(t.id); showToast('Öğretmen kaydedildi.','success');
 }
-function deleteTeacher(id){ const t=teacherById(id); if(!t||!confirm(`${teacherName(t)} silinsin mi?`))return; DB.teachers=DB.teachers.filter(x=>x.id!==id); DB.schedules=DB.schedules.filter(x=>x.teacherId!==id); DB.tasks=(DB.tasks||[]).filter(x=>x.teacherId!==id); if(selectedTeacherId===id){selectedTeacherId=''; getEl('teacherProfile').innerHTML='';} saveDB(); renderAll(); showToast('Öğretmen silindi.','success'); }
+function deleteTeacher(id){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Öğretmen silmek için admin yetkisi gerekir.','warning');
+    return;
+  }
+  const t=teacherById(id); if(!t||!confirm(`${teacherName(t)} silinsin mi?`))return; DB.teachers=DB.teachers.filter(x=>x.id!==id); DB.schedules=DB.schedules.filter(x=>x.teacherId!==id); DB.tasks=(DB.tasks||[]).filter(x=>x.teacherId!==id); if(selectedTeacherId===id){selectedTeacherId=''; getEl('teacherProfile').innerHTML='';} saveDB(); renderAll(); showToast('Öğretmen silindi.','success');
+}
 
 function formatPhone(phone){
   if(!phone) return '—';

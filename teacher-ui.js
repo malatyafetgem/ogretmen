@@ -38,6 +38,10 @@ function fillDynamicSelects(){
 function sTab(id){
   if(['schedule','duty','tasks'].includes(id)){ window.reportMode=id; id='reports'; }
   if(!getEl(id)) id='dashboard';
+  if(id==='settings' && typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Ayarlar sayfası yalnızca admin hesabıyla açılabilir.','warning');
+    id='dashboard';
+  }
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active-pane'));
   getEl(id).classList.add('active-pane');
   document.querySelectorAll('.nav-link[id^="nav-"],.bnav-item').forEach(a=>a.classList.remove('active'));
@@ -50,7 +54,19 @@ function sTab(id){
   if(id==='settings') renderSettings();
   return false;
 }
-function renderAll(){ fillDynamicSelects(); renderDashboard(); renderTeachers(); renderClasses(); renderReports(); renderSettings(); }
+function renderAll(){
+  fillDynamicSelects();
+  renderDashboard();
+  renderTeachers();
+  renderClasses();
+  renderReports();
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    const settings=getEl('settingsContent');
+    if(settings) settings.innerHTML='';
+  } else {
+    renderSettings();
+  }
+}
 function setReportMode(mode='schedule'){
   window.reportMode=mode;
   syncReportPrimaryAction(mode);

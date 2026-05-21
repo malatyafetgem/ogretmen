@@ -1,6 +1,10 @@
 let scheduleEntriesVisible=false;
 
 function openScheduleModal(id=''){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Ders ekleme/düzenleme için admin yetkisi gerekir.','warning');
+    return;
+  }
   fillDynamicSelects();
   const s=DB.schedules.find(x=>x.id===id)||null;
   getEl('scheduleModalTitle').textContent=s?'Ders Düzenle':'Ders Ekle';
@@ -47,6 +51,10 @@ function fillScheduleSubjectSelect(teacherId, selectedSubject=''){
 }
 
 function saveScheduleForm(){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Ders kaydetmek için admin yetkisi gerekir.','warning');
+    return;
+  }
   const id=getEl('scheduleId').value||uid('s');
   const hour=Number(getEl('sHour').value), time=lessonTimeByHour(hour);
   const teacherId=getEl('sTeacher').value;
@@ -73,6 +81,10 @@ function findScheduleSaveConflict(item,id=''){
 }
 
 function deleteSchedule(id){
+  if(typeof isAdminUser==='function' && !isAdminUser()){
+    showToast('Ders silmek için admin yetkisi gerekir.','warning');
+    return;
+  }
   if(!confirm('Bu ders kaydı silinsin mi?')) return;
   DB.schedules=DB.schedules.filter(s=>s.id!==id);
   saveDB();

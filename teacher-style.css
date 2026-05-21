@@ -55,6 +55,28 @@
 .h-100 { height: 100% !important; }
 .shadow, .shadow-lg { box-shadow: none !important; }
 
+/* Yetki görünürlüğü: User hesapları yalnızca okuma/rapor kullanır. */
+body.role-user #settings,
+body.role-user #nav-settings,
+body.role-user #bnav-settings,
+body.role-user .dashboard-add-row,
+body.role-user #reportPrimaryAction,
+body.role-user .table-actions,
+body.role-user button[onclick*="openTeacherModal"],
+body.role-user button[onclick*="openScheduleModal"],
+body.role-user button[onclick*="openTaskModal"],
+body.role-user button[onclick*="deleteTeacher"],
+body.role-user button[onclick*="deleteSchedule"],
+body.role-user button[onclick*="deleteTask"],
+body.role-user button[onclick*="saveTeacherForm"],
+body.role-user button[onclick*="saveScheduleForm"],
+body.role-user button[onclick*="saveTaskForm"],
+body.role-user button[onclick*="resetAllData"],
+body.role-user button[onclick*="loadDemoData"],
+body.role-user input[type="file"] {
+  display: none !important;
+}
+
 /* Grid */
 .container-fluid { width:100%; padding-right:16px; padding-left:16px; margin:0 auto; }
 .row { display:flex; flex-wrap:wrap; margin-right:-8px; margin-left:-8px; }
@@ -1488,6 +1510,9 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
     display:grid; grid-template-columns:repeat(5,1fr);
     background:var(--c-surface); border-top:var(--border-ink);
     z-index:1040;
+  }
+  body.role-user .bottom-nav {
+    grid-template-columns:repeat(4,1fr);
   }
   .bnav-item {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
