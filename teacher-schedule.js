@@ -65,8 +65,8 @@ function saveScheduleForm(){
 
 function findScheduleSaveConflict(item,id=''){
   const sameTime=s=>s.id!==id&&s.day===item.day&&Number(s.hour)===Number(item.hour);
-  const teacherConflict=DB.schedules.find(s=>sameTime(s)&&s.teacherId===item.teacherId);
-  if(teacherConflict) return 'Bu öğretmenin aynı gün ve saatte başka bir dersi var.';
+  const teacherItems=DB.schedules.filter(s=>sameTime(s)&&s.teacherId===item.teacherId).concat(item);
+  if(teacherItems.length>1&&!isAllowedSharedTeacherSlot(teacherItems)) return 'Bu öğretmenin aynı gün ve saatte başka bir dersi var.';
   const classItems=DB.schedules.filter(s=>sameTime(s)&&s.className===item.className).concat(item);
   if(classItems.length>1&&!isAllowedSharedClassSlot(classItems)) return 'Bu sınıfın aynı gün ve saatte başka bir dersi var.';
   return '';
@@ -121,9 +121,10 @@ function renderSchedule(){
   else if(f.mode==='classList') body=buildClassProgramList();
   else if(f.mode==='free') body=buildFreeTimeReport();
   else body=buildTeacherProgramList();
-  const isListMode=(f.mode==='teacherPrograms'||f.mode==='free'||!f.mode);
-  const entryControls=isListMode?'':`<div class="page-actions no-print"><span class="small text-muted">${visibleItems.length} ders</span><button class="btn btn-sm btn-outline-secondary" onclick="toggleScheduleEntries()"><i class="fas fa-list me-1"></i>Ders Kayıtlarını ${scheduleEntriesVisible?'Gizle':'Göster'}</button>${scheduleEntriesVisible?`<button class="btn btn-sm btn-outline-secondary" onclick="printDocument({sourceId:'scheduleEntryList',type:'entry-list',title:'Ders Kayıtları',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button>`:''}</div>`;
-  const headerAside=f.mode==='free'?'<span class="small text-muted">Dinamik hesap</span>':(entryControls||`<span class="small text-muted">${visibleItems.length} ders</span>`);
+  const isListMode=(f.mode==='teacherPrograms'||f.mode==='free'||f.mode==='classList'||!f.mode);
+  const visibleHourCount=uniqueScheduleHourCount(visibleItems, f.mode==='classList'||f.mode==='classSheet'?'class':'teacher');
+  const entryControls=isListMode?'':`<div class="page-actions no-print"><span class="small text-muted">${visibleHourCount} ders saati</span><button class="btn btn-sm btn-outline-secondary" onclick="toggleScheduleEntries()"><i class="fas fa-list me-1"></i>Ders Kayıtlarını ${scheduleEntriesVisible?'Gizle':'Göster'}</button>${scheduleEntriesVisible?`<button class="btn btn-sm btn-outline-secondary" onclick="printDocument({sourceId:'scheduleEntryList',type:'entry-list',title:'Ders Kayıtları',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button>`:''}</div>`;
+  const headerAside=f.mode==='free'?'<span class="small text-muted">Dinamik hesap</span>':(entryControls||`<span class="small text-muted">${visibleHourCount} ders saati</span>`);
   getEl('scheduleContent').innerHTML=`<div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-table me-2"></i>${scheduleTitle()}</h3>${headerAside}</div><div class="card-body">${buildScheduleHealthPanel()}${body}${isListMode||!scheduleEntriesVisible?'':buildScheduleEntryList()}</div></div>`;
 }
 
@@ -189,7 +190,7 @@ function buildClassProgramList(){
     key:`report-class-${cls}-${days.join('-')}-${hours.join('-')}-${f.teacherId||'all'}`,
     title:`${cls} Haftalık Program`,
     icon:'fas fa-users',
-    meta:`${days.length} gün · ${hours.length} ders`,
+    meta:`${uniqueScheduleHourCount(DB.schedules.filter(s=>s.className===cls&&days.includes(s.day)&&hours.includes(Number(s.hour))&&(!f.teacherId||s.teacherId===f.teacherId)),'class')} ders saati`,
     content:buildReportClassProgramBoard(cls,days,hours,f.teacherId),
     open:classes.length===1||i===0
   })).join('')}</div>`;
@@ -208,7 +209,7 @@ function buildTeacherProgramList(){
       key:`report-teacher-prog-${t.id}-${days.join('-')}-${hours.join('-')}`,
       title:teacherName(t),
       icon:'fas fa-user-tie',
-      meta:t.branch||'',
+      meta:`${uniqueScheduleHourCount(lessons,'teacher')} saat · ${t.branch||''}`,
       content:buildReportTeacherProgramBoard(t,days,hours),
       open:i===0
     });
@@ -256,65 +257,52 @@ function buildTeacherSheet(){
       const dayCells=[];
       for(let i=0;i<hours.length;i++){
         const h=hours[i];
-        const s=DB.schedules.find(x=>x.teacherId===t.id&&x.day===d&&Number(x.hour)===h&&(!f.className||x.className===f.className));
+        const slot=DB.schedules.filter(x=>x.teacherId===t.id&&x.day===d&&Number(x.hour)===h&&(!f.className||x.className===f.className));
         let span=1;
-        if(s){
-          const sig=teacherSheetSignature(s);
+        if(slot.length){
+          const sig=scheduleSlotSignature(slot);
           for(let j=i+1;j<hours.length;j++){
             if(hours[j]!==hours[j-1]+1) break;
-            const next=DB.schedules.find(x=>x.teacherId===t.id&&x.day===d&&Number(x.hour)===hours[j]&&(!f.className||x.className===f.className));
-            if(!next || teacherSheetSignature(next)!==sig) break;
+            const next=DB.schedules.filter(x=>x.teacherId===t.id&&x.day===d&&Number(x.hour)===hours[j]&&(!f.className||x.className===f.className));
+            if(scheduleSlotSignature(next)!==sig) break;
             span++;
           }
         }
         const duty=t.dutyDay===d?' duty-sheet':'';
-        const content=s?`<strong>${escapeHtml(s.className)}</strong><span>${escapeHtml(sheetSubjectCode(s.subject))}</span>`:'—';
-        dayCells.push(`<td colspan="${span}" class="${s?'sheet-filled sheet-cell-content':'sheet-empty'}${duty}" title="${escapeHtml(s?`${s.subject} ${s.className}`:(t.dutyDay===d?'Nöbet günü':''))}">${content}</td>`);
+        const classes=[...new Set(slot.map(s=>s.className))].join('/');
+        const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
+        const title=slot.map(s=>`${s.subject} ${s.className}`).join(' | ') || (t.dutyDay===d?'Nöbet günü':'');
+        const content=slot.length?`<strong>${escapeHtml(classes)}</strong><span>${escapeHtml(subjects)}</span>`:'—';
+        dayCells.push(`<td colspan="${span}" class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}${duty}" title="${escapeHtml(title)}">${content}</td>`);
         i+=span-1;
       }
       return dayCells.join('');
     }).join('');
-    return `<tr><th class="sheet-name" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}"><strong class="sheet-teacher-code">${escapeHtml(compactTeacherCode(t))}</strong></th>${cells}</tr>`;
+    return `<tr><th class="sheet-name" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}"><strong class="sheet-teacher-code">${escapeHtml(sheetTeacherCode(t))}</strong></th>${cells}</tr>`;
   }).join('');
   const cellCount=days.length*hours.length;
-  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet teacher-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Öğretmen</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet teacher-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Öğr.</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function buildClassSheet(){
   const f=scheduleFilters();
   const classes=filteredClassList(f);
   const days=visibleScheduleDays(f), hours=visibleScheduleHours(f);
-  const head=days.map(d=>`<th colspan="${hours.length}">${d}</th>`).join('');
-  const sub=days.map(()=>hours.map(h=>`<th>${h}</th>`).join('')).join('');
-  const rows=classes.map(cls=>{
-    const cells=days.map(d=>{
-      const dayCells=[];
-      for(let i=0;i<hours.length;i++){
-        const h=hours[i];
-        const slot=DB.schedules.filter(x=>x.className===cls&&x.day===d&&Number(x.hour)===h&&(!f.teacherId||x.teacherId===f.teacherId));
-        let span=1;
-        if(slot.length){
-          const sig=scheduleSlotSignature(slot);
-          for(let j=i+1;j<hours.length;j++){
-            if(hours[j]!==hours[j-1]+1) break;
-            const next=DB.schedules.filter(x=>x.className===cls&&x.day===d&&Number(x.hour)===hours[j]&&(!f.teacherId||x.teacherId===f.teacherId));
-            if(scheduleSlotSignature(next)!==sig) break;
-            span++;
-          }
-        }
-      const names=[...new Set(slot.map(s=>compactTeacherCode(teacherById(s.teacherId))))].join(', ');
+  const head=classes.map(cls=>`<th class="sheet-class-head">${escapeHtml(cls)}</th>`).join('');
+  const rows=days.map(day=>hours.map(hour=>{
+    const time=lessonTimeRange(hour);
+    const cells=classes.map(cls=>{
+      const slot=DB.schedules.filter(x=>x.className===cls&&x.day===day&&Number(x.hour)===hour&&(!f.teacherId||x.teacherId===f.teacherId));
+      const names=[...new Set(slot.map(s=>sheetTeacherCode(teacherById(s.teacherId))))].join('/');
       const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
       const title=slot.map(s=>`${s.subject} · ${teacherName(teacherById(s.teacherId))}`).join(' | ');
-        const hasDuty=slot.some(s=>teacherById(s.teacherId)?.dutyDay===d);
-        dayCells.push(`<td colspan="${span}" class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}${hasDuty?' duty-sheet':''}" title="${escapeHtml(title)}">${slot.length?`${escapeHtml(subjects)}<br><small>${escapeHtml(names)}</small>`:'—'}</td>`);
-        i+=span-1;
-      }
-      return dayCells.join('');
+      const hasDuty=slot.some(s=>teacherById(s.teacherId)?.dutyDay===day);
+      return `<td class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}${hasDuty?' duty-sheet':''}" title="${escapeHtml(title)}">${slot.length?`<strong>${escapeHtml(subjects)}</strong><span>${escapeHtml(names)}</span>`:'—'}</td>`;
     }).join('');
-    return `<tr><th class="sheet-name">${cls}</th>${cells}</tr>`;
-  }).join('');
-  const cellCount=days.length*hours.length;
-  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet class-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Sınıf</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<tr><th class="sheet-day-cell">${escapeHtml(day)}</th><th class="sheet-hour-cell">${escapeHtml(`${hour}.`)}${time?`<small>${escapeHtml(time)}</small>`:''}</th>${cells}</tr>`;
+  }).join('')).join('');
+  const cellCount=classes.length;
+  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet class-sheet class-sheet-transposed" data-cell-count="${cellCount}"><thead><tr><th class="sheet-day-cell">Gün</th><th class="sheet-hour-cell">Saat</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function scheduleSlotSignature(slot){
@@ -358,9 +346,9 @@ function buildFreeTimeReport(){
   const summary=(f.day||f.hour)?buildFreeQuerySummary(teachers,days,hours,f):buildFreeDayOverview(teachers);
   const rows=teachers.map(t=>{
     const free=[];
-    days.forEach(d=>hours.forEach(h=>{ if(isTeacherFreeAt(t.id,d,h)) free.push(`${d} ${lessonHourLabel(h)}`); }));
+    days.forEach(d=>hours.forEach(h=>{ if(isTeacherFreeAt(t.id,d,h)) free.push({day:d,hour:h}); }));
     const freeDayLabel=days.filter(d=>schoolHours().every(h=>isTeacherFreeAt(t.id,d,h))).join(', ');
-    return `<tr><td><strong>${teacherLink(t)}</strong><br><small>${escapeHtml(t.branch||'')}</small></td><td>${escapeHtml(t.freeDay||'—')}</td><td>${escapeHtml(freeDayLabel||'—')}</td><td>${free.length}</td><td>${free.slice(0,24).map(x=>`<span class="soft-chip">${escapeHtml(x)}</span>`).join('')}${free.length>24?`<span class="text-muted"> +${free.length-24}</span>`:''}</td></tr>`;
+    return `<tr><td><strong>${teacherLink(t)}</strong><br><small>${escapeHtml(t.branch||'')}</small></td><td>${escapeHtml(freeDayLabel||'—')}</td><td>${free.length}</td><td>${formatFreeSlotsByDayHtml(free)}</td></tr>`;
   }).join('');
   const busyAtHour=(f.day&&f.hour)?buildBusyDayFreeHourSection(teachers,f.day,Number(f.hour)):'';
   return `${summary}${busyAtHour}${disclosureSection({
@@ -368,7 +356,7 @@ function buildFreeTimeReport(){
     title:'Ayrıntılı Boş Saat Tablosu',
     icon:'fas fa-table',
     meta:`${teachers.length} öğretmen`,
-    content:`<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Öğretmen</th><th>Kayıtlı Boş Gün</th><th>Programda Boş Gün</th><th>Boş Saat</th><th>Uygun Saatler</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    content:`<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Öğretmen</th><th>Boş Gün</th><th>Boş Saat</th><th>Uygun Saatler</th></tr></thead><tbody>${rows}</tbody></table></div>`
   })}`;
 }
 
@@ -385,13 +373,36 @@ function buildFreeDayOverview(teachers){
     const chips=free.map(t=>`<span class="soft-chip">${teacherLink(t)}</span>`).join('');
     return `<div class="free-day-summary"><strong>${escapeHtml(day)}</strong><span>${free.length} öğretmen</span><div class="chip-wrap">${chips||'<span class="text-muted">Tam boş günü olan yok.</span>'}</div></div>`;
   }).join('');
-  return `<div class="free-report-block"><div class="section-title-row"><h4><i class="fas fa-calendar-minus me-2"></i>Programda Tam Boş Günler</h4><span class="small text-muted">Pazartesi-Cuma</span></div><p class="free-report-note">Aşağıdaki özet, ders programında o gün hiç dersi görünmeyen öğretmenleri gösterir. Belirli gün veya ders saati seçersen uygun öğretmenler ayrı listelenir.</p><div class="free-day-overview">${cards}</div></div>`;
+  return `<div class="free-report-block"><div class="section-title-row"><h4><i class="fas fa-calendar-minus me-2"></i>Boş Günler</h4><span class="small text-muted">Pazartesi-Cuma</span></div><p class="free-report-note">Ders programına göre o gün hiç dersi olmayan öğretmenleri gösterir. Belirli gün veya ders saati seçersen uygun öğretmenler ayrı listelenir.</p><div class="free-day-overview">${cards}</div></div>`;
 }
 
 function freeSlotLabelForTeacher(teacherId,days,hours){
   const slots=[];
-  days.forEach(day=>hours.forEach(hour=>{ if(isTeacherFreeAt(teacherId,day,hour)) slots.push(`${day} ${lessonHourLabel(hour)}`); }));
-  return slots.slice(0,10).join(', ') + (slots.length>10?` +${slots.length-10}`:'');
+  days.forEach(day=>hours.forEach(hour=>{ if(isTeacherFreeAt(teacherId,day,hour)) slots.push({day,hour}); }));
+  return formatFreeSlotsByDayText(slots, 3);
+}
+
+function groupFreeSlotsByDay(slots){
+  const map=new Map();
+  (slots||[]).forEach(slot=>{
+    if(!map.has(slot.day)) map.set(slot.day,[]);
+    map.get(slot.day).push(Number(slot.hour));
+  });
+  return [...map.entries()].sort((a,b)=>dayOrder(a[0])-dayOrder(b[0])).map(([day,hours])=>({day,hours:[...new Set(hours)].sort((a,b)=>a-b)}));
+}
+
+function formatFreeSlotsByDayText(slots, limitDays=0){
+  const groups=groupFreeSlotsByDay(slots);
+  const visible=limitDays ? groups.slice(0,limitDays) : groups;
+  const text=visible.map(g=>`${g.day}: ${compactHourList(g.hours)}`).join('; ');
+  return text + (limitDays && groups.length>limitDays ? ` +${groups.length-limitDays} gün` : '') || '—';
+}
+
+function formatFreeSlotsByDayHtml(slots){
+  const groups=groupFreeSlotsByDay(slots);
+  return groups.length
+    ? groups.map(g=>`<div class="free-hours-row"><strong>${escapeHtml(g.day)}:</strong> ${escapeHtml(compactHourList(g.hours))}</div>`).join('')
+    : '—';
 }
 
 function buildBusyDayFreeHourSection(teachers,day,hour){
@@ -448,7 +459,7 @@ function scheduleConflicts(){
     byTeacher.get(teacherKey).push(s);
     byClass.get(classKey).push(s);
   });
-  const teacher=[...byTeacher.values()].filter(items=>items.length>1);
+  const teacher=[...byTeacher.values()].filter(items=>items.length>1&&!isAllowedSharedTeacherSlot(items));
   const classes=[...byClass.values()].filter(items=>items.length>1&&!isAllowedSharedClassSlot(items));
   return {teacher,classes};
 }
@@ -460,6 +471,12 @@ function isAllowedSharedClassSlot(items){
   return pairs.some(pair=>
     subjects.includes(plainKey(pair[0])) && subjects.includes(plainKey(pair[1]))
   );
+}
+
+function isAllowedSharedTeacherSlot(items){
+  if(!items || items.length<2) return false;
+  const classNames=new Set(items.map(s=>s.className));
+  return classNames.size===1 && isAllowedSharedClassSlot(items);
 }
 
 function buildScheduleHealthPanel(){
@@ -495,8 +512,12 @@ function sheetSubjectCode(subject){
 function sheetTeacherCode(t){
   if(!t) return '—';
   const parts=teacherNameParts(t);
-  const initials=parts.first.split(/\s+/).filter(Boolean).map(w=>upperNamePart(w.slice(0,1))+'.').join('');
-  return `${initials}${parts.last}`.trim();
+  const firstCode=parts.first.split(/\s+/).filter(Boolean).map(w=>upperNamePart(w).slice(0,1)).join('');
+  const lastWords=parts.last.split(/\s+/).filter(Boolean);
+  const lastCode=lastWords.length>1
+    ? lastWords.map(w=>upperNamePart(w).slice(0,1)).join('')
+    : (lastWords[0] ? upperNamePart(lastWords[0]).slice(0,3) : '');
+  return `${firstCode}${lastCode}`.replace(/\s+/g,'').trim() || compactTeacherCode(t);
 }
 
 function shortTeacherName(t){

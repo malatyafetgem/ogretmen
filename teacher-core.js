@@ -46,6 +46,10 @@ const SUBJECT_CATALOG = [
   ['Türk Dili ve Edebiyatı','TDE'],
   ['Yabancı Dil','İNG']
 ].map(([name,code])=>({name,code,key:plainKey(name)}));
+const DEFAULT_SHARED_LESSON_PAIRS = [
+  ['Görsel Sanatlar','Müzik'],
+  ['S. Klasik Ahlak Metinleri','S. Türk Sosyal Hayatında Aile']
+];
 const SUBJECT_ALIASES = new Map();
 SUBJECT_CATALOG.forEach(s=>SUBJECT_ALIASES.set(s.key,s));
 [
@@ -85,7 +89,7 @@ let APP_STARTED = false;
 
 let DB = loadDB();
 
-function makeEmptyDB(){ return { teachers: [], schedules: [], tasks: [], meta: {}, settings: { classes: [...CLASS_LIST], days: DAY_NAMES, hours: HOURS, lessonTimes: LESSON_TIMES } }; }
+function makeEmptyDB(){ return { teachers: [], schedules: [], tasks: [], meta: {}, settings: { classes: [...CLASS_LIST], days: DAY_NAMES, hours: HOURS, lessonTimes: LESSON_TIMES, sharedLessonPairs: DEFAULT_SHARED_LESSON_PAIRS } }; }
 // Seed fonksiyonları kaldırıldı — veriler yalnızca Firebase'den gelir
 function hasSeedTeachers(){ return false; }
 function cloneSeedTeachers(){ return []; }
@@ -104,6 +108,7 @@ function normalizeDB(d){
   d.settings.lessonTimes=normalizeLessonTimes(d.settings.lessonTimes, d.settings.hours);
   d.settings.subjects=normalizeSubjectSettings(d.settings.subjects);
   SUBJECT_SETTINGS_RUNTIME=d.settings.subjects.map(s=>({...s,key:plainKey(s.name)}));
+  d.settings.sharedLessonPairs=normalizeSharedLessonPairs(d.settings.sharedLessonPairs);
   d.teachers=sortedTeachers((Array.isArray(d.teachers)?d.teachers:[]).map(normalizeTeacherRecord));
   // teacherId migration: eski kayıtlarda teacherId ham TC olabilir → hash'e çevir
   const teacherIdMap=new Map();
@@ -171,6 +176,20 @@ function normalizeSubjectSettings(subjects){
     list.push({name,code});
   });
   return list.length ? list : SUBJECT_CATALOG.map(s=>({name:s.name,code:s.code}));
+}
+function normalizeSharedLessonPairs(pairs){
+  const list=[], seen=new Set();
+  [...DEFAULT_SHARED_LESSON_PAIRS, ...(Array.isArray(pairs)?pairs:[])].forEach(pair=>{
+    if(!Array.isArray(pair)||pair.length<2) return;
+    const a=subjectInfo(pair[0])?.name || migrateSubjectName(String(pair[0]||'').replace(/\s+/g,' ').trim());
+    const b=subjectInfo(pair[1])?.name || migrateSubjectName(String(pair[1]||'').replace(/\s+/g,' ').trim());
+    if(!a||!b||plainKey(a)===plainKey(b)) return;
+    const key=[plainKey(a),plainKey(b)].sort().join('__');
+    if(seen.has(key)) return;
+    seen.add(key);
+    list.push([a,b]);
+  });
+  return list;
 }
 function subjectSettings(){ return SUBJECT_SETTINGS_RUNTIME.map(s=>({name:s.name,code:s.code,key:s.key||plainKey(s.name)})); }
 function schoolDays(){ return normalizeDaySettings(DB?.settings?.days); }
@@ -298,6 +317,46 @@ function compactTeacherCode(t){
   const first=parts.first.split(/\s+/).filter(Boolean).map(w=>upperNamePart(w.slice(0,1))+'.').join('');
   const last=parts.last.split(/\s+/).filter(Boolean).map(w=>upperNamePart(w).slice(0,3)).join(' ');
   return `${first}${last}`.trim() || teacherName(t);
+}
+function sheetTeacherCode(t){
+  if(!t) return '—';
+  const parts=teacherNameParts(t);
+  const firstCode=parts.first.split(/\s+/).filter(Boolean).map(w=>upperNamePart(w).slice(0,1)).join('');
+  const lastWords=parts.last.split(/\s+/).filter(Boolean);
+  const lastCode=lastWords.length>1
+    ? lastWords.map(w=>upperNamePart(w).slice(0,1)).join('')
+    : (lastWords[0] ? upperNamePart(lastWords[0]).slice(0,3) : '');
+  return `${firstCode}${lastCode}`.replace(/\s+/g,'').trim() || compactTeacherCode(t);
+}
+function uniqueScheduleHourKey(s, scope='teacher'){
+  const base=`${s.day||''}__${Number(s.hour)||''}`;
+  if(scope==='class') return `${s.className||''}__${base}`;
+  if(scope==='teacher') return `${s.teacherId||''}__${base}`;
+  return base;
+}
+function uniqueScheduleHourCount(items, scope='teacher'){
+  return new Set((items||[]).map(s=>uniqueScheduleHourKey(s, scope))).size;
+}
+function compactHourList(hours){
+  const values=[...new Set((hours||[]).map(Number).filter(Boolean))].sort((a,b)=>a-b);
+  if(!values.length) return '—';
+  const prefix=values.slice(0,-1).join(', ');
+  return `${prefix}${prefix?', ':''}${values.at(-1)}. Saat${values.length>1?'ler':''}`;
+}
+function mergeSameHourLessons(items, scope='teacher'){
+  const map=new Map();
+  (items||[]).forEach(s=>{
+    const key=uniqueScheduleHourKey(s, scope);
+    const item=map.get(key);
+    if(item){
+      item.subjects.push(s.subject);
+      item.notes.push(s.note||'');
+      item.records.push(s);
+    } else {
+      map.set(key,{...s,subjects:[s.subject],notes:[s.note||''],records:[s]});
+    }
+  });
+  return [...map.values()];
 }
 function normalizeBranchName(value){
   const text=String(value||'').replace(/\s+/g,' ').trim();

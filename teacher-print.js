@@ -520,6 +520,9 @@ h3,h4               { break-after:avoid; page-break-after:avoid; }
 
 /* ── soft-chip genel ── */
 .soft-chip { display:inline-block; border:1px solid #94a3b8; border-radius:3px; padding:0 2mm; font-size:8pt; margin:1px; }
+.free-hours-line,.free-hours-row { display:block; font-size:7.5pt; line-height:1.25; }
+.free-hours-row + .free-hours-row { margin-top:.7mm; }
+.free-hours-row strong { font-weight:800; }
 
 /* ── section-title-row ── */
 .section-title-row {
@@ -563,7 +566,8 @@ function buildSheetPrintCss(type, root, opts) {
   const sheetTable     = root ? root.querySelector('.schedule-sheet') : null;
   const cellCount      = sheetTable ? Number(sheetTable.dataset.cellCount || 0) : 0;
   const isTeacherSheet = root ? !!root.querySelector('.teacher-sheet') : (type === 'teacher-sheet');
-  const nameColW       = isTeacherSheet ? '22mm' : '15mm';
+  const isClassTransposed = root ? !!root.querySelector('.class-sheet-transposed') : false;
+  const nameColW       = isTeacherSheet ? '12mm' : (isClassTransposed ? '22mm' : '15mm');
   const cellW          = cellCount > 0
     ? `calc((100% - ${nameColW}) / ${cellCount})`
     : `calc((100% - ${nameColW}) / 40)`;
@@ -604,19 +608,33 @@ function buildSheetPrintCss(type, root, opts) {
   overflow-wrap:anywhere; word-break:normal;
 }
 .sheet-print .teacher-sheet .sheet-name .sheet-teacher-code {
-  display:block; max-width:100%; white-space:normal; overflow:hidden; text-overflow:clip;
+  display:block; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:clip;
 }
 .sheet-print .teacher-sheet .sheet-name .sheet-teacher-code {
-  font-size:4.25pt; line-height:1.05; font-weight:800;
+  font-size:4.1pt; line-height:1.05; font-weight:800;
 }
 .sheet-print .class-sheet .sheet-name {
   width:${nameColW}!important; min-width:${nameColW}!important; max-width:${nameColW}!important;
   text-align:center;
 }
+.sheet-print .class-sheet-transposed .sheet-day-cell {
+  width:13mm!important; min-width:13mm!important; max-width:13mm!important;
+  text-align:left!important; font-weight:800;
+}
+.sheet-print .class-sheet-transposed .sheet-hour-cell {
+  width:9mm!important; min-width:9mm!important; max-width:9mm!important;
+  text-align:center!important; font-weight:800;
+}
+.sheet-print .class-sheet-transposed .sheet-hour-cell small {
+  display:block; margin:0; font-size:3.9pt; line-height:1.05; color:#334155;
+}
 .sheet-print .teacher-sheet td,
 .sheet-print .teacher-sheet thead tr:nth-child(2) th { width:${cellW}; }
 .sheet-print .class-sheet td,
 .sheet-print .class-sheet thead tr:nth-child(2) th   { width:${cellW}; }
+.sheet-print .class-sheet-transposed .sheet-class-head,
+.sheet-print .class-sheet-transposed td.sheet-filled,
+.sheet-print .class-sheet-transposed td.sheet-empty { width:${cellW}; }
 .sheet-print .schedule-sheet th,
 .sheet-print .schedule-sheet td { border:0.4pt solid #64748b!important; }
 .sheet-print .schedule-sheet .sheet-name { border-right:1.5pt solid #334155!important; }

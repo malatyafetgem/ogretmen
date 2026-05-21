@@ -674,6 +674,24 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   min-width:140px; text-align:left;
 }
 .schedule-sheet .sheet-name small { display:block; color:var(--c-muted); font-weight:500; }
+.schedule-sheet .sheet-day-cell,
+.schedule-sheet .sheet-hour-cell {
+  background:var(--c-surface) !important;
+  font-weight:800;
+  text-align:center;
+}
+.class-sheet-transposed .sheet-day-cell {
+  min-width:92px; text-align:left;
+}
+.class-sheet-transposed .sheet-hour-cell {
+  min-width:70px;
+}
+.class-sheet-transposed .sheet-hour-cell small {
+  display:block;
+  color:var(--c-muted);
+  font-size:.64rem;
+  line-height:1.05;
+}
 
 .sheet-filled {
   background:#fff !important; text-align:center; min-width:56px;
@@ -861,6 +879,9 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .free-slot-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
 .free-day { border:var(--border-ink); border-radius:var(--r); background:var(--c-surface); padding:10px; }
 .free-day strong { display:block; margin-bottom:6px; font-size:.83rem; font-weight:800; }
+.free-hours-line { display:block; color:var(--c-ink-2); font-size:.82rem; line-height:1.25; }
+.free-hours-row + .free-hours-row { margin-top:2px; }
+.free-hours-row strong { font-weight:800; }
 .free-report-block { border:var(--border-ink); border-left:4px solid var(--c-green); border-radius:var(--r); background:#f9fafb; padding:14px 16px; }
 .free-report-block + .free-report-block { margin-top:14px; }
 .free-report-note { margin:0 0 10px; color:var(--c-muted); font-size:.85rem; }
@@ -1197,6 +1218,8 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .free-slot-grid    { display:flex; flex-wrap:wrap; gap:2mm; }
   .free-report-note  { font-size:8pt; color:#475569; margin-bottom:3mm; }
   .soft-chip { display:inline-block; border:1px solid #cbd5e1; border-radius:3px; padding:0 2mm; font-size:8pt; margin:1px; }
+  .free-hours-line,.free-hours-row { display:block; font-size:7.5pt; line-height:1.25; }
+  .free-hours-row + .free-hours-row { margin-top:.7mm; }
 
   /* ── Nöbet çizelgesi ── */
   .duty-matrix { width:100%; border-collapse:collapse; }
@@ -1260,8 +1283,11 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .sheet-cell-content strong { font-size:4.25pt; font-weight:800; }
   .sheet-cell-content span { font-size:3.95pt; font-weight:700; margin-top:.15mm; }
   .sheet-name { text-align:left; }
-  .teacher-sheet .sheet-name { width:22mm; min-width:22mm; max-width:22mm; white-space:normal; overflow:hidden; overflow-wrap:anywhere; line-height:1.05; }
-  .teacher-sheet .sheet-name .sheet-teacher-code { display:block; max-width:100%; white-space:normal; overflow:hidden; font-size:4.25pt; line-height:1.05; font-weight:800; }
+  .teacher-sheet .sheet-name { width:12mm; min-width:12mm; max-width:12mm; white-space:normal; overflow:hidden; overflow-wrap:anywhere; line-height:1.05; }
+  .teacher-sheet .sheet-name .sheet-teacher-code { display:block; max-width:100%; white-space:nowrap; overflow:hidden; font-size:4.25pt; line-height:1.05; font-weight:800; }
+  .class-sheet-transposed .sheet-day-cell { width:13mm; min-width:13mm; max-width:13mm; text-align:left !important; font-size:4.4pt; }
+  .class-sheet-transposed .sheet-hour-cell { width:9mm; min-width:9mm; max-width:9mm; text-align:center !important; font-size:4.1pt; }
+  .class-sheet-transposed .sheet-hour-cell small { display:block; margin:0; font-size:3.7pt; line-height:1.05; color:#334155; }
   .class-sheet tbody small { font-size:4.45pt; }
   .sheet-filled,.sheet-empty { min-width:0 !important; }
   .duty-sheet { box-shadow:inset 0 0 0 .6pt #d97706; }

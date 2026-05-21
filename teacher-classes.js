@@ -33,7 +33,7 @@ function renderClasses(){
   const advisorHtml=advisor?` <span style="font-weight:normal;font-size:0.7em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">(${escapeHtml(teacherName(advisor))})</span>`:'';
   getEl('classProfileContent').innerHTML=cls?`<div class="card obs-panel profile-card"><div class="card-header profile-header"><div><h3 class="card-title"><i class="fas fa-users me-2"></i>${escapeHtml(cls)}${advisorHtml}</h3></div></div><div class="card-body profile-disclosures">
     ${isWeekly?'':disclosureSection({key:`class-${cls}-daily-${day}`,title:`${day} Programı`,icon:'fas fa-calendar-day',meta:cls,content:buildClassDailySchedule(cls,day),open:true})}
-    ${disclosureSection({key:`class-${cls}-weekly`,title:'Haftalık Program',icon:'fas fa-calendar-week',meta:`${items.length} ders kaydı`,content:buildClassWeeklySchedule(cls),open:isWeekly})}
+    ${disclosureSection({key:`class-${cls}-weekly`,title:'Haftalık Program',icon:'fas fa-calendar-week',meta:`${uniqueScheduleHourCount(items,'class')} ders saati`,content:buildClassWeeklySchedule(cls),open:isWeekly})}
     ${disclosureSection({key:`class-${cls}-subjects`,title:'Ders Dağılımı',icon:'fas fa-book-open',meta:`${classSubjectSummary(cls).length} ders`,content:buildClassSubjectTable(cls)})}
   </div></div>`:emptyState('Sınıf seçiniz.');
 }
@@ -108,11 +108,14 @@ function classDailySlotHtml(slots){
 
 function classSubjectSummary(className){
   const map=new Map();
-  classScheduleItems(className).forEach(s=>{
-    const key=plainKey(s.subject), item=map.get(key)||{subject:s.subject,code:subjectCode(s.subject),hours:0,teachers:new Map()};
+  mergeSameHourLessons(classScheduleItems(className),'class').forEach(s=>{
+    const subjectLabel=[...new Set((s.subjects||[s.subject]).map(displaySubjectName))].join(' / ');
+    const key=plainKey(subjectLabel), item=map.get(key)||{subject:subjectLabel,code:subjectCode(subjectLabel),hours:0,teachers:new Map()};
     item.hours++;
-    const t=teacherById(s.teacherId);
-    if(t) item.teachers.set(t.id,t);
+    (s.records||[s]).forEach(record=>{
+      const t=teacherById(record.teacherId);
+      if(t) item.teachers.set(t.id,t);
+    });
     map.set(key,item);
   });
   return [...map.values()].sort((a,b)=>a.subject.localeCompare(b.subject,'tr'));
