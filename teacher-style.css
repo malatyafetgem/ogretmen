@@ -1110,6 +1110,74 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .settings-group-head { margin:0 0 14px; }
 .settings-group-head h3 { font-size:1rem; font-weight:800; letter-spacing:-.02em; margin:0; }
 .settings-group-head p  { margin:3px 0 0; color:var(--c-muted); font-size:.85rem; }
+.settings-editor {
+  border:1px solid #e5e7eb;
+  border-radius:var(--r);
+  background:var(--c-surface);
+  overflow:hidden;
+}
+.settings-editor-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  padding:10px 12px;
+  border-bottom:var(--border-ink);
+  background:#fff;
+}
+.settings-editor-toolbar .btn {
+  min-width:118px;
+}
+.settings-editor-body {
+  padding:13px 14px 14px;
+}
+.settings-filter-row {
+  display:grid;
+  grid-template-columns:minmax(170px, 240px) minmax(0, 1fr);
+  gap:14px;
+  align-items:end;
+}
+.settings-split-grid {
+  display:grid;
+  grid-template-columns:minmax(240px, .7fr) minmax(360px, 1.3fr);
+  gap:14px;
+}
+.settings-subtitle {
+  margin:0 0 7px;
+  font-size:.78rem;
+  font-weight:800;
+  color:var(--c-muted);
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.settings-table-scroll {
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:visible;
+  border:1px solid #e5e7eb;
+  border-radius:var(--r-sm);
+  background:var(--c-surface);
+  -webkit-overflow-scrolling:touch;
+}
+.settings-table-scroll[data-scroll-hint]::before {
+  content:attr(data-scroll-hint);
+  display:none;
+  position:sticky;
+  left:0;
+  padding:6px 9px;
+  font-size:.72rem;
+  color:var(--c-muted);
+  border-bottom:1px solid #e5e7eb;
+  background:#fff;
+  z-index:4;
+}
+.settings-table-scroll .table {
+  width:max-content;
+  min-width:100%;
+}
+.settings-table-scroll .table > :not(caption) > * > * {
+  background-clip:padding-box;
+}
 .settings-matrix th, .settings-matrix td { vertical-align:middle; min-width:150px; }
 .settings-matrix .place-cell { min-width:170px; }
 .settings-matrix select, .settings-matrix input { min-width:150px; }
@@ -1120,6 +1188,8 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .class-program-settings-table .class-program-slot { min-width:150px; }
 .class-program-cell { display:grid; grid-template-columns:1fr; gap:4px; }
 .class-program-cell .class-program-subject { font-size:.77rem; }
+.shared-lessons-table th:nth-child(2),
+.shared-lessons-table td:nth-child(2) { min-width:36px; width:36px; }
 
 /* ─── 34. YARDIMCI ─── */
 .schedule-entry-list { border-top:var(--border-ink); padding-top:14px; }
@@ -1447,12 +1517,39 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .class-program-board th, .class-program-board td,
   .teacher-program-board th, .teacher-program-board td { padding:5px 4px !important; min-width:62px; }
   .duty-matrix th, .duty-matrix td { min-width:130px; }
-  .settings-matrix th, .settings-matrix td { min-width:120px; font-size:.82rem; }
-.settings-matrix select, .settings-matrix input { min-width:110px; }
-.class-program-settings-table th:not(:first-child),
-.class-program-settings-table .class-program-slot { min-width:150px; }
-.class-program-cell { display:grid; grid-template-columns:1fr; gap:4px; }
-.class-program-cell .class-program-subject { font-size:.77rem; }
+  .settings-editor-toolbar {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .settings-editor-toolbar .btn { min-width:0; width:100%; }
+  .settings-editor-body { padding:12px; }
+  .settings-filter-row,
+  .settings-split-grid {
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .settings-table-scroll {
+    margin-left:0;
+    margin-right:0;
+  }
+  .settings-table-scroll[data-scroll-hint]::before {
+    display:block;
+  }
+  .settings-matrix th, .settings-matrix td {
+    min-width:132px;
+    font-size:.78rem;
+    padding:8px 10px !important;
+  }
+  .settings-matrix .place-cell { min-width:144px; }
+  .settings-matrix select, .settings-matrix input { min-width:124px; }
+  .class-program-settings-table th:first-child,
+  .class-program-settings-table td:first-child { min-width:88px; }
+  .class-program-settings-table th:not(:first-child),
+  .class-program-settings-table .class-program-slot { min-width:210px; }
+  .class-program-cell { display:grid; grid-template-columns:1fr; gap:5px; }
+  .class-program-cell .form-select { font-size:.78rem; }
+  .class-program-cell .class-program-subject { font-size:.75rem; }
 }
 
 @media (max-width:575px) {
