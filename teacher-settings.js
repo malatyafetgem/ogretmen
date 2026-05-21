@@ -171,16 +171,53 @@ function buildClassProgramSettings(dayValue){
   const days=schoolDays(), hours=schoolHours();
   const dayOptions=days.map(d=>`<option value="${escapeHtml(d)}" ${d===dayValue?'selected':''}>${escapeHtml(d)}</option>`).join('');
   const rows=(DB.settings.classes||CLASS_LIST).map((cls,i)=>classProgramRow(cls,cls,dayValue,i)).join('');
-  return `<div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-calendar-days me-2"></i>Ders Programı Hızlı Düzenleme</h3><div class="page-actions no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div></div><div class="card-body"><div class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><div class="col-md-9"><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Sütunlar ders saatlerini, satırlar sınıfları gösterir. Öğretmen listesi alfabetiktir; kaydedince ders adı öğretmenin branşından alınır.</p></div></div><div class="table-responsive mt-3"><table class="table settings-matrix mb-0"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th>${h}. Ders<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
+  return `<div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-calendar-days me-2"></i>Ders Programı Hızlı Düzenleme</h3><div class="page-actions no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div></div><div class="card-body"><div class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><div class="col-md-9"><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div></div><div class="table-responsive mt-3"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th>${h}. Ders<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
 }
 
 function classProgramRow(className,originalClass,day,index){
   const hours=schoolHours();
   const cells=hours.map(hour=>{
     const item=DB.schedules.find(s=>s.className===className&&s.day===day&&Number(s.hour)===Number(hour));
-    return `<td><select class="form-select form-select-sm class-program-teacher" data-hour="${hour}">${teacherSelectOptions(item?.teacherId||'', 'Boş')}</select></td>`;
+    return `<td class="class-program-slot"><div class="class-program-cell"><select class="form-select form-select-sm class-program-teacher" data-hour="${hour}" onchange="updateClassProgramSubjectSelect(this)">${teacherSelectOptions(item?.teacherId||'', 'Boş')}</select><select class="form-select form-select-sm class-program-subject" data-hour="${hour}" ${item?.teacherId?'':'disabled'}>${classProgramSubjectOptions(item?.teacherId||'', item?.subject||'')}</select></div></td>`;
   }).join('');
   return `<tr class="class-program-row" data-original-class="${escapeHtml(originalClass||'')}" data-row="${index}"><td class="place-cell"><input class="form-control form-control-sm class-name-input" value="${escapeHtml(className||'')}" placeholder="Örn: 9A"></td>${cells}<td class="no-print"><button class="btn btn-sm btn-outline-danger" onclick="removeSettingsRow(this)">Sil</button></td></tr>`;
+}
+
+function classProgramSubjectChoices(teacherId='', selectedSubject=''){
+  const t=teacherById(teacherId);
+  if(!t) return [];
+  const preferred=[
+    ...(Array.isArray(t.subjects)?t.subjects:[]),
+    ...DB.schedules.filter(s=>s.teacherId===teacherId).map(s=>s.subject),
+    t.branch
+  ].filter(Boolean).map(s=>normalizeSubjectName(s, teacherId));
+  const all=subjectSettings().map(s=>s.name).sort((a,b)=>a.localeCompare(b,'tr'));
+  const list=[], seen=new Set();
+  [...preferred, selectedSubject, ...all].filter(Boolean).forEach(subject=>{
+    const normalized=normalizeSubjectName(subject, teacherId);
+    const key=plainKey(normalized);
+    if(!key||seen.has(key)) return;
+    seen.add(key);
+    list.push(normalized);
+  });
+  return list;
+}
+
+function classProgramSubjectOptions(teacherId='', selectedSubject=''){
+  if(!teacherId) return '<option value="">Ders</option>';
+  const choices=classProgramSubjectChoices(teacherId, selectedSubject);
+  if(!choices.length) return '<option value="">Ders bulunamadı</option>';
+  const selectedKey=plainKey(selectedSubject||choices[0]);
+  return choices.map(subject=>`<option value="${escapeHtml(subject)}" ${plainKey(subject)===selectedKey?'selected':''}>${escapeHtml(subject)}</option>`).join('');
+}
+
+function updateClassProgramSubjectSelect(teacherSelect){
+  const cell=teacherSelect?.closest('.class-program-cell');
+  const subjectSelect=cell?.querySelector('.class-program-subject');
+  if(!subjectSelect) return;
+  const teacherId=teacherSelect.value||'';
+  subjectSelect.innerHTML=classProgramSubjectOptions(teacherId, subjectSelect.value||'');
+  subjectSelect.disabled=!teacherId;
 }
 
 function addClassProgramRow(){
@@ -211,13 +248,23 @@ function saveClassProgramMatrix(){
   for(const hour of schoolHours()){
     const used=new Map();
     for(const item of maps){
-      const teacherId=item.row.querySelector(`select[data-hour="${hour}"]`)?.value||'';
+      const teacherId=item.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`)?.value||'';
       if(!teacherId) continue;
       if(used.has(teacherId)){
         showToast(`${day} ${hour}. derste aynı öğretmen birden fazla sınıfa seçilmiş.`, 'warning', 6000);
         return;
       }
       used.set(teacherId,item.className);
+    }
+  }
+  for(const item of maps){
+    for(const hour of schoolHours()){
+      const teacherId=item.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`)?.value||'';
+      const subject=item.row.querySelector(`.class-program-subject[data-hour="${hour}"]`)?.value||'';
+      if(teacherId&&!subject){
+        showToast(`${item.className} ${hour}. derste ders seçilmemiş.`, 'warning', 5000);
+        return;
+      }
     }
   }
   maps.forEach(m=>{ if(m.oldName&&m.oldName!==m.className) DB.schedules.forEach(s=>{ if(s.className===m.oldName) s.className=m.className; }); });
@@ -227,12 +274,11 @@ function saveClassProgramMatrix(){
   DB.schedules=DB.schedules.filter(s=>!(allowed.has(s.className)&&s.day===day));
   maps.forEach(m=>{
     schoolHours().forEach(hour=>{
-      const teacherId=m.row.querySelector(`select[data-hour="${hour}"]`)?.value||'';
+      const teacherId=m.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`)?.value||'';
       if(!teacherId) return;
-      const t=teacherById(teacherId);
+      const subject=m.row.querySelector(`.class-program-subject[data-hour="${hour}"]`)?.value||'';
       const time=lessonTimeByHour(hour);
-      const subject=t?.subjects?.[0]||t?.branch||'Ders';
-      DB.schedules.push({id:uid('s'),teacherId,className:m.className,subject,day,hour,startTime:time?.start||'',endTime:time?.end||'',note:''});
+      DB.schedules.push({id:uid('s'),teacherId,className:m.className,subject:normalizeSubjectName(subject, teacherId),day,hour,startTime:time?.start||'',endTime:time?.end||'',note:''});
     });
   });
   DB.settings.classes=classNames;
