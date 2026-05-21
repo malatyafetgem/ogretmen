@@ -1,0 +1,1413 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* Academic Swiss Brutal tema katmani
+   Sadece gorsel ust katman: mimari, veri akisi ve JS davranisi degismez. */
+:root {
+  --c-ink: #111827;
+  --c-ink-2: #374151;
+  --c-muted: #6b7280;
+  --c-blue: #1a56db;
+  --c-orange: #f59e0b;
+  --c-green: #057a55;
+  --c-red: #e02424;
+  --c-bg: #f8fafc;
+  --c-surface: #ffffff;
+  --c-border: #d9e0ea;
+  --border-ink: 2px solid var(--c-ink);
+  --border-ink-thick: 2.5px solid var(--c-ink);
+  --border-light: 1px solid var(--c-border);
+  --r: 5px;
+  --shadow-brutal-sm: 3px 3px 0 rgba(17, 24, 39, .95);
+  --shadow-brutal-xs: 2px 2px 0 rgba(17, 24, 39, .95);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.88), rgba(248,250,252,.88)),
+    var(--c-bg);
+  color: var(--c-ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.app-content { padding-top: 24px; }
+.container-fluid { max-width: 1420px; }
+
+.card,
+.obs-panel,
+.login-card,
+.modal-content,
+.settings-editor,
+.teacher-selected-preview,
+.metric-card {
+  border: var(--border-ink-thick);
+  border-radius: var(--r);
+  background: var(--c-surface);
+}
+
+.obs-panel,
+.metric-card,
+.login-card,
+.settings-editor {
+  box-shadow: var(--shadow-brutal-sm) !important;
+}
+
+.card-header,
+.obs-panel > .card-header {
+  background: #fff;
+  border-bottom: var(--border-ink);
+  padding: 15px 17px;
+}
+
+.card-title,
+.page-title-row h2,
+.brand-text,
+.top-brand-title,
+.top-mobile-title,
+.disclosure-title,
+.settings-group-head h3 {
+  font-weight: 900;
+  letter-spacing: -.035em;
+}
+
+.page-title-row h2 {
+  font-size: 1.45rem;
+}
+
+.page-title-row p,
+.metric-sub,
+.disclosure-meta,
+.settings-group-head p {
+  color: var(--c-muted);
+  font-weight: 500;
+}
+
+.btn,
+.top-action-link,
+.version-pill,
+.prog-mode-btn,
+.teacher-action-btn,
+.dashboard-add-btn {
+  border: var(--border-ink);
+  border-radius: var(--r);
+  font-weight: 800;
+  letter-spacing: -.01em;
+  box-shadow: var(--shadow-brutal-xs);
+  transition: transform .08s ease, box-shadow .08s ease, background-color .12s ease, color .12s ease;
+}
+
+.btn:hover,
+.top-action-link:hover,
+.prog-mode-btn:hover,
+.teacher-action-btn:hover,
+.dashboard-add-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(17, 24, 39, .95);
+}
+
+.btn:active,
+.top-action-link:active,
+.prog-mode-btn:active,
+.teacher-action-btn:active,
+.dashboard-add-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(17, 24, 39, .95);
+}
+
+.btn-primary {
+  background: var(--c-blue);
+  border-color: var(--c-ink);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1648c0;
+  border-color: var(--c-ink);
+}
+
+.form-label {
+  color: var(--c-muted);
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  border: var(--border-ink);
+  border-radius: var(--r);
+  background: #fff;
+  font-weight: 600;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--c-ink);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, .2);
+}
+
+.form-control::placeholder {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.obs-topbar,
+.app-sidebar.obs-sidebar,
+.bottom-nav {
+  background: #fff !important;
+}
+
+.obs-topbar {
+  min-height: 70px;
+  height: 70px;
+  border-bottom: var(--border-ink);
+}
+
+.top-icon-link,
+.version-pill,
+.top-action-link {
+  min-height: 42px;
+}
+
+.version-success {
+  background: rgba(5, 122, 85, .08) !important;
+  border-color: var(--c-green) !important;
+}
+
+.app-sidebar.obs-sidebar {
+  border-right: var(--border-ink);
+}
+
+@media screen and (min-width: 992px) {
+  .app-sidebar.obs-sidebar,
+  .app-sidebar.obs-sidebar .sidebar-wrapper {
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
+    scrollbar-width: none;
+  }
+
+  .app-sidebar.obs-sidebar::-webkit-scrollbar,
+  .app-sidebar.obs-sidebar .sidebar-wrapper::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .app-sidebar.obs-sidebar .sidebar-wrapper {
+    height: calc(100vh - 70px);
+  }
+}
+
+.sidebar-brand {
+  border-bottom: var(--border-ink);
+}
+
+.brand-link {
+  grid-template-columns: 34px minmax(0, 1fr);
+  column-gap: 14px;
+}
+
+.brand-image,
+.top-mobile-icon {
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.sidebar-menu {
+  padding: 14px 14px;
+}
+
+.sidebar-menu .nav-link,
+.bnav-item {
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+
+.sidebar-menu .nav-link {
+  border: 2px solid transparent;
+  min-height: 44px;
+}
+
+.sidebar-menu .nav-link:hover {
+  background: #f3f4f6;
+  border-color: var(--c-border);
+}
+
+.sidebar-menu .nav-link.active {
+  background: #f3f4f6 !important;
+  color: var(--c-ink) !important;
+  border-color: var(--c-ink);
+  box-shadow: var(--shadow-brutal-xs);
+}
+
+.sidebar-menu .nav-link.active .nav-icon {
+  color: var(--c-blue) !important;
+  opacity: 1;
+}
+
+.metric-card {
+  height: 122px;
+  min-height: 122px;
+  max-height: 122px;
+  padding: 15px 16px 13px;
+}
+
+.metric-label {
+  font-weight: 900;
+  letter-spacing: .075em;
+}
+
+.metric-value {
+  font-size: 2.7rem;
+  font-weight: 900;
+  letter-spacing: -.065em;
+}
+
+.metric-info,
+.metric-success,
+.metric-danger {
+  border-color: var(--c-ink);
+}
+
+.metric-warning {
+  background: var(--c-orange);
+  border-color: var(--c-ink);
+}
+
+.table-responsive,
+.settings-table-scroll,
+.sheet-scroll {
+  border: var(--border-ink);
+  border-radius: var(--r);
+  background: #fff;
+}
+
+.table th,
+.prog-table thead th,
+.schedule-sheet th {
+  background: #f3f4f6 !important;
+  color: var(--c-muted);
+  font-weight: 900;
+}
+
+.table td,
+.table th {
+  border-color: var(--c-border);
+}
+
+.table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.content-disclosure {
+  border-top: var(--border-ink);
+}
+
+.content-disclosure summary {
+  padding: 15px 0;
+}
+
+.disclosure-title i,
+.empty-state i,
+.contact-link,
+.teacher-name-link {
+  color: var(--c-blue);
+}
+
+.lesson-cell,
+.class-board-slot,
+.teacher-board-slot,
+.daily-lesson-card,
+.free-day-card,
+.free-slot-card,
+.profile-info-card {
+  border: var(--border-ink);
+  border-radius: var(--r);
+}
+
+.modal-content {
+  box-shadow: 8px 8px 0 rgba(17, 24, 39, .95) !important;
+}
+
+.obs-toast {
+  border: var(--border-ink);
+  box-shadow: var(--shadow-brutal-sm);
+  border-radius: var(--r);
+}
+
+@media (max-width: 991.98px) {
+  .obs-topbar {
+    display: none !important;
+  }
+
+  .app-content {
+    padding-top: 18px !important;
+    padding-bottom: 84px;
+  }
+
+  .container-fluid {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .page-title-row {
+    margin-bottom: 12px;
+  }
+
+  .bottom-nav {
+    height: 70px;
+    border-top: var(--border-ink);
+    box-shadow: 0 -3px 0 rgba(17, 24, 39, .95);
+  }
+
+  .bnav-item {
+    font-size: .68rem;
+    color: var(--c-muted);
+  }
+
+  .bnav-item i {
+    font-size: 1.25rem;
+  }
+
+  .bnav-item.active {
+    color: var(--c-blue);
+  }
+
+  .bnav-item.active::before {
+    width: 34px;
+    height: 3px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  body {
+    font-size: 14px;
+  }
+
+  .metric-card {
+    height: 112px;
+    min-height: 112px;
+    max-height: 112px;
+    padding: 13px 12px 11px;
+  }
+
+  .metric-value {
+    font-size: 2.25rem;
+  }
+
+  .card-body {
+    padding: 14px;
+  }
+}
+
+@media screen {
+  /* Buton ailesi: tum varyantlar ayni tasarim dilini kullansin. */
+  .btn-outline-primary,
+  .btn-outline-secondary,
+  .btn-outline-danger,
+  .btn-outline-success {
+    background: #fff;
+    border-color: var(--c-ink) !important;
+    color: var(--c-ink) !important;
+  }
+
+  .btn-outline-primary:hover,
+  .btn-outline-secondary:hover,
+  .btn-outline-success:hover {
+    background: #f3f4f6;
+  }
+
+  .btn-outline-danger:hover {
+    background: #fef2f2;
+    color: var(--c-red) !important;
+  }
+
+  .btn.btn-primary,
+  .report-switch .btn-primary,
+  .prog-mode-btn.prog-mode-active {
+    background: var(--c-blue) !important;
+    border-color: var(--c-ink) !important;
+    color: #fff !important;
+  }
+
+  .report-switch {
+    gap: 8px;
+    padding: 2px;
+  }
+
+  .report-switch .btn {
+    border-radius: var(--r) !important;
+    border-right-width: 2px !important;
+    flex: 0 0 auto;
+  }
+
+  .page-actions .btn,
+  .schedule-print-btn,
+  #reportPrimaryAction {
+    min-height: 42px;
+  }
+
+  /* Standart tablolar: referans temadaki blok, cizgili, okunur tablo dili. */
+  .table-responsive,
+  .settings-table-scroll,
+  .sheet-scroll,
+  .teacher-weekly-scroll,
+  .class-weekly-scroll {
+    border: var(--border-ink-thick) !important;
+    border-radius: var(--r);
+    background: #fff;
+    box-shadow: var(--shadow-brutal-sm);
+    overflow: auto;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: separate !important;
+    border-spacing: 0;
+    font-size: .89rem;
+    background: #fff;
+  }
+
+  .table thead th,
+  .table th {
+    background: #f3f4f6 !important;
+    color: var(--c-muted) !important;
+    border-right: 1px solid var(--c-border) !important;
+    border-bottom: var(--border-ink) !important;
+    padding: 11px 12px !important;
+    font-size: .72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .075em;
+    line-height: 1.15;
+  }
+
+  .table td {
+    border-right: 1px solid var(--c-border) !important;
+    border-bottom: 1px solid var(--c-border) !important;
+    padding: 11px 12px !important;
+    color: var(--c-ink);
+    font-weight: 550;
+    line-height: 1.25;
+    background: #fff;
+  }
+
+  .table tbody tr:nth-child(even) td {
+    background: #fbfdff;
+  }
+
+  .table tbody tr:hover td {
+    background: #eef4ff !important;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    border-left: 0 !important;
+  }
+
+  .table th:last-child,
+  .table td:last-child {
+    border-right: 0 !important;
+  }
+
+  .table tbody tr:last-child td {
+    border-bottom: 0 !important;
+  }
+
+  .table-sm th,
+  .table-sm td {
+    padding: 8px 10px !important;
+    font-size: .82rem;
+  }
+
+  .teacher-row.selected-row td {
+    background: #dbeafe !important;
+  }
+
+  .table-actions .btn {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 5px 8px;
+    box-shadow: none;
+  }
+
+  /* Program tablolari: sinif/ogretmen haftalik gorunumleri. */
+  .prog-table,
+  .class-program-board,
+  .teacher-program-board,
+  .duty-matrix,
+  .schedule-sheet {
+    border-collapse: separate !important;
+    border-spacing: 0;
+    width: 100%;
+    background: #fff;
+    border: var(--border-ink-thick);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+
+  .prog-table th,
+  .prog-table td,
+  .class-program-board th,
+  .class-program-board td,
+  .teacher-program-board th,
+  .teacher-program-board td,
+  .duty-matrix th,
+  .duty-matrix td,
+  .schedule-sheet th,
+  .schedule-sheet td {
+    border-right: 1px solid var(--c-border) !important;
+    border-bottom: 1px solid var(--c-border) !important;
+  }
+
+  .prog-table th:last-child,
+  .prog-table td:last-child,
+  .class-program-board th:last-child,
+  .class-program-board td:last-child,
+  .teacher-program-board th:last-child,
+  .teacher-program-board td:last-child,
+  .duty-matrix th:last-child,
+  .duty-matrix td:last-child,
+  .schedule-sheet th:last-child,
+  .schedule-sheet td:last-child {
+    border-right: 0 !important;
+  }
+
+  .prog-table tr:last-child td,
+  .class-program-board tr:last-child td,
+  .teacher-program-board tr:last-child td,
+  .duty-matrix tr:last-child td,
+  .schedule-sheet tr:last-child td {
+    border-bottom: 0 !important;
+  }
+
+  .prog-table thead th,
+  .class-program-board thead th,
+  .teacher-program-board thead th,
+  .duty-matrix thead th,
+  .schedule-sheet thead th {
+    background: #f3f4f6 !important;
+    color: var(--c-muted) !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  .prog-th-day,
+  .class-program-board th:first-child,
+  .teacher-program-board th:first-child,
+  .duty-place-head,
+  .schedule-sheet .sheet-name {
+    background: #fff !important;
+    color: var(--c-ink) !important;
+    font-weight: 900 !important;
+  }
+
+  .class-board-slot,
+  .teacher-board-slot,
+  .daily-lesson-card,
+  .lesson-cell {
+    background: #fff;
+    border: var(--border-ink) !important;
+    border-radius: var(--r);
+    box-shadow: 2px 2px 0 rgba(17, 24, 39, .12);
+  }
+
+  .class-board-slot strong,
+  .teacher-board-slot strong,
+  .daily-slot strong,
+  .lesson-cell strong {
+    font-weight: 900;
+    color: var(--c-ink);
+    letter-spacing: -.02em;
+  }
+
+  .class-board-slot span,
+  .teacher-board-slot span,
+  .daily-slot span,
+  .lesson-cell span,
+  .lesson-cell small {
+    color: var(--c-muted);
+    font-weight: 700;
+  }
+
+  .empty-cell,
+  .class-board-empty,
+  .teacher-board-empty {
+    background: repeating-linear-gradient(135deg, #fff 0 7px, #f8fafc 7px 14px) !important;
+    color: #9ca3af !important;
+  }
+
+  .lesson-cell.duty-mark,
+  .daily-lesson-card.duty-sheet,
+  .duty-sheet {
+    background: var(--c-orange) !important;
+    border-color: var(--c-ink) !important;
+    color: var(--c-ink) !important;
+  }
+
+  /* Nobet matrisi ve carsafta dolu hucreler daha blok gorunsun. */
+  .duty-filled-cell,
+  .duty-cell {
+    background: #f8fafc;
+  }
+
+  .duty-cell strong,
+  .sheet-cell-content strong {
+    font-weight: 900;
+    letter-spacing: -.025em;
+  }
+
+  .duty-cell span,
+  .sheet-cell-content span {
+    color: var(--c-muted);
+    font-weight: 650;
+  }
+
+  .sheet-cell-content {
+    min-height: 26px;
+    display: grid;
+    place-items: center;
+    gap: 1px;
+  }
+
+  .schedule-sheet .slot-span-note {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 999px;
+    color: #1d4ed8 !important;
+  }
+
+  /* Ayarlar tablolarinda mobil/kucuk ekran okunurlugu. */
+  .settings-editor {
+    overflow: hidden;
+  }
+
+  .settings-editor-toolbar {
+    background: #fff;
+    border-bottom: var(--border-ink);
+  }
+
+  .settings-editor-body {
+    background: #fff;
+  }
+
+  .settings-table-scroll .table {
+    min-width: max-content;
+  }
+
+  .settings-table-scroll,
+  .table-responsive,
+  .teacher-weekly-scroll,
+  .class-weekly-scroll,
+  .sheet-scroll {
+    overflow-x: auto;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-table-scroll-wide .settings-matrix {
+    min-width: 980px;
+  }
+
+  .class-program-settings-table {
+    min-width: 1660px !important;
+  }
+
+  .settings-matrix th:first-child,
+  .settings-matrix td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    box-shadow: 2px 0 0 var(--c-ink);
+  }
+
+  .settings-matrix thead th:first-child {
+    z-index: 4;
+    background: #f3f4f6;
+  }
+
+  .class-program-settings-table .class-program-cell {
+    min-width: 184px;
+  }
+
+  .settings-matrix th,
+  .settings-matrix td {
+    padding: 9px 10px !important;
+  }
+
+  .settings-matrix input,
+  .settings-matrix select,
+  .class-program-cell .form-select {
+    min-height: 38px;
+    border-width: 2px;
+    font-weight: 650;
+  }
+
+  .settings-table-scroll[data-scroll-hint]::before {
+    background: #fff;
+    color: var(--c-muted);
+    border-bottom: 1px solid var(--c-border);
+    font-weight: 800;
+  }
+
+  /* Arama, chip ve kucuk bilgi bloklari. */
+  .search-result-item {
+    border: 2px solid transparent;
+    font-weight: 700;
+  }
+
+  .search-result-item:hover {
+    background: #f3f4f6;
+    border-color: var(--c-ink);
+    box-shadow: var(--shadow-brutal-xs);
+  }
+
+  .search-result-select,
+  .soft-chip,
+  .chip-free-day {
+    border: var(--border-ink) !important;
+    border-radius: var(--r) !important;
+    background: #fff !important;
+    color: var(--c-ink) !important;
+    font-weight: 850 !important;
+  }
+
+  .soft-chip .teacher-name-link {
+    color: var(--c-ink);
+    font-weight: 850;
+  }
+
+  .free-day,
+  .free-query-card,
+  .free-day-summary,
+  .profile-info,
+  .info-line.profile-info,
+  .profile-info-card {
+    border: var(--border-ink) !important;
+    border-radius: var(--r);
+    background: #fff;
+  }
+
+  .free-day,
+  .free-query-card,
+  .free-day-summary {
+    box-shadow: 2px 2px 0 rgba(17, 24, 39, .12);
+  }
+
+  .section-title-row h4 {
+    font-weight: 900;
+    letter-spacing: -.03em;
+  }
+}
+
+@media screen and (max-width: 991.98px) {
+  .table-responsive,
+  .settings-table-scroll,
+  .sheet-scroll,
+  .teacher-weekly-scroll,
+  .class-weekly-scroll {
+    box-shadow: none;
+  }
+
+  .table thead th,
+  .table th {
+    font-size: .68rem;
+  }
+
+  .table td {
+    font-size: .82rem;
+  }
+
+  .class-program-board,
+  .teacher-program-board,
+  .duty-matrix,
+  .schedule-sheet,
+  .prog-table {
+    font-size: .76rem;
+  }
+
+  .class-board-slot,
+  .teacher-board-slot,
+  .daily-lesson-card {
+    box-shadow: none;
+  }
+}
+
+/* OB34: kalan etkileşimli yüzeyler, modallar ve açılır bölümler. */
+@media screen {
+  .content-disclosure {
+    border: var(--border-ink) !important;
+    border-top: var(--border-ink) !important;
+    border-radius: var(--r);
+    background: #fff;
+    box-shadow: var(--shadow-brutal-xs);
+    overflow: hidden;
+  }
+
+  .content-disclosure + .content-disclosure {
+    margin-top: 14px;
+  }
+
+  .content-disclosure summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 56px;
+    padding: 14px 16px !important;
+    cursor: pointer;
+    list-style: none;
+    background: #fff;
+    border: 0;
+  }
+
+  .content-disclosure summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .content-disclosure summary::after {
+    content: "\f078";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: var(--c-muted);
+    transition: transform .14s ease;
+  }
+
+  .content-disclosure[open] summary {
+    border-bottom: var(--border-ink);
+  }
+
+  .content-disclosure[open] summary::after {
+    transform: rotate(180deg);
+    color: var(--c-blue);
+  }
+
+  .disclosure-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    font-weight: 900;
+    color: var(--c-ink);
+  }
+
+  .disclosure-title i {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: var(--border-ink);
+    border-radius: var(--r);
+    background: #eff6ff;
+    color: var(--c-blue);
+  }
+
+  .disclosure-meta {
+    margin-left: auto;
+    margin-right: 8px;
+    color: var(--c-muted);
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .disclosure-body {
+    padding: 16px;
+    background: #fff;
+  }
+
+  .profile-disclosures {
+    display: grid;
+    gap: 14px;
+  }
+
+  .card-body.profile-disclosures,
+  .obs-panel > .card-body.profile-disclosures,
+  .profile-card > .card-body.profile-disclosures {
+    padding: 16px !important;
+  }
+
+  .profile-disclosures > .content-disclosure:first-child {
+    margin-top: 0;
+    border-top: var(--border-ink) !important;
+  }
+
+  /* Haftalik program hucreleri: dolu, bos ve nobet durumlari ayrissin. */
+  .prog-table {
+    overflow: hidden;
+  }
+
+  .prog-table tbody td {
+    background: #fff;
+    transition: background .12s ease, box-shadow .12s ease;
+  }
+
+  .prog-table tbody td.prog-td-filled {
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(17, 24, 39, .08);
+  }
+
+  .prog-table tbody td.prog-td-empty {
+    background:
+      linear-gradient(135deg, rgba(248, 250, 252, .9), rgba(255, 255, 255, .96)),
+      repeating-linear-gradient(135deg, transparent 0 8px, rgba(17, 24, 39, .035) 8px 16px);
+  }
+
+  .prog-table tbody td.prog-td-duty {
+    background: #fff7ed !important;
+    box-shadow: inset 0 0 0 2px var(--c-orange);
+  }
+
+  .prog-table tbody td.prog-td-filled:hover {
+    background: #f8fafc;
+  }
+
+  .prog-slot {
+    min-height: 48px;
+    padding: 6px 8px;
+    border-radius: 3px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 2px;
+  }
+
+  .prog-slot strong {
+    display: block;
+    max-width: 100%;
+    color: var(--c-ink) !important;
+    font-size: .9rem;
+    line-height: 1.08;
+    font-weight: 900;
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
+  }
+
+  .prog-slot span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    min-height: 18px;
+    padding: 1px 6px;
+    border: 1px solid #dbe3ef;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: var(--c-muted) !important;
+    font-size: .7rem;
+    line-height: 1.1;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+  }
+
+  .prog-slot small {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #075985 !important;
+    font-size: .64rem;
+    font-weight: 850;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .prog-td-duty .prog-slot span,
+  .prog-td-duty .prog-slot small {
+    border-color: rgba(245, 158, 11, .45);
+    background: #fffbeb;
+    color: #92400e !important;
+  }
+
+  /* Carsaf program: yogun tabloda hucreler daha temiz okunsun. */
+  .schedule-sheet tbody td.sheet-filled {
+    background: #fff !important;
+    box-shadow: inset 0 0 0 1px rgba(17, 24, 39, .06);
+  }
+
+  .schedule-sheet tbody td.sheet-empty {
+    background:
+      linear-gradient(135deg, #fff, #f8fafc) !important;
+    color: #cbd5e1 !important;
+  }
+
+  .schedule-sheet tbody td.duty-sheet,
+  .schedule-sheet tbody td.sheet-filled.duty-sheet {
+    background: #fff7ed !important;
+    box-shadow: inset 0 0 0 2px var(--c-orange);
+  }
+
+  .sheet-cell-content {
+    min-height: 30px;
+    padding: 4px 3px;
+    border-radius: 3px;
+  }
+
+  .sheet-cell-content strong {
+    color: var(--c-ink) !important;
+    font-weight: 900;
+    letter-spacing: -.025em;
+    line-height: 1.04;
+  }
+
+  .sheet-cell-content span {
+    display: inline-flex;
+    justify-content: center;
+    max-width: 100%;
+    margin-top: 2px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: var(--c-muted) !important;
+    font-weight: 850;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .schedule-sheet .sheet-name {
+    box-shadow: 2px 0 0 var(--c-ink);
+  }
+
+  .schedule-sheet .sheet-name small,
+  .schedule-sheet .sheet-teacher-code {
+    color: var(--c-muted) !important;
+    font-weight: 850;
+  }
+
+  .schedule-sheet .sheet-day-cell {
+    background: #eff6ff !important;
+    color: var(--c-blue) !important;
+  }
+
+  .schedule-sheet .sheet-hour-cell {
+    color: var(--c-ink) !important;
+  }
+
+  .settings-group {
+    margin-bottom: 24px;
+  }
+
+  .settings-group-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: var(--border-ink);
+  }
+
+  .settings-group-head h3 {
+    margin: 0;
+    color: var(--c-ink);
+  }
+
+  .settings-group-head p {
+    max-width: 720px;
+    margin: 0;
+  }
+
+  .settings-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .settings-editor-toolbar .btn {
+    min-width: 126px;
+  }
+
+  .settings-editor-body {
+    padding: 14px;
+  }
+
+  .settings-filter-row,
+  .settings-split-grid {
+    gap: 14px;
+  }
+
+  .settings-subtitle {
+    margin: 0 0 8px;
+    font-size: .9rem;
+    font-weight: 900;
+    color: var(--c-ink);
+  }
+
+  .schedule-filter-details,
+  .task-filter-details {
+    margin-top: 14px;
+    border: var(--border-ink);
+    border-radius: var(--r);
+    background: #fff;
+    box-shadow: var(--shadow-brutal-xs);
+    overflow: hidden;
+  }
+
+  .schedule-filter-details summary,
+  .task-filter-details summary {
+    padding: 12px 14px !important;
+    font-weight: 900;
+    cursor: pointer;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .schedule-filter-details[open] summary,
+  .task-filter-details[open] summary {
+    border-bottom: var(--border-ink);
+  }
+
+  .schedule-filter-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: var(--c-muted);
+    font-weight: 800;
+  }
+
+  .schedule-toolbar-card .card-body,
+  .dashboard-search-card .card-body,
+  .dashboard-today-card .card-body,
+  .dashboard-quick-card .card-body,
+  .dashboard-free-card .card-body {
+    background: #fff;
+  }
+
+  .modal-content {
+    border: var(--border-ink-thick);
+    border-radius: var(--r);
+    box-shadow: 6px 6px 0 rgba(17, 24, 39, .92);
+  }
+
+  .modal-header,
+  .modal-footer {
+    border-color: var(--c-ink) !important;
+    background: #fff;
+  }
+
+  .obs-modal-header {
+    border-bottom: var(--border-ink) !important;
+  }
+
+  .modal-title {
+    font-weight: 900;
+    letter-spacing: -.03em;
+  }
+
+  .btn-close,
+  .btn-close-white {
+    width: 32px;
+    height: 32px;
+    border: var(--border-ink);
+    border-radius: var(--r);
+    background-color: #fff;
+    opacity: 1;
+  }
+
+  .import-block,
+  .ti-section,
+  .ti-preview-box,
+  .import-feedback-box {
+    border: var(--border-ink) !important;
+    border-radius: var(--r) !important;
+    background: #fff;
+    box-shadow: var(--shadow-brutal-xs);
+  }
+
+  .import-block {
+    padding: 14px;
+  }
+
+  .import-block h4,
+  .import-block strong,
+  .ti-section-head {
+    font-weight: 900;
+    color: var(--c-ink);
+    letter-spacing: -.02em;
+  }
+
+  .ti-section-head {
+    background: #f3f4f6;
+    border-bottom: var(--border-ink);
+  }
+
+  .ti-field-row,
+  .ti-extra-row {
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .obs-toast {
+    border: var(--border-ink);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-brutal-xs);
+    font-weight: 800;
+  }
+
+  .empty-state {
+    border: 2px dashed #9ca3af;
+    border-radius: var(--r);
+    background: repeating-linear-gradient(135deg, #fff 0 8px, #f8fafc 8px 16px);
+    color: var(--c-muted);
+    font-weight: 800;
+  }
+
+  .teacher-name-link {
+    color: var(--c-blue);
+    font-weight: 900;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  .teacher-name-link:hover {
+    color: var(--c-ink);
+  }
+
+  .btn-tc-reveal {
+    border: var(--border-ink);
+    border-radius: var(--r);
+    background: #fff;
+    color: var(--c-ink);
+    width: 30px;
+    height: 30px;
+  }
+
+  .teacher-subjects-list {
+    border: var(--border-ink);
+    border-radius: var(--r);
+    background: #fff;
+    padding: 10px;
+  }
+
+  .teacher-subject-check {
+    border: 1px solid var(--c-border);
+    border-radius: var(--r);
+    padding: 6px 8px;
+    background: #f8fafc;
+    font-weight: 750;
+  }
+
+  .top-action-link,
+  .version-pill {
+    box-shadow: var(--shadow-brutal-xs);
+  }
+}
+
+@media screen and (max-width: 991.98px) {
+  .content-disclosure,
+  .schedule-filter-details,
+  .task-filter-details,
+  .import-block,
+  .ti-section,
+  .ti-preview-box {
+    box-shadow: none;
+  }
+
+  .settings-group-head {
+    display: block;
+  }
+
+  .disclosure-meta {
+    white-space: normal;
+    text-align: right;
+  }
+
+  .modal-content {
+    box-shadow: none;
+  }
+}
+
+@media screen and (max-width: 575px) {
+  body {
+    font-size: 14px;
+  }
+
+  .page-title-row h2,
+  .settings-group-head h3 {
+    font-size: 1.15rem;
+    letter-spacing: -.035em;
+  }
+
+  .page-title-row p,
+  .settings-group-head p,
+  .import-block p,
+  .text-muted.small {
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+
+  .card-title,
+  .obs-panel .card-title,
+  .disclosure-title,
+  .import-block h4 {
+    font-size: .9rem;
+  }
+
+  .metric-label {
+    font-size: .6rem;
+    letter-spacing: .055em;
+  }
+
+  .metric-value {
+    font-size: 1.95rem;
+    line-height: 1;
+  }
+
+  .metric-sub {
+    font-size: .7rem;
+  }
+
+  .form-control,
+  .form-select,
+  .btn {
+    font-size: .88rem;
+  }
+
+  .content-disclosure summary {
+    min-height: 52px;
+    padding: 12px 14px !important;
+  }
+
+  .disclosure-title i {
+    width: 30px;
+    height: 30px;
+  }
+
+  .disclosure-body {
+    padding: 13px;
+  }
+
+  .card-body.profile-disclosures,
+  .obs-panel > .card-body.profile-disclosures,
+  .profile-card > .card-body.profile-disclosures {
+    padding: 13px !important;
+  }
+
+  .import-block {
+    padding: 12px;
+  }
+}
+
+@media print {
+  .card,
+  .obs-panel,
+  .metric-card,
+  .settings-editor,
+  .table-responsive,
+  .btn,
+  .version-pill,
+  .top-action-link {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}

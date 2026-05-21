@@ -603,7 +603,7 @@ function togglePassword(){ const i=getEl('loginPass'), icon=getEl('togglePassIco
 function startApp(){
   getEl('loginScreen').style.display='none';
   getEl('mainApp').style.display='block';
-  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB27';
+  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB35';
   applyAuthUiState();
   hydrateStaticSelects();
   renderDashboard();
