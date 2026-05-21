@@ -148,6 +148,37 @@ function openDisclosureForPrint(root) {
   });
 }
 
+function isEmptyProfilePrintValue(value) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return true;
+  return text === '—' || text === '-' || /^kayıt yok$/i.test(text);
+}
+
+function prepareProfileInfoCardsForPrint(root) {
+  if (!root) return;
+  const firstInfo = root.querySelector('.profile-info');
+  const infoRow = firstInfo ? firstInfo.closest('.row') : null;
+  if (infoRow) infoRow.classList.add('profile-info-grid-print');
+
+  root.querySelectorAll('.profile-info').forEach(info => {
+    const valueEl = info.querySelector('strong');
+    const rawValue = valueEl?.classList.contains('tc-field')
+      ? (valueEl.getAttribute('data-tc') || valueEl.textContent)
+      : valueEl?.textContent;
+    if (isEmptyProfilePrintValue(rawValue)) {
+      const wrapper = info.closest('[class*="col-"]') || info;
+      wrapper.classList.add('print-hidden');
+    }
+  });
+}
+
+function hideTeacherDutySectionForPrint(root) {
+  if (!root) return;
+  root.querySelectorAll('details.content-disclosure[data-section-key*="-duty"]').forEach(el => {
+    el.classList.add('print-hidden');
+  });
+}
+
 /**
  * Profil çıktılarında program bölümünü niyete göre hazırlar.
  * Öğretmen/sınıf için gün açıkça seçilmediyse haftalık program basılır.
@@ -168,6 +199,8 @@ function prepareProfileProgramForPrint(root, opts) {
         if (meta) meta.textContent = 'Haftalık Program';
       }
       root.querySelectorAll('.program-filter-inline, .program-mode-btns').forEach(el => el.classList.add('print-hidden'));
+      prepareProfileInfoCardsForPrint(root);
+      hideTeacherDutySectionForPrint(root);
       return;
     }
 
@@ -361,6 +394,11 @@ a { color:#0f172a; text-decoration:none; }
 .table th { background:#f1f5f9!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 thead { display:table-header-group; }
 .no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden { display:none!important; }
+.dashboard-search-card,.teacher-action-row,.teacher-selected-preview,
+.program-filter-inline,.program-mode-btns,.schedule-toolbar-card,
+.report-switch,.task-filter-details,.schedule-filter-details { display:none!important; }
+.profile-info-empty,
+details.content-disclosure[data-section-key*="-duty"] { display:none!important; }
 .print-only,.tc-print-full { display:block!important; }
 .screen-only,.tc-screen-mask { display:none!important; }
 .tc-print-col { display:table-cell!important; }
@@ -412,6 +450,31 @@ button:not(.print-keep) { display:none!important; }
 .prog-table { width:100%; border-collapse:collapse; }
 .row { display:flex; flex-wrap:wrap; gap:6px; }
 .col-6,.col-lg-3,.col-lg-5,.col-lg-6,.col-lg-7 { flex:1 1 0; }
+
+.profile-info-grid-print {
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:2mm!important;
+}
+.profile-info-grid-print > [class*="col-"] {
+  width:auto!important; max-width:none!important; flex:none!important; padding:0!important;
+}
+.profile-info {
+  border:0.8pt solid #334155;
+  border-radius:3px;
+  background:#f8fafc!important;
+  padding:2mm 2.4mm;
+  min-height:12mm;
+  break-inside:avoid;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.profile-info span {
+  display:block; font-size:6.6pt; color:#64748b;
+  text-transform:uppercase; letter-spacing:.025em; margin-bottom:1mm;
+}
+.profile-info strong {
+  display:block; font-size:8.5pt; line-height:1.15; overflow-wrap:anywhere;
+}
 
 /* ── prog-table (haftalık program tablolar) ── */
 .prog-table { width:100%; border-collapse:collapse; break-inside:avoid; }
@@ -689,9 +752,27 @@ function buildProfilePrintCss(type, root, opts) {
 .profile-print .profile-header  { margin-bottom:3mm; }
 .profile-print .profile-disclosures { padding:0 2mm!important; }
 .profile-print .content-disclosure { break-inside:avoid; page-break-inside:avoid; }
-.profile-print .info-line       { margin-bottom:2mm; break-inside:avoid; }
-.profile-print .info-line span  { font-size:7.5pt; color:#64748b; display:block; }
-.profile-print .info-line strong { font-size:9pt; display:block; }
+.profile-print .profile-info-grid-print {
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:2mm!important;
+}
+.profile-print .profile-info-grid-print > [class*="col-"] {
+  width:auto!important; max-width:none!important; flex:none!important; padding:0!important;
+}
+.profile-print .info-line,
+.profile-print .profile-info {
+  border:0.8pt solid #334155; border-radius:3px; background:#f8fafc!important;
+  padding:2mm 2.4mm; min-height:12mm; margin:0; break-inside:avoid;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.profile-print .info-line span,
+.profile-print .profile-info span {
+  font-size:6.6pt; color:#64748b; display:block; text-transform:uppercase;
+  letter-spacing:.025em; margin-bottom:1mm;
+}
+.profile-print .info-line strong,
+.profile-print .profile-info strong { font-size:8.5pt; line-height:1.15; display:block; overflow-wrap:anywhere; }
 .profile-print .teacher-weekly-scroll,.profile-print .table-responsive { overflow:visible!important; }
 .profile-print .prog-table { width:100%; font-size:7pt; table-layout:fixed; border-collapse:collapse; }
 .profile-print .prog-table th,
@@ -708,7 +789,25 @@ function buildProfilePrintCss(type, root, opts) {
 .profile-print .btn-tc-reveal   { display:none!important; }
 .profile-print .tc-field::before { content:attr(data-tc); font-size:9pt; font-weight:700; display:block; }
 .profile-print .tc-display      { display:none!important; }
-.profile-print .free-slot-grid  { display:flex; flex-wrap:wrap; gap:2mm; }
+.profile-print .free-slot-grid  { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2mm; }
+.profile-print .free-day {
+  border:0.8pt solid #334155; border-radius:3px; background:#f8fafc!important;
+  padding:2mm; min-height:14mm; break-inside:avoid;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.profile-print .free-day strong {
+  display:block; font-size:8pt; font-weight:800; margin:0 0 1mm;
+}
+.profile-print .free-day .text-muted {
+  color:#64748b!important; font-size:7.5pt;
+}
+.profile-print .free-day .soft-chip {
+  border:0.7pt solid #94a3b8; border-radius:3px; padding:0.5mm 1.6mm;
+  margin:0.5mm; font-size:7.5pt; background:#fff!important;
+}
+.profile-print .free-day .chip-free-day {
+  background:#dcfce7!important; color:#166534!important; font-weight:800;
+}
 .profile-print .duty-profile-box {
   display:flex; gap:6mm; border:1pt solid #334155; padding:2mm 4mm; border-radius:4px;
 }
@@ -1002,8 +1101,9 @@ function printDocument(options) {
     // Güvenli escapeHtml
     const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s => String(s));
     const printTitle = esc(meta.title || opts.title || 'Yazdır');
+    const browserPrintTitle = opts.type === 'teacher-profile' ? '&#8203;' : printTitle;
 
-    const printHtml = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${printTitle}</title><style>${css}</style></head><body class="${bodyClass}">${headerHtml}${rootClone.outerHTML}</body></html>`;
+    const printHtml = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${browserPrintTitle}</title><style>${css}</style></head><body class="${bodyClass}">${headerHtml}${rootClone.outerHTML}</body></html>`;
 
     const iframe = openPrintFrame(printHtml);
 

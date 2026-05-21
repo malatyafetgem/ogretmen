@@ -283,13 +283,17 @@ function formatEmail(email){
   if(!email) return '—';
   return `<a href="mailto:${escapeHtml(email)}" class="contact-link"><i class="fas fa-envelope me-1"></i>${escapeHtml(email)}</a>`;
 }
+function isBlankProfileValue(value){
+  const text=String(value ?? '').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  return !text || text==='—' || text==='-';
+}
 function profileInfoTc(tcRaw){
   const masked=maskTc(tcRaw||'');
   const full=escapeHtml(tcRaw||'—');
-  if(!tcRaw) return `<div class="col-6 col-xl-3"><div class="info-line profile-info"><span><i class="fas fa-fingerprint me-1"></i>T.C. Kimlik No</span><strong>—</strong></div></div>`;
+  if(!tcRaw) return `<div class="col-6 col-xl-3 profile-info-empty"><div class="info-line profile-info"><span><i class="fas fa-fingerprint me-1"></i>T.C. Kimlik No</span><strong>—</strong></div></div>`;
   return `<div class="col-6 col-xl-3"><div class="info-line profile-info"><span><i class="fas fa-fingerprint me-1"></i>T.C. Kimlik No</span><strong class="tc-field" data-tc="${full}" data-masked="${escapeHtml(masked)}" data-revealed="0"><span class="tc-display">${escapeHtml(masked)}</span><button class="btn-tc-reveal no-print" onclick="toggleTcReveal(this.closest('.tc-field'))" title="TC'yi göster/gizle"><i class="fas fa-eye"></i></button></strong></div></div>`;
 }
-function profileInfo(label,value,icon){ return `<div class="col-6 col-xl-3"><div class="info-line profile-info"><span><i class="${icon} me-1"></i>${label}</span><strong>${escapeHtml(value)}</strong></div></div>`; }
+function profileInfo(label,value,icon){ return `<div class="col-6 col-xl-3${isBlankProfileValue(value)?' profile-info-empty':''}"><div class="info-line profile-info"><span><i class="${icon} me-1"></i>${label}</span><strong>${escapeHtml(value)}</strong></div></div>`; }
 function toggleTcReveal(field){
   if(!field) return;
   const revealed=field.dataset.revealed==='1';
@@ -305,12 +309,12 @@ function toggleTcReveal(field){
     if(btn) btn.className='fas fa-eye-slash';
   }
 }
-function profileInfoRaw(label,valueHtml,icon){ return `<div class="col-6 col-xl-3"><div class="info-line profile-info"><span><i class="${icon} me-1"></i>${label}</span><strong>${valueHtml}</strong></div></div>`; }
+function profileInfoRaw(label,valueHtml,icon){ return `<div class="col-6 col-xl-3${isBlankProfileValue(valueHtml)?' profile-info-empty':''}"><div class="info-line profile-info"><span><i class="${icon} me-1"></i>${label}</span><strong>${valueHtml}</strong></div></div>`; }
 function buildTeacherPersonalInfo(t, lessons, tasks, free){
   const extraHtml = Object.entries(t.extraFields||{}).map(([label,value])=>
     value ? profileInfo(label, value, 'fas fa-tag') : ''
   ).join('');
-  return `<div class="row g-3">
+  return `<div class="row g-3 profile-info-grid-print">
       ${profileInfoTc(t._tcRaw||'')}
       ${profileInfo('Branş',t.branch||'—','fas fa-book-open')}
       ${profileInfoRaw('Telefon',formatPhone(t.phone),'fas fa-phone')}
