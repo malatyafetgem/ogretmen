@@ -153,6 +153,15 @@ function openDisclosureForPrint(root) {
   if (!root) return;
   root.querySelectorAll('details.content-disclosure').forEach(el => {
     el.setAttribute('open', '');
+    el.open = true;
+    const body = el.querySelector(':scope > .disclosure-body');
+    if (body) {
+      body.hidden = false;
+      body.classList.remove('d-none', 'collapse');
+      body.style.display = 'block';
+      body.style.visibility = 'visible';
+      body.style.height = 'auto';
+    }
   });
 }
 
@@ -201,7 +210,8 @@ function prepareProfileProgramForPrint(root, opts) {
       const id = (typeof selectedTeacherId !== 'undefined') ? selectedTeacherId : '';
       const t = id && typeof teacherById === 'function' ? teacherById(id) : null;
       const mode = (typeof currentProgramMode !== 'undefined') ? currentProgramMode : '';
-      if (section && t && mode !== 'day' && typeof buildTeacherProfileSchedule === 'function' && typeof teacherLessons === 'function') {
+      const hasRenderedProgram = !!(section && section.querySelector('.prog-table, .daily-program-grid') && section.textContent.trim());
+      if (section && t && (!hasRenderedProgram || mode !== 'day') && typeof buildTeacherProfileSchedule === 'function' && typeof teacherLessons === 'function') {
         section.innerHTML = `<div class="program-section-content">${buildTeacherProfileSchedule(t, teacherLessons(id))}</div>`;
         const meta = section.closest('details')?.querySelector('.disclosure-meta');
         if (meta) meta.textContent = 'Haftalık Program';
@@ -221,6 +231,41 @@ function prepareProfileProgramForPrint(root, opts) {
   } catch (e) {
     console.warn('[teacher-print] profil program hazırlığı atlandı:', e);
   }
+}
+
+function normalizeProgramListForPrint(root, opts) {
+  if (!root || !opts || opts.type !== 'program-list') return;
+  root.querySelectorAll('.class-program-list > details.content-disclosure').forEach(detail => {
+    const summary = detail.querySelector(':scope > summary');
+    const titleText = summary?.querySelector('.disclosure-title strong')?.textContent?.trim()
+      || summary?.querySelector('.disclosure-title')?.textContent?.trim()
+      || '';
+    const metaText = summary?.querySelector('.disclosure-meta')?.textContent?.trim() || '';
+    const body = detail.querySelector(':scope > .disclosure-body');
+    const section = document.createElement('section');
+    section.className = 'print-program-section';
+
+    const head = document.createElement('div');
+    head.className = 'print-program-head';
+    const title = document.createElement('strong');
+    title.className = 'print-program-title';
+    title.textContent = titleText;
+    head.appendChild(title);
+    if (metaText) {
+      const meta = document.createElement('span');
+      meta.className = 'print-program-meta';
+      meta.textContent = metaText;
+      head.appendChild(meta);
+    }
+
+    const content = document.createElement('div');
+    content.className = 'print-program-body';
+    content.innerHTML = body ? body.innerHTML : '';
+
+    section.appendChild(head);
+    section.appendChild(content);
+    detail.replaceWith(section);
+  });
 }
 
 function normalizePrintHeadingText(text) {
@@ -388,8 +433,9 @@ function buildBasePrintCss(orientation) {
 }
 @page { size:${orientation}; margin:10mm; }
 * { box-sizing:border-box; }
-html,body { margin:0; padding:0; }
+html,body { margin:0!important; padding:0!important; height:auto!important; min-height:0!important; overflow:visible!important; }
 body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
+body > :last-child { margin-bottom:0!important; padding-bottom:0!important; }
 a,.contact-link,.teacher-name-link { color:#0f172a!important; text-decoration:none!important; }
 .contact-link i { display:none!important; }
 
@@ -402,7 +448,7 @@ a,.contact-link,.teacher-name-link { color:#0f172a!important; text-decoration:no
 .table th,.table td { border:1px solid #cbd5e1!important; padding:3px 5px!important; vertical-align:middle; }
 .table th { background:#f1f5f9!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 thead { display:table-header-group; }
-.no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden,.app-footer,.page-title-row { display:none!important; }
+.no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden,.app-footer,footer.app-footer,.page-title-row { display:none!important; }
 .dashboard-search-card,.teacher-action-row,.teacher-selected-preview,
 .program-filter-inline,.program-mode-btns,.schedule-toolbar-card,
 .report-switch,.task-filter-details,.schedule-filter-details { display:none!important; }
@@ -657,6 +703,15 @@ function buildSheetPrintCss(type, root, opts) {
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 .sheet-print .duty-sheet { box-shadow:inset 0 0 0 .6pt #d97706; }
+.sheet-print.mobile-print .schedule-sheet th,
+.sheet-print.mobile-print .schedule-sheet td { padding:.18mm .22mm!important; line-height:.82; }
+.sheet-print.mobile-print .sheet-cell-content strong { font-size:3.5pt; line-height:.92; }
+.sheet-print.mobile-print .sheet-cell-content span   { font-size:3.25pt; line-height:.9; }
+.sheet-print.mobile-print .class-sheet tbody small   { font-size:3.25pt; line-height:.9; }
+.sheet-print.mobile-print .class-sheet-transposed .sheet-day-cell { width:10mm!important; min-width:10mm!important; max-width:10mm!important; font-size:3.7pt; }
+.sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell { width:7.5mm!important; min-width:7.5mm!important; max-width:7.5mm!important; font-size:3.5pt; }
+.sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell small { font-size:3.05pt; line-height:.88; }
+.sheet-print.mobile-print .class-sheet .sheet-name { font-size:4.2pt; line-height:.9; }
 `;
 }
 
@@ -702,6 +757,29 @@ function buildWeeklyProgramPrintCss(type, root, opts) {
 }
 .program-list-print .teacher-program-board thead,
 .program-list-print .class-program-board thead { display:table-header-group; }
+.program-list-print .print-program-section {
+  border-top:1px solid #dbe3ef; padding-top:1.5mm; margin-bottom:4mm;
+  break-inside:avoid; page-break-inside:avoid;
+}
+.program-list-print .print-program-section:first-child { border-top:0; padding-top:0; }
+.program-list-print .print-program-head {
+  display:flex; justify-content:space-between; align-items:baseline; gap:4mm;
+  margin-bottom:1.5mm; break-after:avoid; page-break-after:avoid;
+}
+.program-list-print .print-program-title { font-size:9pt; font-weight:800; }
+.program-list-print .print-program-meta { font-size:7pt; color:#475569; white-space:nowrap; }
+.program-list-print.mobile-print .print-program-section { margin-bottom:3mm; break-inside:auto; page-break-inside:auto; }
+.program-list-print.mobile-print .print-program-title { font-size:7.2pt; }
+.program-list-print.mobile-print .print-program-meta { font-size:6pt; }
+.program-list-print.mobile-print .teacher-program-board,
+.program-list-print.mobile-print .class-program-board,
+.program-list-print.mobile-print .prog-table { font-size:5.8pt; line-height:1; }
+.program-list-print.mobile-print .teacher-program-board th,
+.program-list-print.mobile-print .teacher-program-board td,
+.program-list-print.mobile-print .class-program-board th,
+.program-list-print.mobile-print .class-program-board td,
+.program-list-print.mobile-print .prog-table th,
+.program-list-print.mobile-print .prog-table td { padding:.45px 1px!important; line-height:1; }
 `;
 }
 
@@ -765,24 +843,24 @@ function buildTeacherListPrintCss(type, root, opts) {
 .teacher-list-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
 .teacher-list-print.mobile-print { font-size:7pt; }
 .teacher-list-print.mobile-print .table {
-  table-layout:fixed; font-size:6.2pt; width:100%;
+  table-layout:fixed; font-size:5.7pt; width:100%;
 }
 .teacher-list-print.mobile-print .table th,
 .teacher-list-print.mobile-print .table td {
-  padding:1px 2px!important; line-height:1.05; overflow-wrap:anywhere; word-break:break-word;
+  padding:.6px 1.2px!important; line-height:1; overflow-wrap:anywhere; word-break:break-word;
 }
 .teacher-list-print.mobile-print .table th:nth-child(1),
 .teacher-list-print.mobile-print .table td:nth-child(1) { width:5mm; }
 .teacher-list-print.mobile-print .table th:nth-child(2),
-.teacher-list-print.mobile-print .table td:nth-child(2) { width:24mm; }
+.teacher-list-print.mobile-print .table td:nth-child(2) { width:28mm; }
 .teacher-list-print.mobile-print .table th:nth-child(3),
-.teacher-list-print.mobile-print .table td:nth-child(3) { width:20mm; }
+.teacher-list-print.mobile-print .table td:nth-child(3) { width:24mm; }
 .teacher-list-print.mobile-print .table th:nth-child(4),
-.teacher-list-print.mobile-print .table td:nth-child(4) { width:19mm; }
+.teacher-list-print.mobile-print .table td:nth-child(4) { width:30mm; }
 .teacher-list-print.mobile-print .table th:nth-child(5),
-.teacher-list-print.mobile-print .table td:nth-child(5) { width:19mm; }
+.teacher-list-print.mobile-print .table td:nth-child(5) { width:22mm; }
 .teacher-list-print.mobile-print .table th:nth-child(6),
-.teacher-list-print.mobile-print .table td:nth-child(6) { width:34mm; }
+.teacher-list-print.mobile-print .table td:nth-child(6) { display:none!important; }
 .teacher-list-print.mobile-print .table th:nth-child(7),
 .teacher-list-print.mobile-print .table td:nth-child(7) { width:10mm; }
 .teacher-list-print.mobile-print .table th:nth-child(n+8),
@@ -916,6 +994,13 @@ function buildDutyPrintCss(type, root, opts) {
 .duty-print .duty-empty-cell  { color:#94a3b8; text-align:center; }
 .duty-print .duty-cell strong { display:block; font-size:9pt; }
 .duty-print .duty-cell span   { display:block; font-size:7.5pt; color:#475569; }
+.duty-print.mobile-print .duty-matrix { table-layout:fixed; width:100%; font-size:6.2pt; }
+.duty-print.mobile-print .duty-matrix th,
+.duty-print.mobile-print .duty-matrix td { padding:1mm .6mm!important; line-height:1.05; }
+.duty-print.mobile-print .duty-matrix thead th { font-size:6.5pt; }
+.duty-print.mobile-print .duty-place-head { width:18mm; min-width:18mm; max-width:18mm; font-size:6.2pt; white-space:normal; }
+.duty-print.mobile-print .duty-cell strong { font-size:6.2pt; line-height:1; }
+.duty-print.mobile-print .duty-cell span { display:none; }
 `;
 }
 
@@ -1161,6 +1246,7 @@ function printDocument(options) {
     expandScrollableAreas(rootClone);
     openDisclosureForPrint(rootClone);
     prepareProfileProgramForPrint(rootClone, opts);
+    normalizeProgramListForPrint(rootClone, opts);
     dedupePrintHeadings(rootClone, meta);
     markHiddenForPrint(rootClone);
 

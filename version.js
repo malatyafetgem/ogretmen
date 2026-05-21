@@ -1,1 +1,1 @@
-const APP_VERSION = 'OB23';
+const APP_VERSION = 'OB24';

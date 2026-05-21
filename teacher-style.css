@@ -1140,7 +1140,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 /* ─── 36. YAZDIRMA ─── */
 @media print {
   /* ── Uygulama kabuğu ve işlem öğeleri ── */
-  .app-header,.app-sidebar,.app-footer,.bottom-nav,.page-actions,.schedule-health,.obs-toast { display:none !important; }
+  .app-header,.app-sidebar,.app-footer,footer.app-footer,.bottom-nav,.page-actions,.schedule-health,.obs-toast { display:none !important; }
   .page-title-row,
   #classes > .obs-panel.mb-3 { display:none !important; }
   .dashboard-search-card,.teacher-action-row,.teacher-selected-preview,
@@ -1161,7 +1161,9 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   /* ── Genel bileşenler ── */
   @page { size:A4 portrait; margin:10mm; }
   * { box-sizing:border-box; }
+  html, body { height:auto !important; min-height:0 !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
   body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
+  body > :last-child { margin-bottom:0 !important; padding-bottom:0 !important; }
   a,.contact-link,.teacher-name-link { color:#0f172a !important; text-decoration:none; }
   .contact-link i { display:none !important; }
   .card { border:0 !important; box-shadow:none !important; break-inside:auto; page-break-inside:auto; }
@@ -1302,19 +1304,41 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 }
 
 @media print and (max-width:767px) {
+  .sheet-print .schedule-sheet th,
+  .sheet-print .schedule-sheet td,
+  .schedule-sheet th,
+  .schedule-sheet td {
+    padding:.18mm .22mm !important;
+    line-height:.82;
+  }
+  .sheet-print .sheet-cell-content strong,
+  .sheet-cell-content strong { font-size:3.5pt !important; line-height:.92; }
+  .sheet-print .sheet-cell-content span,
+  .sheet-cell-content span { font-size:3.25pt !important; line-height:.9; }
+  .class-sheet tbody small { font-size:3.25pt !important; line-height:.9; }
+  .class-sheet-transposed .sheet-day-cell { width:10mm !important; min-width:10mm !important; max-width:10mm !important; font-size:3.7pt !important; }
+  .class-sheet-transposed .sheet-hour-cell { width:7.5mm !important; min-width:7.5mm !important; max-width:7.5mm !important; font-size:3.5pt !important; }
+  .class-sheet-transposed .sheet-hour-cell small { font-size:3.05pt !important; line-height:.88; }
+  .class-program-list .content-disclosure { break-inside:auto !important; page-break-inside:auto !important; }
   .teacher-list-print .table,
   #reportTeacherPrintArea .table {
     table-layout:fixed;
-    font-size:6.2pt;
+    font-size:5.7pt;
   }
   .teacher-list-print .table th,
   .teacher-list-print .table td,
   #reportTeacherPrintArea .table th,
   #reportTeacherPrintArea .table td {
-    padding:1px 2px !important;
-    line-height:1.05;
+    padding:.6px 1.2px !important;
+    line-height:1;
     overflow-wrap:anywhere;
     word-break:break-word;
+  }
+  .teacher-list-print .table th:nth-child(6),
+  .teacher-list-print .table td:nth-child(6),
+  #reportTeacherPrintArea .table th:nth-child(6),
+  #reportTeacherPrintArea .table td:nth-child(6) {
+    display:none !important;
   }
   .teacher-list-print .table th:nth-child(n+8),
   .teacher-list-print .table td:nth-child(n+8),
@@ -1322,6 +1346,13 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   #reportTeacherPrintArea .table td:nth-child(n+8) {
     display:none !important;
   }
+  .duty-matrix { table-layout:fixed !important; width:100% !important; font-size:6.2pt !important; }
+  .duty-matrix th,
+  .duty-matrix td { min-width:0 !important; padding:1mm .6mm !important; line-height:1.05; }
+  .duty-matrix thead th { font-size:6.5pt !important; }
+  .duty-place-head { width:18mm !important; min-width:18mm !important; max-width:18mm !important; font-size:6.2pt !important; white-space:normal !important; }
+  .duty-cell strong { font-size:6.2pt !important; line-height:1; }
+  .duty-cell span { display:none !important; }
   .profile-info-grid-print {
     grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   }

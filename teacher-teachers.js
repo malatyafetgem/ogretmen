@@ -152,9 +152,9 @@ function showTeacherProfile(id){
   // Badge ve butonları güncelle
   updateTeacherBadge(t);
   showProfileButtons(true);
-  currentProgramMode='';
+  currentProgramMode='weekly';
   getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-    ${disclosureSection({key:`teacher-${id}-program`,title:'Program',icon:'fas fa-calendar-days',meta:'Gün veya Haftalık seçin',content:buildTeacherProgramContent(id),open:false})}
+    ${disclosureSection({key:`teacher-${id}-program`,title:'Program',icon:'fas fa-calendar-days',meta:'Haftalık Program',content:buildTeacherProgramContent(id),open:false})}
     ${disclosureSection({key:`teacher-${id}-personal`,title:'Kişisel Bilgiler',icon:'fas fa-user',meta:'Öğretmen kartı',content:buildTeacherPersonalInfo(t, lessons, tasks, free),open:false})}
     ${disclosureSection({key:`teacher-${id}-load`,title:'Ders Yükü',icon:'fas fa-book-open',meta:`${lessonHourCount} saat / hafta`,content:buildTeacherLessonLoad(t, lessons)})}
     ${disclosureSection({key:`teacher-${id}-duty`,title:'Nöbet',icon:'fas fa-clipboard-check',meta:dutyMeta,content:buildTeacherDutyInfo(t)})}
@@ -166,8 +166,10 @@ function showTeacherProfile(id){
 function buildTeacherProgramContent(id){
   const days=schoolDays();
   const dayBtns=days.map(d=>`<button class="prog-mode-btn" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
-  const btns=`<div class="program-mode-btns" id="programModeBtns">${dayBtns}<button class="prog-mode-btn" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button></div>`;
-  return `<div class="program-filter-inline">${btns}</div><div id="teacherProgramSection" class="teacher-program-section"></div>`;
+  const btns=`<div class="program-mode-btns" id="programModeBtns">${dayBtns}<button class="prog-mode-btn prog-mode-active" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button></div>`;
+  const t=teacherById(id);
+  const weekly=t?`<div class="program-section-content">${buildTeacherProfileSchedule(t, teacherLessons(id))}</div>`:'';
+  return `<div class="program-filter-inline">${btns}</div><div id="teacherProgramSection" class="teacher-program-section">${weekly}</div>`;
 }
 
 function setProgramMode(mode, day='', render=true){

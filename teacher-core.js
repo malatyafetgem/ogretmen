@@ -561,7 +561,7 @@ function togglePassword(){ const i=getEl('loginPass'), icon=getEl('togglePassIco
 function startApp(){
   getEl('loginScreen').style.display='none';
   getEl('mainApp').style.display='block';
-  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB23';
+  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB24';
   hydrateStaticSelects();
   renderDashboard();
   sTab((location.hash||'#dashboard').slice(1));
