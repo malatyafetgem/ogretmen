@@ -561,9 +561,9 @@ function togglePassword(){ const i=getEl('loginPass'), icon=getEl('togglePassIco
 function startApp(){
   getEl('loginScreen').style.display='none';
   getEl('mainApp').style.display='block';
-  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB49';
+  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB22';
   hydrateStaticSelects();
-  renderAll();
+  renderDashboard();
   sTab((location.hash||'#dashboard').slice(1));
   APP_STARTED=true;
 }
@@ -577,12 +577,15 @@ async function handleAuthUser(user){
     return;
   }
   writeSession();
-  if(!APP_STARTED) startApp();
+  const hasLocalData=Array.isArray(DB.teachers)&&DB.teachers.length>0;
+  if(!APP_STARTED&&hasLocalData) startApp();
   showSyncState('Bulut bağlanıyor','');
   try{
     await hydrateRemoteDB();
-    renderAll();
+    if(!APP_STARTED) startApp();
+    else renderAll();
   }catch(e){
+    if(!APP_STARTED) startApp();
     showSyncState('Yerel kopya','warning');
   }
 }
