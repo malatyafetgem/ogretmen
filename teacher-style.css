@@ -885,7 +885,8 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .free-report-block { border:var(--border-ink); border-left:4px solid var(--c-green); border-radius:var(--r); background:#f9fafb; padding:14px 16px; }
 .free-report-block + .free-report-block { margin-top:14px; }
 .free-report-note { margin:0 0 10px; color:var(--c-muted); font-size:.85rem; }
-.free-query-grid, .free-day-overview { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+.free-query-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+.free-day-overview { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
 .free-query-card, .free-day-summary { border:var(--border-ink); border-radius:var(--r); background:var(--c-surface); padding:10px 13px; }
 .free-query-card strong, .free-query-card span, .free-query-card small,
 .free-day-summary strong, .free-day-summary span { display:block; }
@@ -1135,7 +1136,9 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 /* ─── 36. YAZDIRMA ─── */
 @media print {
   /* ── Uygulama kabuğu ve işlem öğeleri ── */
-  .app-header,.app-sidebar,.bottom-nav,.page-actions,.schedule-health,.obs-toast { display:none !important; }
+  .app-header,.app-sidebar,.app-footer,.bottom-nav,.page-actions,.schedule-health,.obs-toast { display:none !important; }
+  .page-title-row,
+  #classes > .obs-panel.mb-3 { display:none !important; }
   .dashboard-search-card,.teacher-action-row,.teacher-selected-preview,
   .program-filter-inline,.program-mode-btns,.schedule-toolbar-card,
   .report-switch,.task-filter-details,.schedule-filter-details { display:none !important; }
@@ -1155,7 +1158,8 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   @page { size:A4 portrait; margin:10mm; }
   * { box-sizing:border-box; }
   body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
-  a    { color:#0f172a; text-decoration:none; }
+  a,.contact-link,.teacher-name-link { color:#0f172a !important; text-decoration:none; }
+  .contact-link i { display:none !important; }
   .card { border:0 !important; box-shadow:none !important; break-inside:auto; page-break-inside:auto; }
   .card-header { padding:3px 0; }
   .card-body   { padding:0; }
@@ -1214,7 +1218,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   /* ── Boş saat raporu ── */
   .free-report-block { break-inside:avoid; margin-bottom:6mm; }
   .free-query-grid   { display:flex; flex-wrap:wrap; gap:3mm; }
-  .free-day-overview { display:flex; flex-wrap:wrap; gap:3mm; }
+  .free-day-overview { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3mm; }
   .free-slot-grid    { display:flex; flex-wrap:wrap; gap:2mm; }
   .free-report-note  { font-size:8pt; color:#475569; margin-bottom:3mm; }
   .soft-chip { display:inline-block; border:1px solid #cbd5e1; border-radius:3px; padding:0 2mm; font-size:8pt; margin:1px; }
@@ -1293,6 +1297,40 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .duty-sheet { box-shadow:inset 0 0 0 .6pt #d97706; }
 }
 
+@media print and (max-width:767px) {
+  .teacher-list-print .table,
+  #reportTeacherPrintArea .table {
+    table-layout:fixed;
+    font-size:6.2pt;
+  }
+  .teacher-list-print .table th,
+  .teacher-list-print .table td,
+  #reportTeacherPrintArea .table th,
+  #reportTeacherPrintArea .table td {
+    padding:1px 2px !important;
+    line-height:1.05;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+  .teacher-list-print .table th:nth-child(n+8),
+  .teacher-list-print .table td:nth-child(n+8),
+  #reportTeacherPrintArea .table th:nth-child(n+8),
+  #reportTeacherPrintArea .table td:nth-child(n+8) {
+    display:none !important;
+  }
+  .profile-info-grid-print {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  .prog-table {
+    font-size:6.2pt;
+  }
+  .prog-table th,
+  .prog-table td {
+    padding:1px 2px !important;
+    line-height:1.05;
+  }
+}
+
 /* ─── 37. MOBİL RESPONSIVE (≤991px) ─── */
 @media (max-width:991px) {
   .obs-sidebar { display:none !important; }
@@ -1327,6 +1365,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .schedule-view-control  { flex:1 1 auto; }
   .schedule-filter-summary { min-height:0; }
   .schedule-print-btn { width:100%; }
+  .free-day-overview { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .free-slot-grid { grid-template-columns:1fr; }
   .daily-program-grid { grid-template-columns:1fr; gap:5px; }
   .daily-lesson-card { flex-direction:row; align-items:center; gap:10px; min-height:auto; padding:10px 13px; }
@@ -1413,6 +1452,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .page-title-row { gap:8px; }
   .page-actions { width:100%; justify-content:flex-start; }
   .page-actions .btn { flex:1 1 auto; justify-content:center; }
+  .free-day-overview { grid-template-columns:1fr; }
   .free-slot-grid { grid-template-columns:1fr 1fr; }
 }
 

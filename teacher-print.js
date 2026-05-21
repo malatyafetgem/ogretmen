@@ -52,6 +52,14 @@ function resolveBodyClass(type) {
   return map[type] || '';
 }
 
+function isMobilePrintViewport() {
+  try {
+    return (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) || window.innerWidth <= 767;
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Sayfa yönünü belirler.
  * orientation='auto' ise DOM'u inceleyerek karar verir.
@@ -382,7 +390,8 @@ function buildBasePrintCss(orientation) {
 * { box-sizing:border-box; }
 html,body { margin:0; padding:0; }
 body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
-a { color:#0f172a; text-decoration:none; }
+a,.contact-link,.teacher-name-link { color:#0f172a!important; text-decoration:none!important; }
+.contact-link i { display:none!important; }
 
 /* ── Ortak bileşenler ── */
 .card        { border:0; break-inside:auto; page-break-inside:auto; }
@@ -393,7 +402,7 @@ a { color:#0f172a; text-decoration:none; }
 .table th,.table td { border:1px solid #cbd5e1!important; padding:3px 5px!important; vertical-align:middle; }
 .table th { background:#f1f5f9!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 thead { display:table-header-group; }
-.no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden { display:none!important; }
+.no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden,.app-footer,.page-title-row { display:none!important; }
 .dashboard-search-card,.teacher-action-row,.teacher-selected-preview,
 .program-filter-inline,.program-mode-btns,.schedule-toolbar-card,
 .report-switch,.task-filter-details,.schedule-filter-details { display:none!important; }
@@ -754,6 +763,30 @@ function buildTeacherListPrintCss(type, root, opts) {
 }
 .teacher-list-print .table thead { display:table-header-group; }
 .teacher-list-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
+.teacher-list-print.mobile-print { font-size:7pt; }
+.teacher-list-print.mobile-print .table {
+  table-layout:fixed; font-size:6.2pt; width:100%;
+}
+.teacher-list-print.mobile-print .table th,
+.teacher-list-print.mobile-print .table td {
+  padding:1px 2px!important; line-height:1.05; overflow-wrap:anywhere; word-break:break-word;
+}
+.teacher-list-print.mobile-print .table th:nth-child(1),
+.teacher-list-print.mobile-print .table td:nth-child(1) { width:5mm; }
+.teacher-list-print.mobile-print .table th:nth-child(2),
+.teacher-list-print.mobile-print .table td:nth-child(2) { width:24mm; }
+.teacher-list-print.mobile-print .table th:nth-child(3),
+.teacher-list-print.mobile-print .table td:nth-child(3) { width:20mm; }
+.teacher-list-print.mobile-print .table th:nth-child(4),
+.teacher-list-print.mobile-print .table td:nth-child(4) { width:19mm; }
+.teacher-list-print.mobile-print .table th:nth-child(5),
+.teacher-list-print.mobile-print .table td:nth-child(5) { width:19mm; }
+.teacher-list-print.mobile-print .table th:nth-child(6),
+.teacher-list-print.mobile-print .table td:nth-child(6) { width:34mm; }
+.teacher-list-print.mobile-print .table th:nth-child(7),
+.teacher-list-print.mobile-print .table td:nth-child(7) { width:10mm; }
+.teacher-list-print.mobile-print .table th:nth-child(n+8),
+.teacher-list-print.mobile-print .table td:nth-child(n+8) { display:none!important; }
 `;
 }
 
@@ -843,6 +876,18 @@ function buildProfilePrintCss(type, root, opts) {
 .profile-print .table thead { display:table-header-group; }
 .profile-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
 .profile-print .table-responsive { overflow:visible!important; }
+.profile-print.mobile-print { font-size:8pt; }
+.profile-print.mobile-print .ph-wrap { margin-bottom:3mm; padding-bottom:1.5mm; }
+.profile-print.mobile-print .profile-disclosures { padding:0!important; }
+.profile-print.mobile-print .content-disclosure { break-inside:auto; page-break-inside:auto; }
+.profile-print.mobile-print .content-disclosure > .disclosure-body { padding:2mm 0; }
+.profile-print.mobile-print .profile-info-grid-print { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2mm!important; }
+.profile-print.mobile-print .profile-info { min-height:10mm; padding:1.8mm 2mm; }
+.profile-print.mobile-print .profile-info strong { font-size:7.8pt; }
+.profile-print.mobile-print .prog-table { font-size:6.2pt; }
+.profile-print.mobile-print .prog-table th,
+.profile-print.mobile-print .prog-table td { padding:1px 2px!important; line-height:1.05; }
+.profile-print.mobile-print .free-slot-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 `;
 }
 
@@ -917,7 +962,7 @@ function buildFreePrintCss(type, root, opts) {
 .free-print .free-query-card span   { display:block; font-size:7.5pt; color:#475569; }
 .free-print .free-query-card small  { display:block; font-size:7pt; color:#64748b; margin-top:1mm; }
 .free-print .free-report-note { font-size:8pt; color:#475569; margin-bottom:3mm; }
-.free-print .free-day-overview { display:flex; flex-wrap:wrap; gap:3mm; }
+.free-print .free-day-overview { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3mm; }
 .free-print .free-day-summary {
   border:1pt solid #cbd5e1; padding:2mm 3mm; min-width:38mm; break-inside:avoid;
 }
@@ -1093,6 +1138,9 @@ function printDocument(options) {
       bodyClass = isSheet ? 'sheet-print' : isEntryList ? 'entry-print' : isProgramList ? 'program-list-print'
                : isProfile ? 'profile-print' : isDuty ? 'duty-print' : isTasks ? 'tasks-print'
                : isFree ? 'free-print' : '';
+    }
+    if (isMobilePrintViewport()) {
+      bodyClass = `${bodyClass} mobile-print`.trim();
     }
 
     // Sayfa yönü

@@ -121,7 +121,7 @@ function renderSchedule(){
   else if(f.mode==='classList') body=buildClassProgramList();
   else if(f.mode==='free') body=buildFreeTimeReport();
   else body=buildTeacherProgramList();
-  const isListMode=(f.mode==='teacherPrograms'||f.mode==='free'||f.mode==='classList'||!f.mode);
+  const isListMode=(f.mode==='teacherPrograms'||f.mode==='free'||f.mode==='classList'||f.mode==='teacherSheet'||f.mode==='classSheet'||!f.mode);
   const visibleHourCount=uniqueScheduleHourCount(visibleItems, f.mode==='classList'||f.mode==='classSheet'?'class':'teacher');
   const entryControls=isListMode?'':`<div class="page-actions no-print"><span class="small text-muted">${visibleHourCount} ders saati</span><button class="btn btn-sm btn-outline-secondary" onclick="toggleScheduleEntries()"><i class="fas fa-list me-1"></i>Ders Kayıtlarını ${scheduleEntriesVisible?'Gizle':'Göster'}</button>${scheduleEntriesVisible?`<button class="btn btn-sm btn-outline-secondary" onclick="printDocument({sourceId:'scheduleEntryList',type:'entry-list',title:'Ders Kayıtları',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button>`:''}</div>`;
   const headerAside=f.mode==='free'?'<span class="small text-muted">Dinamik hesap</span>':(entryControls||`<span class="small text-muted">${visibleHourCount} ders saati</span>`);
@@ -288,21 +288,37 @@ function buildClassSheet(){
   const f=scheduleFilters();
   const classes=filteredClassList(f);
   const days=visibleScheduleDays(f), hours=visibleScheduleHours(f);
-  const head=classes.map(cls=>`<th class="sheet-class-head">${escapeHtml(cls)}</th>`).join('');
-  const rows=days.map(day=>hours.map(hour=>{
-    const time=lessonTimeRange(hour);
-    const cells=classes.map(cls=>{
-      const slot=DB.schedules.filter(x=>x.className===cls&&x.day===day&&Number(x.hour)===hour&&(!f.teacherId||x.teacherId===f.teacherId));
-      const names=[...new Set(slot.map(s=>sheetTeacherCode(teacherById(s.teacherId))))].join('/');
-      const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
-      const title=slot.map(s=>`${s.subject} · ${teacherName(teacherById(s.teacherId))}`).join(' | ');
-      const hasDuty=slot.some(s=>teacherById(s.teacherId)?.dutyDay===day);
-      return `<td class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}${hasDuty?' duty-sheet':''}" title="${escapeHtml(title)}">${slot.length?`<strong>${escapeHtml(subjects)}</strong><span>${escapeHtml(names)}</span>`:'—'}</td>`;
+  const head=days.map(d=>`<th colspan="${hours.length}">${escapeHtml(d)}</th>`).join('');
+  const sub=days.map(()=>hours.map(h=>`<th>${h}</th>`).join('')).join('');
+  const rows=classes.map(cls=>{
+    const cells=days.map(d=>{
+      const dayCells=[];
+      for(let i=0;i<hours.length;i++){
+        const h=hours[i];
+        const slot=DB.schedules.filter(x=>x.className===cls&&x.day===d&&Number(x.hour)===h&&(!f.teacherId||x.teacherId===f.teacherId));
+        let span=1;
+        if(slot.length){
+          const sig=scheduleSlotSignature(slot);
+          for(let j=i+1;j<hours.length;j++){
+            if(hours[j]!==hours[j-1]+1) break;
+            const next=DB.schedules.filter(x=>x.className===cls&&x.day===d&&Number(x.hour)===hours[j]&&(!f.teacherId||x.teacherId===f.teacherId));
+            if(scheduleSlotSignature(next)!==sig) break;
+            span++;
+          }
+        }
+        const names=[...new Set(slot.map(s=>sheetTeacherCode(teacherById(s.teacherId))))].join('/');
+        const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
+        const title=slot.map(s=>`${s.subject} · ${teacherName(teacherById(s.teacherId))}`).join(' | ');
+        const hasDuty=slot.some(s=>teacherById(s.teacherId)?.dutyDay===d);
+        dayCells.push(`<td colspan="${span}" class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}${hasDuty?' duty-sheet':''}" title="${escapeHtml(title)}">${slot.length?`<strong>${escapeHtml(subjects)}</strong><span>${escapeHtml(names)}</span>`:'—'}</td>`);
+        i+=span-1;
+      }
+      return dayCells.join('');
     }).join('');
-    return `<tr><th class="sheet-day-cell">${escapeHtml(day)}</th><th class="sheet-hour-cell">${escapeHtml(`${hour}.`)}${time?`<small>${escapeHtml(time)}</small>`:''}</th>${cells}</tr>`;
-  }).join('')).join('');
-  const cellCount=classes.length;
-  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet class-sheet class-sheet-transposed" data-cell-count="${cellCount}"><thead><tr><th class="sheet-day-cell">Gün</th><th class="sheet-hour-cell">Saat</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<tr><th class="sheet-name">${escapeHtml(cls)}</th>${cells}</tr>`;
+  }).join('');
+  const cellCount=days.length*hours.length;
+  return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet class-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Sınıf</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function scheduleSlotSignature(slot){
