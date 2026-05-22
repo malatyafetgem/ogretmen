@@ -25,6 +25,18 @@
 
   /* Kenar yuvarlama */
   --r: 4px;
+
+  /* Gölge ve katman sırası */
+  --shadow-brutal-sm: 3px 3px 0 rgba(17, 24, 39, .95);
+  --shadow-brutal-xs: 2px 2px 0 rgba(17, 24, 39, .95);
+  --z-sticky-cell: 2;
+  --z-sticky-head: 4;
+  --z-sticky-corner: 5;
+  --z-topbar: 1035;
+  --z-sidebar: 1040;
+  --z-bottom-nav: 1040;
+  --z-toast: 2000;
+  --z-busy: 2050;
 }
 
 /* ─── 2. SIFIRLAMALAR & YARDIMCILAR ─── */
@@ -72,7 +84,6 @@ body.role-user button[onclick*="saveTeacherForm"],
 body.role-user button[onclick*="saveScheduleForm"],
 body.role-user button[onclick*="saveTaskForm"],
 body.role-user button[onclick*="resetAllData"],
-body.role-user button[onclick*="loadDemoData"],
 body.role-user input[type="file"] {
   display: none !important;
 }
@@ -239,12 +250,12 @@ body {
 @media (min-width:992px) {
   .app-sidebar.obs-sidebar {
     position:fixed !important; top:0 !important; left:0 !important; bottom:0 !important;
-    width:240px; z-index:1040; overflow-y:auto;
+    width:240px; z-index:var(--z-sidebar); overflow-y:auto;
     background:var(--c-surface) !important;
     border-right: var(--border-ink);
   }
   .app-header, .app-main, .app-footer { margin-left:240px; }
-  .app-header { position:sticky; top:0; z-index:1035; }
+  .app-header { position:sticky; top:0; z-index:var(--z-topbar); }
   .app-main   { min-height:calc(100vh - 57px); }
 }
 .sidebar-brand {
@@ -692,11 +703,11 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .sheet-scroll    { max-height:70vh; overflow:auto; }
 .schedule-sheet  { font-size:.78rem; }
 .schedule-sheet th {
-  position:sticky; top:0; z-index:4; background:#f3f4f6 !important; text-align:center;
+  position:sticky; top:0; z-index:var(--z-sticky-head); background:#f3f4f6 !important; text-align:center;
   font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
 }
 .schedule-sheet .sheet-name {
-  position:sticky; left:0; z-index:5; background:var(--c-surface) !important;
+  position:sticky; left:0; z-index:var(--z-sticky-corner); background:var(--c-surface) !important;
   min-width:140px; text-align:left;
 }
 .schedule-sheet .sheet-name small { display:block; color:var(--c-muted); font-weight:500; }
@@ -748,7 +759,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .duty-matrix .duty-place-head {
   text-align:left; white-space:nowrap; padding-left:8px !important;
   min-width:140px; font-size:.75rem; font-weight:800; background:#f3f4f6 !important;
-  position:sticky; left:0; z-index:2;
+  position:sticky; left:0; z-index:var(--z-sticky-cell);
 }
 
 /* Dolu nöbet hücresi */
@@ -1107,7 +1118,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .contact-link:hover { text-decoration:underline; }
 
 /* ─── 31. TOAST ─── */
-#toastContainer { position:fixed; top:68px; right:16px; z-index:2000; display:flex; flex-direction:column; gap:8px; }
+#toastContainer { position:fixed; top:68px; right:16px; z-index:var(--z-toast); display:flex; flex-direction:column; gap:8px; }
 .obs-toast {
   display:flex; align-items:center; gap:10px;
   min-width:240px; max-width:340px; padding:11px 14px;
@@ -1139,6 +1150,56 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .import-feedback-box span { display:block; margin-top:4px; font-size:.82rem; }
 .feedback-success { border:var(--border-ink); background:#f0fdf4; color:#166534; }
 .feedback-danger  { border:var(--border-ink); background:#fef2f2; color:#991b1b; }
+
+.busy-overlay {
+  position:fixed;
+  inset:0;
+  z-index:var(--z-busy);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(249,250,251,.78);
+  backdrop-filter:blur(2px);
+}
+.busy-overlay.is-visible { display:flex; }
+.busy-card {
+  width:min(440px,100%);
+  border:var(--border-ink-thick);
+  border-radius:var(--r);
+  background:var(--c-surface);
+  box-shadow:var(--shadow-brutal-sm);
+  padding:16px 18px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  color:var(--c-ink);
+}
+.busy-card strong { display:block; font-weight:900; line-height:1.2; }
+.busy-card span { display:block; color:var(--c-muted); margin-top:3px; font-size:.92rem; }
+.busy-spinner {
+  width:28px;
+  height:28px;
+  border:3px solid #dbe3ef;
+  border-top-color:var(--c-blue);
+  border-radius:50%;
+  animation:busy-spin .8s linear infinite;
+  flex:0 0 auto;
+}
+.busy-result { align-items:flex-start; }
+.busy-result > i { font-size:1.4rem; margin-top:1px; color:var(--c-blue); }
+.busy-result.busy-success > i { color:var(--c-green); }
+.busy-result.busy-danger > i { color:var(--c-red); }
+.busy-result ul { margin:6px 0 0; padding-left:18px; color:var(--c-ink-2); font-size:.9rem; }
+.busy-result button {
+  margin-left:auto;
+  border:0;
+  background:transparent;
+  color:var(--c-muted);
+  width:28px;
+  height:28px;
+}
+@keyframes busy-spin { to { transform:rotate(360deg); } }
 .settings-group + .settings-group { margin-top:24px; }
 .settings-group-head { margin:0 0 14px; }
 .settings-group-head h3 { font-size:1rem; font-weight:800; letter-spacing:-.02em; margin:0; }
@@ -1244,11 +1305,11 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 /* Sticky ilk sütun */
 .settings-matrix th:first-child,
 .settings-matrix td:first-child {
-  position:sticky; left:0; z-index:2;
+  position:sticky; left:0; z-index:var(--z-sticky-cell);
   background:var(--c-surface);
   box-shadow:2px 0 4px -1px rgba(0,0,0,.08);
 }
-.settings-matrix thead th:first-child { background:#f3f4f6; z-index:3; }
+.settings-matrix thead th:first-child { background:#f3f4f6; z-index:calc(var(--z-sticky-cell) + 1); }
 /* Kısaltma sütunu: 3-5 karakter için dar yeterli */
 .subject-settings-table td:nth-child(2) input { min-width:60px; max-width:90px; }
 /* Ortak ders ayraç "+" sütunu */
@@ -1260,6 +1321,18 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .class-program-settings-table .class-program-slot { min-width:150px; }
 .class-program-cell { display:grid; grid-template-columns:1fr; gap:4px; }
 .class-program-cell .class-program-subject { font-size:.77rem; }
+.class-program-cell.has-conflict {
+  outline:2px solid var(--c-orange);
+  outline-offset:2px;
+  background:#fff7ed;
+}
+.class-program-conflict .alert {
+  border:var(--border-ink);
+  border-left:5px solid var(--c-orange);
+  border-radius:var(--r);
+  background:#fff7ed;
+  color:var(--c-ink);
+}
 
 /* ─── 34. YARDIMCI ─── */
 .schedule-entry-list { border-top:var(--border-ink); padding-top:14px; }
@@ -1337,7 +1410,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
     position:fixed; left:0; right:0; bottom:0; height:64px;
     display:grid; grid-template-columns:repeat(5,1fr);
     background:var(--c-surface); border-top:var(--border-ink);
-    z-index:1040;
+    z-index:var(--z-bottom-nav);
   }
   body.role-user .bottom-nav {
     grid-template-columns:repeat(4,1fr);

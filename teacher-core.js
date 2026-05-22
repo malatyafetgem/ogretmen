@@ -1,7 +1,6 @@
 const STORAGE_KEY = 'ogretmenBilgiDB.v1';
 const REMOTE_DB_PATH = 'ogretmenSistemi/main';
 const ADMIN_UID = 'QO8oNRYiKXgv9KcfH4n8CWdzRw82';
-// Seed dosyaları kaldırıldı — veriler yalnızca Firebase'den gelir
 const DAY_NAMES = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
 const HOURS = [1, 2, 3, 4, 5, 6, 7, 8];
 const LESSON_TIMES = [
@@ -99,15 +98,6 @@ function uid(prefix='id'){
 let DB = loadDB();
 
 function makeEmptyDB(){ return { teachers: [], schedules: [], tasks: [], meta: {}, settings: { classes: [...CLASS_LIST], days: DAY_NAMES, hours: HOURS, lessonTimes: LESSON_TIMES, sharedLessonPairs: DEFAULT_SHARED_LESSON_PAIRS } }; }
-// Seed fonksiyonları kaldırıldı — veriler yalnızca Firebase'den gelir
-function hasSeedTeachers(){ return false; }
-function cloneSeedTeachers(){ return []; }
-function hasSeedSchedules(){ return false; }
-function cloneSeedSchedules(){ return []; }
-function hasSeedTasks(){ return false; }
-function cloneSeedTasks(){ return []; }
-function defaultDB(){ return normalizeDB(makeEmptyDB()); }
-function applySeedData(db){ return normalizeDB(db); }
 function normalizeDB(d){
   d.meta=d.meta||{};
   d.settings=d.settings||{};
@@ -228,6 +218,11 @@ function dbForStorage(db){
   return {...db, teachers: db.teachers.map(t=>({...t}))};
 }
 function isAdminUser(){ return CURRENT_ROLE === 'admin'; }
+function requireAdminAction(message='Bu işlem için admin yetkisi gerekir.'){
+  if(isAdminUser()) return true;
+  showToast(message,'warning');
+  return false;
+}
 function restoreDBFromStorage(){
   try{
     const d=JSON.parse(readStorage(STORAGE_KEY)||'null');

@@ -104,6 +104,39 @@ function showToast(msg,type='info',timeout=3000){
   c.appendChild(t);
   setTimeout(()=>t.remove(),timeout);
 }
+function showBusyState(title='İşlem yapılıyor...', detail='Lütfen bekleyin.'){
+  let el=getEl('busyOverlay');
+  if(!el){
+    el=document.createElement('div');
+    el.id='busyOverlay';
+    el.className='busy-overlay';
+    document.body.appendChild(el);
+  }
+  el.innerHTML=`<div class="busy-card"><div class="busy-spinner" aria-hidden="true"></div><div><strong>${escapeHtml(title)}</strong>${detail?`<span>${escapeHtml(detail)}</span>`:''}</div></div>`;
+  el.classList.add('is-visible');
+  document.body.classList.add('app-busy');
+}
+function hideBusyState(){
+  const el=getEl('busyOverlay');
+  if(el) el.classList.remove('is-visible');
+  document.body.classList.remove('app-busy');
+}
+function showImportResult(title, lines=[], type='success', timeout=5200){
+  let el=getEl('busyOverlay');
+  if(!el){
+    el=document.createElement('div');
+    el.id='busyOverlay';
+    el.className='busy-overlay';
+    document.body.appendChild(el);
+  }
+  const icon=type==='success'?'fa-circle-check':type==='danger'?'fa-circle-xmark':'fa-circle-info';
+  const list=Array.isArray(lines)?lines.filter(Boolean):[lines].filter(Boolean);
+  el.innerHTML=`<div class="busy-card busy-result busy-${escapeHtml(type)}"><i class="fas ${icon}" aria-hidden="true"></i><div><strong>${escapeHtml(title)}</strong>${list.length?`<ul>${list.map(line=>`<li>${escapeHtml(line)}</li>`).join('')}</ul>`:''}</div><button type="button" onclick="hideBusyState()" aria-label="Kapat"><i class="fas fa-xmark"></i></button></div>`;
+  el.classList.add('is-visible');
+  document.body.classList.add('app-busy');
+  clearTimeout(showImportResult._timer);
+  showImportResult._timer=setTimeout(hideBusyState,timeout);
+}
 const disclosureState=new Map();
 function rememberDisclosure(el){
   if(el?.dataset?.sectionKey) disclosureState.set(el.dataset.sectionKey, !!el.open);

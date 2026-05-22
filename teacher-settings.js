@@ -24,6 +24,13 @@ function renderSettings(){
     <section class="settings-group">
       ${mkCard(disclosureSection({key:'settings-shared-lessons',title:'Ortak Ders Çiftleri',icon:'fas fa-link',meta:`${(DB.settings.sharedLessonPairs||[]).length} çift`,content:buildSharedLessonSettings(),open:false}))}
     </section>`;
+  setTimeout(()=>{ if(typeof updateClassProgramConflictWarnings==='function') updateClassProgramConflictWarnings(); },0);
+}
+
+function requireSettingsAdmin(){
+  return typeof requireAdminAction==='function'
+    ? requireAdminAction('Ayarlar ve veri işlemleri için admin yetkisi gerekir.')
+    : true;
 }
 
 function buildImportSettings(){
@@ -65,15 +72,18 @@ function lessonTimeRow(item,index){
 }
 
 function addDaySettingsRow(){
+  if(!requireSettingsAdmin()) return;
   getEl('daySettingsBody').insertAdjacentHTML('beforeend',daySettingsRow('',Date.now()));
 }
 
 function addLessonTimeRow(){
+  if(!requireSettingsAdmin()) return;
   const next=Math.max(0,...schoolHours())+1;
   getEl('lessonTimeBody').insertAdjacentHTML('beforeend',lessonTimeRow({hour:next,start:'',end:''},Date.now()));
 }
 
 function saveCalendarSettings(){
+  if(!requireSettingsAdmin()) return;
   const dayRows=[...document.querySelectorAll('#daySettingsBody .day-settings-row')];
   const days=[], dayKeys=new Set(), dayMap=new Map();
   for(const row of dayRows){
@@ -129,10 +139,12 @@ function dutyPlaceRow(place,index,assignments={}){
 }
 
 function addDutyPlaceRow(){
+  if(!requireSettingsAdmin()) return;
   getEl('dutyMatrixBody').insertAdjacentHTML('beforeend',dutyPlaceRow('',Date.now(),{}));
 }
 
 function saveDutyMatrix(){
+  if(!requireSettingsAdmin()) return;
   const rows=[...document.querySelectorAll('#dutyMatrixBody .duty-place-row')];
   const places=[], placeKeys=new Set(), assignments=[], usedTeachers=new Set();
   for(const row of rows){
@@ -167,14 +179,14 @@ function buildClassProgramSettings(dayValue){
   const days=schoolDays(), hours=schoolHours();
   const dayOptions=days.map(d=>`<option value="${escapeHtml(d)}" ${d===dayValue?'selected':''}>${escapeHtml(d)}</option>`).join('');
   const rows=(DB.settings.classes||CLASS_LIST).map((cls,i)=>classProgramRow(cls,cls,dayValue,i)).join('');
-  return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div><div class="settings-editor-body"><div class="settings-scroll-hint no-print"><i class="fas fa-arrows-left-right"></i> Yana kaydırın</div><div class="settings-filter-row"><div><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div><div class="settings-table-scroll settings-table-scroll-wide mt-3"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th class="text-center">${h}.<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
+  return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div><div class="settings-editor-body"><div class="settings-scroll-hint no-print"><i class="fas fa-arrows-left-right"></i> Yana kaydırın</div><div class="settings-filter-row"><div><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div><div id="classProgramConflictWarning" class="class-program-conflict mt-3"></div><div class="settings-table-scroll settings-table-scroll-wide mt-3"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th class="text-center">${h}.<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
 }
 
 function classProgramRow(className,originalClass,day,index){
   const hours=schoolHours();
   const cells=hours.map(hour=>{
     const item=DB.schedules.find(s=>s.className===className&&s.day===day&&Number(s.hour)===Number(hour));
-    return `<td class="class-program-slot"><div class="class-program-cell"><select class="form-select form-select-sm class-program-teacher" data-hour="${hour}" onchange="updateClassProgramSubjectSelect(this)">${teacherSelectOptions(item?.teacherId||'', 'Boş')}</select><select class="form-select form-select-sm class-program-subject" data-hour="${hour}" ${item?.teacherId?'':'disabled'}>${classProgramSubjectOptions(item?.teacherId||'', item?.subject||'')}</select></div></td>`;
+    return `<td class="class-program-slot"><div class="class-program-cell"><select class="form-select form-select-sm class-program-teacher" data-hour="${hour}" onchange="updateClassProgramSubjectSelect(this); updateClassProgramConflictWarnings()">${teacherSelectOptions(item?.teacherId||'', 'Boş')}</select><select class="form-select form-select-sm class-program-subject" data-hour="${hour}" onchange="updateClassProgramConflictWarnings()" ${item?.teacherId?'':'disabled'}>${classProgramSubjectOptions(item?.teacherId||'', item?.subject||'')}</select></div></td>`;
   }).join('');
   return `<tr class="class-program-row" data-original-class="${escapeHtml(originalClass||'')}" data-row="${index}"><td class="place-cell"><input class="form-control form-control-sm class-name-input" value="${escapeHtml(className||'')}" placeholder="Örn: 9A"></td>${cells}<td class="no-print"><button class="btn btn-sm btn-outline-danger" onclick="removeSettingsRow(this)">Sil</button></td></tr>`;
 }
@@ -216,17 +228,51 @@ function updateClassProgramSubjectSelect(teacherSelect){
   subjectSelect.disabled=!teacherId;
 }
 
+function updateClassProgramConflictWarnings(){
+  const panel=getEl('classProgramConflictWarning');
+  if(!panel) return;
+  document.querySelectorAll('.class-program-cell.has-conflict').forEach(cell=>cell.classList.remove('has-conflict'));
+  const day=getEl('classProgramDay')?.value||window.settingsProgramDay||schoolDays()[0]||'';
+  const issues=[];
+  for(const hour of schoolHours()){
+    const used=new Map();
+    document.querySelectorAll('#classProgramBody .class-program-row').forEach(row=>{
+      const className=cleanClassName(row.querySelector('.class-name-input')?.value||'');
+      const teacherSelect=row.querySelector(`.class-program-teacher[data-hour="${hour}"]`);
+      const teacherId=teacherSelect?.value||'';
+      if(!className||!teacherId) return;
+      const cell=teacherSelect.closest('.class-program-cell');
+      if(used.has(teacherId)){
+        const previous=used.get(teacherId);
+        previous.cell?.classList.add('has-conflict');
+        cell?.classList.add('has-conflict');
+        const t=teacherById(teacherId);
+        issues.push(`${teacherName(t)}: ${day} ${hour}. saat ${previous.className} ve ${className}`);
+      }else{
+        used.set(teacherId,{className,cell});
+      }
+    });
+  }
+  const unique=[...new Set(issues)].slice(0,6);
+  panel.innerHTML=unique.length
+    ? `<div class="alert alert-warning mb-0"><strong>Canlı çakışma uyarısı</strong><ul class="mb-0 mt-1">${unique.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>`
+    : '';
+}
+
 function addClassProgramRow(){
+  if(!requireSettingsAdmin()) return;
   const day=getEl('classProgramDay')?.value||window.settingsProgramDay||schoolDays()[0]||'Pazartesi';
   getEl('classProgramBody').insertAdjacentHTML('beforeend',classProgramRow('', '', day, Date.now()));
 }
 
 function removeSettingsRow(btn){
+  if(!requireSettingsAdmin()) return;
   const row=btn.closest('tr');
   if(row&&confirm('Bu satır kaldırılacak. Kaydetmeden kesinleşmez.')) row.remove();
 }
 
 function saveClassProgramMatrix(){
+  if(!requireSettingsAdmin()) return;
   const day=getEl('classProgramDay')?.value||window.settingsProgramDay||schoolDays()[0];
   const rows=[...document.querySelectorAll('#classProgramBody .class-program-row')];
   const oldClasses=DB.settings.classes||CLASS_LIST, classNames=[], classKeys=new Set(), maps=[];
@@ -293,10 +339,12 @@ function subjectSettingsRow(item,index){
 }
 
 function addSubjectSettingsRow(){
+  if(!requireSettingsAdmin()) return;
   getEl('subjectSettingsBody').insertAdjacentHTML('beforeend',subjectSettingsRow({name:'',code:''},Date.now()));
 }
 
 function saveSubjectSettings(){
+  if(!requireSettingsAdmin()) return;
   const rows=[...document.querySelectorAll('#subjectSettingsBody .subject-settings-row')];
   const subjects=[], keys=new Set();
   for(const row of rows){
@@ -334,6 +382,7 @@ function sharedLessonRow(pair,index,baseOpts){
 }
 
 function addSharedLessonRow(){
+  if(!requireSettingsAdmin()) return;
   const body=getEl('sharedLessonBody');
   const empty=getEl('sharedLessonEmpty'); if(empty) empty.remove();
   const subjects=subjectSettings().sort((a,b)=>a.name.localeCompare(b.name,'tr'));
@@ -342,6 +391,7 @@ function addSharedLessonRow(){
 }
 
 function saveSharedLessonSettings(){
+  if(!requireSettingsAdmin()) return;
   const rows=[...document.querySelectorAll('#sharedLessonBody .shared-lesson-row')];
   const pairs=[];
   for(const row of rows){
@@ -361,8 +411,6 @@ function teacherSelectOptions(selected='', emptyLabel='Seçiniz'){
   const teachers=sortedTeachers();
   return `<option value="">${emptyLabel}</option>`+teachers.map(t=>`<option value="${t.id}" ${t.id===selected?'selected':''}>${escapeHtml(teacherName(t))}</option>`).join('');
 }
-
-// Seed yükleme fonksiyonları kaldırıldı — veriler yalnızca Firebase'den gelir
 
 /* ─────────────────────────────────────────────────
    Öğretmen İçe Aktarma Sihirbazı
@@ -386,6 +434,7 @@ const TI_SYSTEM_FIELDS = [
 ];
 
 function importTeacherFile(e){
+  if(!requireSettingsAdmin()){ e.target.value=''; return; }
   const f = e.target.files && e.target.files[0];
   if(!f) return;
   if(!window.XLSX){
@@ -396,8 +445,9 @@ function importTeacherFile(e){
     showToast('Sadece Excel/CSV dosyaları yüklenebilir.','error');
     e.target.value = ''; return;
   }
+  showBusyState('Öğretmen dosyası okunuyor','Başlıklar ve kayıtlar hazırlanıyor.');
   const r = new FileReader();
-  r.onerror = () => { showToast('Dosya okunamadı.','danger'); e.target.value = ''; };
+  r.onerror = () => { hideBusyState(); showImportResult('Dosya okunamadı',['Öğretmen dosyasını yeniden seçin.'],'danger'); e.target.value = ''; };
   r.onload = ev => {
     try {
       const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', raw:false});
@@ -416,9 +466,11 @@ function importTeacherFile(e){
       if(!_tiHeaders.length) throw new Error('Başlık satırı okunamadı.');
       _tiWizardStep = 0;
       _tiRenderWizardStep();
+      hideBusyState();
       bootstrap.Modal.getOrCreateInstance(getEl('teacherImportWizardModal')).show();
     } catch(err){
-      showToast('Hata: ' + (err.message || 'Bilinmeyen hata'), 'danger');
+      hideBusyState();
+      showImportResult('Öğretmen dosyası okunamadı',[err.message || 'Bilinmeyen hata'],'danger');
     }
     e.target.value = '';
   };
@@ -688,8 +740,10 @@ function processTeacherImport(){
 }
 
 function confirmTeacherImport(){
+  if(!requireSettingsAdmin()) return;
   if(!_tiPendingData){ cancelTeacherImport(); return; }
   const { toAdd, toUpdate } = _tiPendingData;
+  showBusyState('Öğretmen kayıtları işleniyor','Yeni ve güncellenecek kayıtlar kaydediliyor.');
 
   toUpdate.forEach(rec => {
     const idx = DB.teachers.findIndex(t => t.id === rec.id || String(t._tcRaw||'') === rec._tcRaw);
@@ -700,8 +754,8 @@ function confirmTeacherImport(){
 
   saveDB();
   renderAll();
-  showToast(`${toAdd.length} yeni, ${toUpdate.length} güncelleme tamamlandı.`, 'success');
   cancelTeacherImport();
+  showImportResult('Öğretmen içe aktarma tamamlandı',[`${toAdd.length} yeni kayıt`, `${toUpdate.length} güncelleme`], 'success');
 }
 
 function cancelTeacherImport(){
@@ -739,17 +793,20 @@ function downloadScheduleTemplate(){
   XLSX.writeFile(wb,'ders-programi-sablonu.xlsx');
 }
 function importScheduleFile(e){
+  if(!requireSettingsAdmin()){ e.target.value=''; return; }
   const f=e.target.files&&e.target.files[0];
   if(!f) return;
   if(!window.XLSX){ showToast('Excel içe aktarma için internet bağlantısı veya XLSX kütüphanesi gerekir.','warning',6000); e.target.value=''; return; }
+  showBusyState('Ders programı dosyası okunuyor','Satırlar ve çakışmalar kontrol ediliyor.');
   const r=new FileReader();
+  r.onerror=()=>{ showImportResult('Ders programı dosyası okunamadı',['Dosyayı yeniden seçip deneyin.'],'danger'); e.target.value=''; };
   r.onload=ev=>{
     try{
       const wb=XLSX.read(ev.target.result,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{defval:''});
       const parsed=parseScheduleRows(rows);
       if(parsed.errors.length){
         renderScheduleImportFeedback(parsed.errors,'danger');
-        showToast(`${parsed.errors.length} satır kontrol edilmeli. Ders programı içe aktarılmadı.`,'warning',6000);
+        showImportResult('Ders programı içe aktarılmadı',[`${parsed.errors.length} satır kontrol edilmeli.`],'warning');
         e.target.value='';
         return;
       }
@@ -758,16 +815,16 @@ function importScheduleFile(e){
       const conflicts=scheduleImportConflicts(nextSchedules);
       if(conflicts.length){
         renderScheduleImportFeedback(conflicts,'danger');
-        showToast('Çakışma bulunduğu için içe aktarma yapılmadı.','warning',6000);
+        showImportResult('Ders programı içe aktarılmadı',['Çakışma bulunduğu için işlem durduruldu.'],'warning');
         e.target.value='';
         return;
       }
       applyImportedSchedule(parsed,mode);
       renderScheduleImportFeedback([`${parsed.items.length} ders kaydı içe aktarıldı.`, `${parsed.classes.length} sınıf, ${parsed.subjects.length} ders ve ${parsed.lessonTimes.length} ders saati işlendi.`],'success');
-      showToast(`${parsed.items.length} ders kaydı içe aktarıldı.`,'success');
+      showImportResult('Ders programı içe aktarma tamamlandı',[`${parsed.items.length} ders kaydı`, `${parsed.classes.length} sınıf`, `${parsed.subjects.length} ders`],'success');
     }catch(err){
       renderScheduleImportFeedback(['Dosya okunamadı. Başlıkları ve ilk sayfayı kontrol edin.'],'danger');
-      showToast('Ders programı dosyası okunamadı.','danger');
+      showImportResult('Ders programı dosyası okunamadı',['Başlıkları ve ilk sayfayı kontrol edin.'],'danger');
     }
     e.target.value='';
   };
@@ -831,6 +888,7 @@ function scheduleImportConflicts(items){
   return issues;
 }
 function applyImportedSchedule(parsed,mode){
+  if(!requireSettingsAdmin()) return;
   if(mode==='replace') DB.schedules=parsed.items;
   else DB.schedules.push(...parsed.items);
   DB.settings.subjects=DB.settings.subjects||subjectSettings().map(s=>({name:s.name,code:s.code}));
@@ -864,9 +922,29 @@ function exportBackup(){
   URL.revokeObjectURL(a.href);
   showToast('Yedek indirildi.','success');
 }
-function importBackup(e){ const f=e.target.files&&e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!Array.isArray(d.teachers)||!Array.isArray(d.schedules))throw Error(); DB=normalizeDB(d); saveDB(); renderAll(); showToast('Yedek geri yüklendi.','success'); }catch(err){ showToast('Yedek dosyası uygun değil.','danger'); } e.target.value=''; }; r.readAsText(f,'utf-8'); }
-function resetAllData(){ if(!confirm('Tüm veriler silinsin mi?'))return; DB=makeEmptyDB(); saveDB(); renderAll(); }
-function loadDemoData(){ const demo=[['Ayşe','Yılmaz','Matematik','9A','Pazartesi','A Blok','Cuma'],['Mehmet','Kaya','Edebiyat','10B','Çarşamba','Bahçe','Salı'],['Elif','Demir','Biyoloji','11C','Perşembe','B Blok','Perşembe'],['Selim','Arslan','Fizik','12A','Salı','C Blok','Pazartesi']].map(x=>({id:uid('t'),firstName:x[0],lastName:x[1],identityNo:'',branch:x[2],phone:'',email:'',classAdvisor:x[3],club:'',project:'',dutyDay:x[4],dutyPlace:x[5],freeDay:x[6],scheduleNote:''})); DB.teachers.push(...demo); const [a,b,c,d]=demo; DB.schedules.push({id:uid('s'),teacherId:a.id,className:'9A',subject:'Matematik',day:'Pazartesi',hour:1,startTime:'08:15',endTime:'08:55',note:''},{id:uid('s'),teacherId:a.id,className:'9A',subject:'Matematik',day:'Pazartesi',hour:2,startTime:'09:05',endTime:'09:45',note:''},{id:uid('s'),teacherId:b.id,className:'10B',subject:'Edebiyat',day:'Salı',hour:3,startTime:'09:55',endTime:'10:35',note:''},{id:uid('s'),teacherId:c.id,className:'11C',subject:'Biyoloji',day:'Perşembe',hour:5,startTime:'11:35',endTime:'12:15',note:'Lab'},{id:uid('s'),teacherId:d.id,className:'12A',subject:'Fizik',day:'Salı',hour:1,startTime:'08:15',endTime:'08:55',note:''}); DB.tasks=DB.tasks||[]; DB.tasks.push({id:uid('g'),teacherId:a.id,kind:'Demo',title:'Örnek Görev',description:'Deneme amaçlı görev',details:'',startDate:'',endDate:''}); saveDB(); renderAll(); showToast('Örnek veri eklendi.','success'); }
+function importBackup(e){
+  if(!requireSettingsAdmin()){ e.target.value=''; return; }
+  const f=e.target.files&&e.target.files[0];
+  if(!f) return;
+  showBusyState('Yedek dosyası okunuyor','Veri yapısı kontrol ediliyor.');
+  const r=new FileReader();
+  r.onerror=()=>{ showImportResult('Yedek okunamadı',['Dosyayı yeniden seçip deneyin.'],'danger'); e.target.value=''; };
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!Array.isArray(d.teachers)||!Array.isArray(d.schedules)) throw Error();
+      DB=normalizeDB(d);
+      saveDB();
+      renderAll();
+      showImportResult('Yedek geri yüklendi',[`${DB.teachers.length} öğretmen`, `${DB.schedules.length} ders kaydı`, `${(DB.tasks||[]).length} görev`],'success');
+    }catch(err){
+      showImportResult('Yedek dosyası uygun değil',['JSON yapısı öğretmen ve ders programı verisi içermeli.'],'danger');
+    }
+    e.target.value='';
+  };
+  r.readAsText(f,'utf-8');
+}
+function resetAllData(){ if(!requireSettingsAdmin())return; if(!confirm('Tüm veriler silinsin mi?'))return; showBusyState('Veriler sıfırlanıyor','Yerel ve bulut kayıtları güncelleniyor.'); DB=makeEmptyDB(); saveDB(); renderAll(); showImportResult('Veriler sıfırlandı',['Sistem boş başlangıç durumuna döndü.'],'success'); }
 
 /* ─────────────────────────────────────────────────
    Ders Programı İçe Aktarma Sihirbazı
@@ -886,12 +964,14 @@ const SI_WIZ_STEPS = [
 ];
 
 function importScheduleFileWizard(e){
+  if(!requireSettingsAdmin()){ e.target.value=''; return; }
   const f = e.target.files && e.target.files[0];
   if(!f) return;
   if(!window.XLSX){ showToast('Excel içe aktarma için XLSX kütüphanesi gerekir.','warning',6000); e.target.value=''; return; }
   if(!/\.(xlsx|xls|xlsm|csv)$/i.test(f.name)){ showToast('Sadece Excel/CSV dosyaları yüklenebilir.','warning'); e.target.value=''; return; }
+  showBusyState('Ders programı dosyası okunuyor','Sihirbaz için başlıklar hazırlanıyor.');
   const r = new FileReader();
-  r.onerror = () => { showToast('Dosya okunamadı.','danger'); e.target.value=''; };
+  r.onerror = () => { showImportResult('Ders programı dosyası okunamadı',['Dosyayı yeniden seçip deneyin.'],'danger'); e.target.value=''; };
   r.onload = ev => {
     try {
       const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array', raw:false});
@@ -913,9 +993,10 @@ function importScheduleFileWizard(e){
       _siStep2Saved = {};
       _siPendingData = null;
       _siRenderWizardStep();
+      hideBusyState();
       bootstrap.Modal.getOrCreateInstance(getEl('scheduleImportWizardModal')).show();
     } catch(err){
-      showToast('Hata: ' + (err.message || 'Bilinmeyen hata'), 'danger');
+      showImportResult('Ders programı dosyası okunamadı',[err.message || 'Bilinmeyen hata'],'danger');
     }
     e.target.value = '';
   };
@@ -1176,14 +1257,16 @@ function processScheduleImport(){
 }
 
 function confirmScheduleImport(){
+  if(!requireSettingsAdmin()) return;
   if(!_siPendingData){ cancelScheduleImport(); return; }
   const { items, errors, mode, classes, subjects, lessonTimes } = _siPendingData;
   if(errors.length && !confirm(`${errors.length} hatalı satır var. Hatasız ${items.length} kayıt yine de aktarılsın mı?`)) return;
   const conflicts = scheduleImportConflicts(mode==='append' ? [...DB.schedules,...items] : items);
   if(conflicts.length && !confirm(`${conflicts.length} çakışma var. Yine de devam edilsin mi?`)) return;
+  showBusyState('Ders programı kaydediliyor','Program kayıtları ve ilgili listeler güncelleniyor.');
   applyImportedSchedule({ items, classes, subjects, lessonTimes }, mode);
-  showToast(`${items.length} ders kaydı içe aktarıldı.`, 'success');
   cancelScheduleImport();
+  showImportResult('Ders programı içe aktarma tamamlandı',[`${items.length} ders kaydı`, `${classes.length} sınıf`, `${subjects.length} ders`], 'success');
 }
 
 function cancelScheduleImport(){
@@ -1220,6 +1303,7 @@ const TASK_WIZ_STEPS = [
 ];
 
 function importTaskFileWizard(e) {
+  if(!requireSettingsAdmin()){ e.target.value=''; return; }
   const f = e.target.files && e.target.files[0];
   if (!f) return;
   if (!window.XLSX) {
@@ -1230,8 +1314,9 @@ function importTaskFileWizard(e) {
     showToast('Sadece Excel/CSV dosyaları yüklenebilir.', 'error');
     e.target.value = ''; return;
   }
+  showBusyState('Görev dosyası okunuyor','Görev başlıkları ve satırları hazırlanıyor.');
   const r = new FileReader();
-  r.onerror = () => { showToast('Dosya okunamadı.', 'danger'); e.target.value = ''; };
+  r.onerror = () => { showImportResult('Görev dosyası okunamadı',['Dosyayı yeniden seçip deneyin.'],'danger'); e.target.value = ''; };
   r.onload = ev => {
     try {
       const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', raw: false });
@@ -1251,9 +1336,10 @@ function importTaskFileWizard(e) {
       _taskIWizardStep = 0;
       _taskIStep1Saved = {};
       _taskIRenderWizardStep();
+      hideBusyState();
       bootstrap.Modal.getOrCreateInstance(getEl('taskImportWizardModal')).show();
     } catch (err) {
-      showToast('Hata: ' + (err.message || 'Bilinmeyen hata'), 'danger');
+      showImportResult('Görev dosyası okunamadı',[err.message || 'Bilinmeyen hata'],'danger');
     }
     e.target.value = '';
   };
@@ -1472,6 +1558,7 @@ function processTaskImport() {
 }
 
 function confirmTaskImport() {
+  if(!requireSettingsAdmin()) return;
   if (!_taskIPendingData) { cancelTaskImport(); return; }
   const { items, errors, mode } = _taskIPendingData;
   if (errors.length && !confirm(`${errors.length} hatalı satır var. Hatasız ${items.length} görev yine de aktarılsın mı?`)) return;
@@ -1479,12 +1566,13 @@ function confirmTaskImport() {
     if (!confirm('Mevcut tüm görevler silinecek ve yeniden yüklenecek. Devam edilsin mi?')) return;
     DB.tasks = [];
   }
+  showBusyState('Görevler kaydediliyor','Görev listesi güncelleniyor.');
   DB.tasks = DB.tasks || [];
   items.forEach(task => DB.tasks.push(task));
   saveDB();
   renderAll();
-  showToast(`${items.length} görev içe aktarıldı.`, 'success');
   cancelTaskImport();
+  showImportResult('Görev içe aktarma tamamlandı',[`${items.length} görev kaydı`], 'success');
 }
 
 function cancelTaskImport() {

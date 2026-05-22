@@ -17,8 +17,6 @@
   --border-ink-thick: 2.5px solid var(--c-ink);
   --border-light: 1px solid var(--c-border);
   --r: 5px;
-  --shadow-brutal-sm: 3px 3px 0 rgba(17, 24, 39, .95);
-  --shadow-brutal-xs: 2px 2px 0 rgba(17, 24, 39, .95);
 }
 
 body {
