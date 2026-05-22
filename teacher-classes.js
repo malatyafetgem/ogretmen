@@ -45,8 +45,7 @@ function classScheduleItems(className){
 function buildClassDailySchedule(className, day){
   const cards=schoolHours().map(hour=>{
     const slots=DB.schedules.filter(s=>s.className===className&&s.day===day&&Number(s.hour)===hour);
-    const hasDuty=slots.some(s=>teacherById(s.teacherId)?.dutyDay===day);
-    return `<div class="daily-lesson-card${slots.length?' has-lesson':''}${hasDuty?' duty-sheet':''}"><div class="daily-lesson-hour">${lessonHourCell(hour)}</div>${slots.length?classDailySlotHtml(slots):'<span class="text-muted">—</span>'}</div>`;
+    return `<div class="daily-lesson-card${slots.length?' has-lesson':''}"><div class="daily-lesson-hour">${lessonHourCell(hour)}</div>${slots.length?classDailySlotHtml(slots):'<span class="text-muted">—</span>'}</div>`;
   }).join('');
   return `<div class="daily-program-grid">${cards}</div>`;
 }
@@ -65,8 +64,7 @@ function classProgramRowCells(className, day, hours, teacherId=''){
     const hour=hours[i];
     const slots=DB.schedules.filter(s=>s.className===className&&s.day===day&&Number(s.hour)===Number(hour)&&(!teacherId||s.teacherId===teacherId));
     const span=slots.length ? classProgramSlotSpan(className,day,i,hours,slots,teacherId) : 1;
-    const hasDuty=slots.some(s=>teacherById(s.teacherId)?.dutyDay===day);
-    cells.push(`<td colspan="${span}" class="${slots.length?'prog-td-filled':'prog-td-empty'}${hasDuty?' prog-td-duty':''}">${slots.length?classBoardSlotHtml(slots):''}</td>`);
+    cells.push(`<td colspan="${span}" class="${slots.length?'prog-td-filled':'prog-td-empty'}">${slots.length?classBoardSlotHtml(slots):''}</td>`);
     i+=span-1;
   }
   return cells.join('');

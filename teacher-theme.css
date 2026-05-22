@@ -182,11 +182,17 @@ body {
 }
 
 @media screen and (min-width: 992px) {
-  .app-sidebar.obs-sidebar,
+  .app-sidebar.obs-sidebar {
+    overflow: hidden !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
   .app-sidebar.obs-sidebar .sidebar-wrapper {
-    overflow-y: hidden !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .app-sidebar.obs-sidebar::-webkit-scrollbar,
@@ -198,6 +204,38 @@ body {
 
   .app-sidebar.obs-sidebar .sidebar-wrapper {
     height: calc(100vh - 70px);
+  }
+
+  body.sidebar-collapse .app-sidebar.obs-sidebar:not(:hover),
+  .sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) {
+    width: 90px;
+  }
+
+  body.sidebar-collapse .app-header,
+  body.sidebar-collapse .app-main,
+  body.sidebar-collapse .app-footer,
+  .sidebar-collapse .app-header,
+  .sidebar-collapse .app-main,
+  .sidebar-collapse .app-footer {
+    margin-left: 90px;
+  }
+
+  body.sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) .sidebar-menu,
+  .sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) .sidebar-menu {
+    padding: 14px 18px;
+  }
+
+  body.sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) .sidebar-menu .nav-link,
+  .sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) .sidebar-menu .nav-link {
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+  }
+
+  body.sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) .sidebar-menu .nav-link p,
+  .sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) .sidebar-menu .nav-link p {
+    display: none !important;
   }
 }
 
@@ -841,7 +879,7 @@ body {
   }
 }
 
-/* OB34: kalan etkileşimli yüzeyler, modallar ve açılır bölümler. */
+/* OB36: kalan etkileşimli yüzeyler, modallar ve açılır bölümler. */
 @media screen {
   .content-disclosure {
     border: var(--border-ink) !important;
@@ -1395,6 +1433,236 @@ body {
 
   .import-block {
     padding: 12px;
+  }
+}
+
+@media screen {
+  .input-group .btn,
+  .input-group .input-group-text,
+  .tc-eye-button,
+  button[onclick^="toggleTcVisibility"],
+  .btn-tc-reveal {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .tc-eye-button,
+  button[onclick^="toggleTcVisibility"],
+  .btn-tc-reveal {
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--c-muted) !important;
+    width: auto !important;
+    min-width: 42px;
+    height: auto !important;
+    padding-inline: 10px !important;
+  }
+
+  .disclosure-title i {
+    display: inline-flex !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--c-blue);
+    flex: 0 0 auto;
+  }
+
+  .teacher-action-row {
+    justify-content: center;
+  }
+
+  .teacher-action-btn {
+    flex: 0 1 150px;
+  }
+
+  .report-switch {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .report-switch .btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .chip-clickable {
+    cursor: pointer;
+  }
+
+  .chip-active {
+    background: var(--c-blue) !important;
+    border-color: var(--c-ink) !important;
+    color: #fff !important;
+  }
+
+  .settings-editor,
+  .settings-editor-body,
+  .ti-section {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .settings-table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  .settings-table-scroll > .table,
+  .settings-table-scroll > table,
+  .settings-table-scroll .settings-matrix,
+  .settings-table-scroll .class-program-settings-table {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .prog-td-filled.prog-td-duty {
+    border-color: var(--c-ink) !important;
+  }
+
+  .prog-table tbody td.prog-td-duty {
+    background: #fff7ed !important;
+    box-shadow: none !important;
+  }
+
+  .daily-lesson-card.duty-sheet {
+    background: #fff !important;
+    border-color: var(--c-ink) !important;
+  }
+
+  .daily-lesson-card.duty-sheet .daily-slot {
+    background: #fff7ed;
+    border-radius: var(--r-sm);
+    padding: 4px 6px;
+  }
+
+  .schedule-sheet tbody td.duty-sheet,
+  .schedule-sheet tbody td.sheet-filled.duty-sheet {
+    background: #fff7ed !important;
+    border-color: var(--c-border) !important;
+    box-shadow: none !important;
+  }
+}
+
+@media screen and (max-width: 991.98px) {
+  .obs-topbar {
+    display: flex !important;
+    min-height: 58px !important;
+    height: 58px !important;
+    align-items: center;
+    padding: 8px 12px !important;
+  }
+
+  .app-content {
+    padding-top: 14px !important;
+  }
+
+  .top-mobile-brand {
+    max-width: calc(100vw - 150px);
+    gap: 7px;
+  }
+
+  .top-mobile-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .top-mobile-title {
+    font-size: .76rem;
+    line-height: 1.05;
+  }
+
+  .version-pill,
+  .top-action-link {
+    min-height: 38px;
+    height: 38px;
+    padding: 5px 9px !important;
+    box-shadow: none !important;
+  }
+
+  .top-action-link .me-1 {
+    margin-right: 0 !important;
+  }
+
+  .report-switch {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-action-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .teacher-action-btn {
+    width: 100%;
+    flex: none;
+  }
+}
+
+@media screen and (max-width: 575.98px) {
+  body {
+    font-family: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 450;
+  }
+
+  .card-title,
+  .obs-panel .card-title,
+  .disclosure-title,
+  .import-block h4,
+  .settings-group-head h3 {
+    font-weight: 780;
+    letter-spacing: -.018em;
+  }
+
+  .metric-value {
+    font-size: 1.85rem;
+    font-weight: 780;
+  }
+
+  .metric-label,
+  .form-label {
+    font-weight: 760;
+    letter-spacing: .045em;
+  }
+
+  .btn,
+  .form-control,
+  .form-select {
+    font-weight: 650;
+  }
+
+  .table th {
+    font-weight: 760;
+  }
+
+  .table td strong {
+    font-weight: 700;
+  }
+
+  .settings-matrix th,
+  .settings-matrix td {
+    min-width: 140px;
+  }
+
+  .settings-matrix .place-cell {
+    min-width: 150px;
+  }
+
+  .class-program-settings-table th:not(:first-child),
+  .class-program-settings-table .class-program-slot {
+    min-width: 230px;
   }
 }
 

@@ -321,8 +321,7 @@ function buildClassSheet(){
         const names=[...new Set(slot.map(s=>sheetTeacherCode(teacherById(s.teacherId))))].join('/');
         const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
         const title=slot.map(s=>`${s.subject} · ${teacherName(teacherById(s.teacherId))}`).join(' | ');
-        const hasDuty=slot.some(s=>teacherById(s.teacherId)?.dutyDay===d);
-        dayCells.push(`<td colspan="${span}" class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}${hasDuty?' duty-sheet':''}" title="${escapeHtml(title)}">${slot.length?`<strong>${escapeHtml(subjects)}</strong><span>${escapeHtml(names)}</span>`:'—'}</td>`);
+        dayCells.push(`<td colspan="${span}" class="${slot.length?'sheet-filled sheet-cell-content':'sheet-empty'}" title="${escapeHtml(title)}">${slot.length?`<strong>${escapeHtml(subjects)}</strong><span>${escapeHtml(names)}</span>`:'—'}</td>`);
         i+=span-1;
       }
       return dayCells.join('');

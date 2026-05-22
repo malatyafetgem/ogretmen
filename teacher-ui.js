@@ -109,3 +109,18 @@ function disclosureSection({key,title,icon='fas fa-circle',meta='',content='',op
 }
 function dashboardCard(label,value,icon,tone,sub=''){ return `<div class="metric-card metric-${tone}"><span class="metric-icon"><i class="${icon}"></i></span><div><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${sub?`<div class="metric-sub">${sub}</div>`:''}</div></div>`; }
 function emptyState(text){ return `<div class="empty-state"><i class="fas fa-circle-info"></i><span>${escapeHtml(text)}</span></div>`; }
+function initSidebarToggle(){
+  document.querySelectorAll('[data-lte-toggle="sidebar"]').forEach(button=>{
+    if(button.dataset.obsSidebarReady) return;
+    button.dataset.obsSidebarReady='1';
+    button.addEventListener('click',event=>{
+      event.preventDefault();
+      document.body.classList.toggle('sidebar-collapse');
+    });
+  });
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',initSidebarToggle);
+} else {
+  initSidebarToggle();
+}

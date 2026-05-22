@@ -435,7 +435,14 @@ function buildBasePrintCss(orientation) {
 * { box-sizing:border-box; }
 html,body { margin:0!important; padding:0!important; height:auto!important; min-height:0!important; overflow:visible!important; }
 body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
-body > :last-child { margin-bottom:0!important; padding-bottom:0!important; }
+body > :last-child,
+body > :last-child *:last-child {
+  margin-bottom:0!important;
+  padding-bottom:0!important;
+  break-after:auto!important;
+  page-break-after:auto!important;
+}
+body::after { content:none!important; display:none!important; }
 a,.contact-link,.teacher-name-link { color:#0f172a!important; text-decoration:none!important; }
 .contact-link i { display:none!important; }
 
@@ -454,6 +461,15 @@ thead { display:table-header-group; }
 .report-switch,.task-filter-details,.schedule-filter-details { display:none!important; }
 .profile-info-empty,
 details.content-disclosure[data-section-key*="-duty"] { display:none!important; }
+.mobile-print .card:last-child,
+.mobile-print .content-disclosure:last-child,
+.mobile-print .print-program-section:last-child,
+.mobile-print .table-responsive:last-child {
+  margin-bottom:0!important;
+  padding-bottom:0!important;
+  break-after:auto!important;
+  page-break-after:auto!important;
+}
 .print-only,.tc-print-full { display:block!important; }
 .screen-only,.tc-screen-mask { display:none!important; }
 .tc-print-col { display:table-cell!important; }
