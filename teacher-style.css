@@ -1299,9 +1299,9 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .settings-matrix select { width:100%; min-width:0; box-sizing:border-box; }
 /* Ders adı gibi uzun metin alanları wrap edebilir */
 .settings-matrix .place-cell input,
-.subject-settings-table td:first-child input { white-space:normal; min-width:100px; }
+.subject-settings-table td:first-child input { white-space:normal; }
 .shared-lessons-table td:first-child select,
-.shared-lessons-table td:nth-child(3) select { min-width:100px; }
+.shared-lessons-table td:nth-child(3) select { min-width:0; }
 /* Sticky ilk sütun */
 .settings-matrix th:first-child,
 .settings-matrix td:first-child {
@@ -1310,8 +1310,8 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   box-shadow:2px 0 4px -1px rgba(0,0,0,.08);
 }
 .settings-matrix thead th:first-child { background:#f3f4f6; z-index:calc(var(--z-sticky-cell) + 1); }
-/* Kısaltma sütunu: 3-5 karakter için dar yeterli */
-.subject-settings-table td:nth-child(2) input { min-width:60px; max-width:90px; }
+/* Kısaltma sütunu: auto layout ile içerik kadar boyutlanır */
+.subject-settings-table td:nth-child(2) input { min-width:0; }
 /* Ortak ders ayraç "+" sütunu */
 .shared-lessons-table th:nth-child(2),
 .shared-lessons-table td:nth-child(2) { width:24px; padding-left:2px; padding-right:2px; }

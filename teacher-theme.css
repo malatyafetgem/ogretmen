@@ -1804,13 +1804,14 @@ body {
   min-width: 100% !important;
 }
 
+/* ── Dar tablolar: içeriğe göre boyutlanan sütunlar ── */
 .settings-section-panel .day-settings-table,
 .settings-section-panel .lesson-time-settings-table,
 .settings-section-panel .subject-settings-table,
 .settings-section-panel .shared-lessons-table {
-  width: 100% !important;
+  width: auto !important;
   min-width: 0 !important;
-  table-layout: fixed;
+  table-layout: auto !important;
 }
 
 .settings-section-panel .settings-matrix th,
@@ -1827,29 +1828,27 @@ body {
 .settings-section-panel .settings-matrix input,
 .settings-section-panel .settings-matrix select {
   min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
+/* ── Nöbet tablosu: geniş, yatay scroll ── */
 .settings-section-panel .duty-settings-table th:first-child,
 .settings-section-panel .duty-settings-table td:first-child {
-  width: 12ch !important;
-  min-width: 12ch !important;
-  max-width: 12ch !important;
+  min-width: 10ch;
 }
 
 .settings-section-panel .duty-settings-table .duty-place-input {
-  width: 12ch !important;
+  min-width: 10ch;
+  width: 100% !important;
 }
 
 .settings-section-panel .duty-settings-table th:not(:first-child):not(.no-print),
 .settings-section-panel .duty-settings-table td:not(:first-child):not(.no-print) {
-  min-width: 16ch !important;
+  min-width: 14ch;
 }
 
-.settings-section-panel .day-settings-table th:first-child,
-.settings-section-panel .day-settings-table td:first-child {
-  width: 10ch !important;
-}
-
+/* ── İşlem sütunları: buton kadar dar ── */
 .settings-section-panel .day-settings-table th.no-print,
 .settings-section-panel .day-settings-table td.no-print,
 .settings-section-panel .lesson-time-settings-table th.no-print,
@@ -1858,30 +1857,19 @@ body {
 .settings-section-panel .subject-settings-table td.no-print,
 .settings-section-panel .shared-lessons-table th.no-print,
 .settings-section-panel .shared-lessons-table td.no-print {
-  width: 58px !important;
+  white-space: nowrap;
+  width: 1px; /* tarayıcı içeriğe göre genişletir, zorlamamak için 1px */
 }
 
-.settings-section-panel .lesson-time-settings-table th:first-child,
-.settings-section-panel .lesson-time-settings-table td:first-child {
-  width: 5ch !important;
-}
-
-.settings-section-panel .lesson-time-settings-table th:nth-child(2),
-.settings-section-panel .lesson-time-settings-table td:nth-child(2),
-.settings-section-panel .lesson-time-settings-table th:nth-child(3),
-.settings-section-panel .lesson-time-settings-table td:nth-child(3) {
-  width: 12ch !important;
-}
-
+/* ── Ders Programı tablosu: geniş, yatay scroll ── */
 .settings-section-panel .class-program-settings-table th:first-child,
 .settings-section-panel .class-program-settings-table td:first-child {
-  width: 6ch !important;
-  min-width: 6ch !important;
-  max-width: 6ch !important;
+  min-width: 5ch;
 }
 
 .settings-section-panel .class-program-settings-table .class-name-input {
-  width: 6ch !important;
+  min-width: 5ch;
+  width: 100% !important;
 }
 
 .settings-section-panel .class-program-settings-table th:not(:first-child):not(.no-print),
@@ -1889,30 +1877,14 @@ body {
   min-width: 148px !important;
 }
 
-.settings-section-panel .subject-settings-table th:nth-child(2),
-.settings-section-panel .subject-settings-table td:nth-child(2) {
-  width: 10ch !important;
-}
-
-.settings-section-panel .subject-settings-table .subject-code-input {
-  width: 10ch !important;
-  max-width: 10ch !important;
-}
-
+/* ── Ortak ders ayraç "+" sütunu: sadece "+" kadar ── */
 .settings-section-panel .shared-lessons-table th:nth-child(2),
 .settings-section-panel .shared-lessons-table td:nth-child(2) {
-  width: 2.25ch !important;
-  min-width: 2.25ch !important;
-  max-width: 2.25ch !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-.settings-section-panel .shared-lessons-table th:first-child,
-.settings-section-panel .shared-lessons-table td:first-child,
-.settings-section-panel .shared-lessons-table th:nth-child(3),
-.settings-section-panel .shared-lessons-table td:nth-child(3) {
-  width: calc((100% - 2.25ch - 58px) / 2) !important;
+  white-space: nowrap;
+  width: 1px;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  text-align: center;
 }
 
 @media print {
