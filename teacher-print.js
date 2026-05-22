@@ -53,16 +53,31 @@ function resolveBodyClass(type) {
 }
 
 function isMobilePrintViewport() {
+  return isMobilePrintDevice();
+}
+
+/**
+ * Mobil/dokunmatik cihaz tespiti — ana sistemdeki _xprIsMobilePrintDevice() yaklaşımı.
+ * Yalnızca ekran genişliğine değil; user-agent, pointer türü ve dokunma noktalarına bakar.
+ */
+function isMobilePrintDevice() {
   try {
-    return (window.matchMedia && window.matchMedia('(max-width: 767px)').matches) || window.innerWidth <= 767;
-  } catch (e) {
+    var ua = (navigator.userAgent || navigator.vendor || '').toString();
+    var mobileUA = /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(ua);
+    var coarse = false;
+    try { coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch(e){}
+    var sw = (window.screen && window.screen.width)  ? window.screen.width  : window.innerWidth;
+    var sh = (window.screen && window.screen.height) ? window.screen.height : window.innerHeight;
+    var smallScreen = Math.min(sw || 0, sh || 0) <= 820;
+    return mobileUA || (smallScreen && (coarse || (navigator.maxTouchPoints || 0) > 1));
+  } catch(e) {
     return false;
   }
 }
 
 function shouldWarnForLandscapePrint(type, orientation) {
   if (orientation !== 'A4 landscape') return false;
-  if (!isMobilePrintViewport()) return false;
+  if (!isMobilePrintDevice()) return false;
   return [
     'teacher-sheet',
     'class-sheet',
@@ -76,11 +91,17 @@ function shouldWarnForLandscapePrint(type, orientation) {
   ].includes(type);
 }
 
-function notifyLandscapePrintHint(type) {
+/**
+ * Yazdırma SONRASI yatay yön ipucunu kullanıcıya gösterir.
+ * Yalnızca mobilde ve landscape çıktılarda çağrılır.
+ * @param {string} type
+ */
+function notifyLandscapePrintHintAfterPrint(type) {
+  if (!isMobilePrintDevice()) return;
   const isSheet = ['teacher-sheet', 'class-sheet'].includes(type);
   const message = isSheet
-    ? 'Çarşaf programı geniştir. Mobil yazdırmada yazdırma ekranından Yatay yönü seçmeniz önerilir.'
-    : 'Bu çıktı yatay sayfaya göre hazırlandı. Mobil yazdırmada yazdırma ekranından Yatay yönü seçmeniz önerilir.';
+    ? 'İpucu: Yatay (landscape) yön seçerseniz çıktı daha iyi görünür.'
+    : 'İpucu: Yazdırma ekranından Yatay yönü seçerseniz daha iyi çıktı alırsınız.';
   if (typeof showToast === 'function') showToast(message, 'info');
   else console.info('[teacher-print]', message);
 }
@@ -144,14 +165,60 @@ function shouldUseLandscapeForPrint(root) {
    ────────────────────────────────────────────────────────────── */
 
 /**
- * Yazdırmada gizlenmesi gereken elemanları işaretler.
- * remove() KULLANILMAZ; CSS gizleme tercih edilir.
- * @param {Element} root
+ * Yazdırma klonundan gereksiz UI öğelerini doğrudan kaldırır.
+ * CSS'e bırakılmaz; DOM'dan çıkarılır — özellikle mobil için kritik.
+ * @param {Element} root  - cloneNode(true) ile alınmış kopya
  */
 function markHiddenForPrint(root) {
-  // Şu an CSS .no-print ile zaten gizleniyor; bu fonksiyon
-  // gerekirse ek print-hidden class eklemek için hazır bırakılmıştır.
   if (!root) return;
+
+  // Doğrudan kaldırılacak seçiciler (çıktıya kesinlikle girmesin)
+  const removeSelectors = [
+    '.no-print',
+    '.print-hidden',
+    '.page-actions',
+    '.teacher-action-row',
+    '.teacher-selected-preview',
+    '.dashboard-search-card',
+    '.program-filter-inline',
+    '.program-mode-btns',
+    '.schedule-toolbar-card',
+    '.schedule-health',
+    '.report-switch',
+    '.task-filter-details',
+    '.schedule-filter-details',
+    '.obs-toast',
+    '.toast',
+    '.alert:not(.print-keep)',
+    'button:not(.print-keep)',
+    '.btn:not(.print-keep):not(.risk-badge)',
+    '.scroll-hint',
+    '.page-title-row',
+    '.app-footer',
+    'footer',
+    '.bottom-nav',
+    '.app-header',
+    '.app-sidebar',
+    '.obs-topbar',
+    // Arama inputları ve filtreler
+    'input[type="search"]',
+    'input[type="text"].search-input',
+    '.search-row',
+    '.filter-row',
+    // Toolbar kontrol satırları
+    '.schedule-toolbar-main',
+    '.schedule-view-control',
+  ];
+
+  removeSelectors.forEach(sel => {
+    try {
+      root.querySelectorAll(sel).forEach(el => {
+        try { el.remove(); } catch(e) {}
+      });
+    } catch(e) {}
+  });
+
+  // CSS sınıfı ekle (fallback için)
   root.querySelectorAll('.schedule-health, .obs-toast, .page-actions').forEach(el => {
     el.classList.add('print-hidden');
   });
@@ -437,7 +504,7 @@ function buildPrintCss(type, orientation, root, opts) {
  */
 function buildBasePrintCss(orientation) {
   return `
-/* ── CSS değişkenleri (iframe'de teacher-style.css yüklü değil) ── */
+/* ── CSS değişkenleri (yeni pencere/iframe'de teacher-style.css yüklü değil — inline tanımlanır) ── */
 :root {
   --c-ink:       #111827;
   --c-ink-2:     #374151;
@@ -1144,75 +1211,154 @@ function buildAutoTypeCss(root, opts) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   7. IFRAME YAZDIRMA VE TEMİZLİK
+   7. YAZDIRMA MOTORU — MOBİL: yeni pencere / MASAÜSTÜ: gizli iframe
    ────────────────────────────────────────────────────────────── */
 
 /**
- * Verilen HTML içeriğiyle gizli bir iframe açar ve döndürür.
- * @param {string} printHtml  - Tam HTML belgesi
- * @returns {HTMLIFrameElement}
+ * Yazdırma hedefini açar (HTML yazmaz — yalnızca hedefi oluşturur/döndürür).
+ * Mobil/dokunmatik cihazlarda: window.open (yeni sekme/pencere) — ana sistem xPR() yaklaşımı.
+ * Masaüstünde: gizli iframe — mevcut davranış korunur.
+ *
+ * @param {boolean} [forceMobile] - Test için zorla mobil mod
+ * @returns {{ type: 'win'|'iframe', ref: Window|HTMLIFrameElement }|null}
  */
-function openPrintFrame(printHtml) {
+function openPrintFrame(forceMobile) {
+  const useMobile = (forceMobile === true) || isMobilePrintDevice();
+
+  if (useMobile) {
+    // ── MOBİL: yeni pencere/sekme ──────────────────────────────
+    const printWin = window.open('', '_blank', 'width=900,height=820,scrollbars=yes');
+    if (!printWin) {
+      if (typeof showToast === 'function') {
+        showToast('Açılır pencere engellendi! Tarayıcı ayarlarından izin verin.', 'warning', 6000);
+      }
+      return null;
+    }
+    return { type: 'win', ref: printWin };
+  }
+
+  // ── MASAÜSTÜ: gizli iframe ───────────────────────────────────
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
   iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
   document.body.appendChild(iframe);
-
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open();
-  doc.write(printHtml);
-  doc.close();
-
-  return iframe;
+  return { type: 'iframe', ref: iframe };
 }
 
 /**
- * iframe'i yazdırır, afterprint veya timeout fallback ile temizler.
- * @param {HTMLIFrameElement} iframe
+ * Yazdırma hedefine HTML yazar, yüklenmeyi bekler, yazdırır ve temizler.
+ * HTML yazma + bekleme + print tek bu fonksiyonda yönetilir; çift tetiklenme engellenir.
+ *
+ * @param {{ type: 'win'|'iframe', ref: Window|HTMLIFrameElement }} handle
+ * @param {string}   printHtml      - Tam HTML belgesi
+ * @param {Function} [onAfterPrint] - Yazdırma/kapanma sonrası opsiyonel callback
  */
-function printFrameAndCleanup(iframe) {
-  if (!iframe || !iframe.contentWindow) return;
+function printFrameAndCleanup(handle, printHtml, onAfterPrint) {
+  if (!handle || !handle.ref) return;
 
-  const win = iframe.contentWindow;
-  let cleaned = false;
-  const fallback = setTimeout(cleanup, 8000);
+  const _done = typeof onAfterPrint === 'function' ? onAfterPrint : () => {};
 
-  function cleanup() {
-    if (cleaned) return;
-    cleaned = true;
-    clearTimeout(fallback);
-    try { iframe.remove(); } catch (e) { /* sessiz */ }
+  if (handle.type === 'win') {
+    // ── MOBİL: yeni pencere modu ────────────────────────────────
+    const printWin = handle.ref;
+
+    try {
+      printWin.document.open();
+      printWin.document.write(printHtml);
+      printWin.document.close();
+    } catch(err) {
+      if (typeof showToast === 'function') showToast('Yazdırma penceresi hazırlanamadı.', 'error', 4000);
+      try { printWin.close(); } catch(e) {}
+      _done();
+      return;
+    }
+
+    // Yüklemeyi bekle → yazdır.
+    // setupDone: load + timeout'un ikisi de tetiklenirse sadece ilki çalışır.
+    let setupDone = false;
+    let printed = false;
+
+    const doPrint = () => {
+      if (printed) return;
+      printed = true;
+      try { printWin.print(); } catch(e) {}
+      setTimeout(_done, 500);
+    };
+
+    const waitAndPrint = () => {
+      if (setupDone) return;
+      setupDone = true;
+
+      const waitImages = () => Promise.all(
+        Array.prototype.slice.call(printWin.document.images || []).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+        })
+      );
+      const waitFonts = () =>
+        (printWin.document.fonts && printWin.document.fonts.ready)
+          ? printWin.document.fonts.ready.catch(() => {})
+          : Promise.resolve();
+
+      Promise.all([waitImages(), waitFonts()]).then(() => setTimeout(doPrint, 250));
+      setTimeout(doPrint, 2500); // güvenlik: Promise resolve olmazsa bile yazdır
+    };
+
+    try { printWin.addEventListener('load', waitAndPrint, { once: true }); } catch(e) {}
+    setTimeout(waitAndPrint, 900); // iOS/Android'de load bazen ateşlenmiyor
+
+    return;
   }
 
-  try {
-    win.addEventListener('afterprint', cleanup, { once: true });
-  } catch (e) { /* eski tarayıcılarda afterprint yoksa timeout yeterli */ }
+  // ── MASAÜSTÜ: iframe modu ────────────────────────────────────
+  const iframe = handle.ref;
+  if (!iframe) { _done(); return; }
 
-  win.focus();
+  // HTML yaz
   try {
-    win.print();
-  } catch (e) {
-    cleanup();
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(printHtml);
+    doc.close();
+  } catch(err) {
+    try { iframe.remove(); } catch(e) {}
+    _done();
+    return;
   }
-}
 
-function waitForPrintFrameReady(iframe, callback) {
-  if (!iframe || typeof callback !== 'function') return;
-  let fired = false;
-  const win = iframe.contentWindow || window;
-  const raf = win.requestAnimationFrame || window.requestAnimationFrame || (fn => setTimeout(fn, 16));
-  const fire = () => {
-    if (fired) return;
-    fired = true;
-    raf(() => setTimeout(callback, 100));
+  // iframe hazır bekleme: load + timeout fallback (ikisi de tetiklenirse sadece ilki çalışır)
+  let iframeReady = false;
+
+  const fireIframePrint = () => {
+    if (iframeReady) return;
+    iframeReady = true;
+
+    const win = iframe.contentWindow;
+    if (!win) { try { iframe.remove(); } catch(e) {} _done(); return; }
+
+    let cleaned = false;
+    const fallback = setTimeout(cleanup, 8000);
+
+    function cleanup() {
+      if (cleaned) return;
+      cleaned = true;
+      clearTimeout(fallback);
+      try { iframe.remove(); } catch(e) {}
+      _done();
+    }
+
+    try { win.addEventListener('afterprint', cleanup, { once: true }); } catch(e) {}
+
+    // rAF + küçük gecikme — render tamamlanmadan print() çağrılmasını önler
+    const raf = win.requestAnimationFrame || window.requestAnimationFrame || (fn => setTimeout(fn, 16));
+    raf(() => setTimeout(() => {
+      win.focus();
+      try { win.print(); } catch(e) { cleanup(); }
+    }, 100));
   };
 
-  try {
-    iframe.addEventListener('load', fire, { once: true });
-  } catch (e) { /* bazı eski tarayıcılar iframe load dinleyicisini desteklemeyebilir */ }
-
-  // Madde 9: mobilde 500ms yetersiz kalabiliyordu → 800ms + rAF kombinasyonu
-  setTimeout(fire, isMobilePrintViewport() ? 800 : 250);
+  try { iframe.addEventListener('load', fireIframePrint, { once: true }); } catch(e) {}
+  setTimeout(fireIframePrint, 500); // load ateşlenmezse fallback
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1284,11 +1430,19 @@ function printDocument(options) {
 
   setPrintButtonBusy(opts.button, true);
 
+  // is-printing class — @media print fallback için
+  document.body.classList.add('is-printing');
+  document.body.dataset.printTarget = opts.sourceId || '';
+
+  const _cleanupBodyClass = () => {
+    document.body.classList.remove('is-printing');
+    delete document.body.dataset.printTarget;
+  };
+
   try {
     // Body class
     let bodyClass = resolveBodyClass(opts.type);
     if (!bodyClass) {
-      // DOM tespiti ile belirle
       const isSheet       = !!root.querySelector('.schedule-sheet');
       const isEntryList   = !!root.querySelector('.schedule-entry-table');
       const isProgramList = !isSheet && !isEntryList && !!root.querySelector('.class-program-list');
@@ -1300,13 +1454,14 @@ function printDocument(options) {
                : isProfile ? 'profile-print' : isDuty ? 'duty-print' : isTasks ? 'tasks-print'
                : isFree ? 'free-print' : '';
     }
-    if (isMobilePrintViewport()) {
+    if (isMobilePrintDevice()) {
       bodyClass = `${bodyClass} mobile-print`.trim();
     }
 
     // Sayfa yönü
     const orientation = resolvePrintOrientation(opts.type, opts.orientation, root, opts.sourceId);
-    if (shouldWarnForLandscapePrint(opts.type, orientation)) notifyLandscapePrintHint(opts.type);
+    // Landscape uyarısı: yazdırma ÖNCE değil, SONRA gösterilecek
+    const _shouldWarnLandscape = shouldWarnForLandscapePrint(opts.type, orientation);
 
     // CSS
     const css = buildPrintCss(opts.type, orientation, root, opts);
@@ -1317,15 +1472,14 @@ function printDocument(options) {
     if (!meta.title && opts.title) meta.title = opts.title;
     const headerHtml = buildPrintHeader(meta, root);
 
-    // DOM hazırlık (iframe kopyasına taşınmadan önce orijinal DOM'da gerek yok;
-    // outerHTML snapshot alındıktan sonra çalıştırılır)
+    // DOM hazırlık
     const rootClone = root.cloneNode(true);
     expandScrollableAreas(rootClone);
     openDisclosureForPrint(rootClone);
     prepareProfileProgramForPrint(rootClone, opts);
     normalizeProgramListForPrint(rootClone, opts);
     dedupePrintHeadings(rootClone, meta);
-    markHiddenForPrint(rootClone);
+    markHiddenForPrint(rootClone);  // güçlendirilmiş klon temizliği
 
     // Güvenli escapeHtml
     const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s => String(s));
@@ -1334,18 +1488,36 @@ function printDocument(options) {
 
     const printHtml = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${browserPrintTitle}</title><style>${css}</style></head><body class="${bodyClass}">${headerHtml}${rootClone.outerHTML}</body></html>`;
 
-    const iframe = openPrintFrame(printHtml);
-
-    waitForPrintFrameReady(iframe, () => {
-      printFrameAndCleanup(iframe);
+    const handle = openPrintFrame();
+    if (!handle) {
+      // Pencere açılamadı (popup engeli vb.)
       setPrintButtonBusy(opts.button, false);
-    });
+      _cleanupBodyClass();
+      return;
+    }
 
-    // Güvenlik: buton takılı kalmasın
-    setTimeout(() => setPrintButtonBusy(opts.button, false), 5000);
+    const _onAfterPrint = () => {
+      setPrintButtonBusy(opts.button, false);
+      _cleanupBodyClass();
+      // Landscape uyarısını yazdırma SONRASI göster
+      if (_shouldWarnLandscape) notifyLandscapePrintHintAfterPrint(opts.type);
+    };
+
+    printFrameAndCleanup(handle, printHtml, _onAfterPrint);
+    // iframe modunda buton hemen serbest; yeni pencere modunda _onAfterPrint halleder
+    if (handle.type === 'iframe') {
+      setPrintButtonBusy(opts.button, false);
+    }
+
+    // Güvenlik: buton ve body class takılı kalmasın
+    setTimeout(() => {
+      setPrintButtonBusy(opts.button, false);
+      _cleanupBodyClass();
+    }, 10000);
 
   } catch (err) {
     setPrintButtonBusy(opts.button, false);
+    _cleanupBodyClass();
     notifyPrintError('Yazdırma hazırlanırken hata oluştu.');
     console.error('[teacher-print] printDocument hatası:', err);
   }

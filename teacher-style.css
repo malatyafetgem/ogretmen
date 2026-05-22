@@ -1352,8 +1352,100 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 
 /* ─── 36. YAZDIRMA ─── */
 
-/* @media print blokları kaldırıldı (Madde 11) */
-/* Gerçek print stilleri teacher-print.js > buildPrintCss() içinde yaşıyor. */
+/* Gerçek print stilleri teacher-print.js > buildPrintCss() içinde yaşıyor.          */
+/* Aşağıdaki @media print bloğu yalnızca fallback'tir: tarayıcı beklenmedik davranış  */
+/* gösterse veya ana sayfa yanlışlıkla yazdırılsa diye arayüz öğelerini gizler.       */
+@media print {
+  /* ── Temel arayüz çerçevesi ── */
+  .app-header,
+  .app-sidebar,
+  .app-footer,
+  footer,
+  .bottom-nav,
+  .obs-topbar {
+    display: none !important;
+  }
+
+  /* ── Navigasyon ve aksiyonlar ── */
+  .page-title-row,
+  .page-actions,
+  .teacher-action-row,
+  .teacher-selected-preview,
+  .schedule-toolbar-card,
+  .schedule-toolbar-main,
+  .schedule-view-control,
+  .schedule-health,
+  .report-switch {
+    display: none !important;
+  }
+
+  /* ── Arama, filtre, kontrol öğeleri ── */
+  .dashboard-search-card,
+  .program-filter-inline,
+  .program-mode-btns,
+  .task-filter-details,
+  .schedule-filter-details,
+  .search-row,
+  .filter-row,
+  input[type="search"],
+  input[type="text"].search-input,
+  select.filter-select {
+    display: none !important;
+  }
+
+  /* ── Butonlar ── */
+  button:not(.print-keep),
+  .btn:not(.print-keep) {
+    display: none !important;
+  }
+
+  /* ── Toast / Alert / Uyarılar ── */
+  .obs-toast,
+  .toast,
+  .alert:not(.print-keep),
+  .scroll-hint,
+  .no-print,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* ── is-printing body class ile hedefli gizleme ── */
+  body.is-printing .app-header,
+  body.is-printing .app-sidebar,
+  body.is-printing .app-footer,
+  body.is-printing footer,
+  body.is-printing .bottom-nav,
+  body.is-printing .obs-topbar,
+  body.is-printing .page-title-row,
+  body.is-printing .page-actions,
+  body.is-printing .teacher-action-row,
+  body.is-printing .teacher-selected-preview,
+  body.is-printing .dashboard-search-card,
+  body.is-printing .program-filter-inline,
+  body.is-printing .program-mode-btns,
+  body.is-printing .schedule-toolbar-card,
+  body.is-printing .schedule-toolbar-main,
+  body.is-printing .schedule-view-control,
+  body.is-printing .schedule-health,
+  body.is-printing .report-switch,
+  body.is-printing .task-filter-details,
+  body.is-printing .schedule-filter-details,
+  body.is-printing .search-row,
+  body.is-printing .filter-row,
+  body.is-printing .obs-toast,
+  body.is-printing .toast,
+  body.is-printing .alert:not(.print-keep),
+  body.is-printing .scroll-hint,
+  body.is-printing .no-print,
+  body.is-printing .print-hidden,
+  body.is-printing button:not(.print-keep),
+  body.is-printing .btn:not(.print-keep),
+  body.is-printing input[type="search"],
+  body.is-printing input[type="text"].search-input,
+  body.is-printing select.filter-select {
+    display: none !important;
+  }
+}
 
 
 /* ─── 37. MOBİL RESPONSIVE (≤991px) ─── */
