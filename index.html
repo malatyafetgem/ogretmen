@@ -8,18 +8,31 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Öğretmen">
 <link rel="icon" href="./icon.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon.png">
 <link rel="manifest" href="./manifest.json">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <title>Öğretmen Bilgi Sistemi</title>
-<script src="./version.js?v=OB41"></script>
+<script src="./version.js"></script>
 <script>
 window.OBS_APP_VERSION = APP_VERSION;
 window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
+window.versionedAsset = function(path) {
+  const separator = path.includes('?') ? '&' : '?';
+  return path + separator + 'v=' + encodeURIComponent(window.OBS_APP_VERSION || 'dev');
+};
+window.writeVersionedStyles = function(paths) {
+  document.write(paths.map(path => '<link rel="stylesheet" href="' + window.versionedAsset(path) + '">').join(''));
+};
+window.writeVersionedScripts = function(paths) {
+  document.write(paths.map(path => '<script src="' + window.versionedAsset(path) + '"><\/script>').join(''));
+};
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
 <!-- adminlte.min.css kaldırıldı (Madde 17) — teacher-style.css tüm layout'u override ediyor -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-<link rel="stylesheet" href="./teacher-style.css?v=OB41">
-<link rel="stylesheet" href="./teacher-theme.css?v=OB41">
+<script>window.writeVersionedStyles(['./teacher-style.css','./teacher-theme.css']);</script>
 </head>
 <body class="layout-fixed sidebar-expand-lg sidebar-mini">
 
@@ -576,19 +589,23 @@ if(!window.bootstrap||!window.bootstrap.Modal){
 }
 </script>
 <!-- Firebase -->
-<script src="./teacher-firebase-config.js?v=OB41"></script>
+<script>window.writeVersionedScripts(['./teacher-firebase-config.js']);</script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-database-compat.js"></script>
 <!-- Uygulama JS dosyaları — sıraya dikkat! -->
-<script src="./teacher-core.js?v=OB41"></script>
-<script src="./teacher-ui.js?v=OB41"></script>
-<script src="./teacher-teachers.js?v=OB41"></script>
-<script src="./teacher-classes.js?v=OB41"></script>
-<script src="./teacher-schedule.js?v=OB41"></script>
-<script src="./teacher-duty.js?v=OB41"></script>
-<script src="./teacher-settings.js?v=OB41"></script>
-<script src="./teacher-print.js?v=OB41"></script>
+<script>
+window.writeVersionedScripts([
+  './teacher-core.js',
+  './teacher-ui.js',
+  './teacher-teachers.js',
+  './teacher-classes.js',
+  './teacher-schedule.js',
+  './teacher-duty.js',
+  './teacher-settings.js',
+  './teacher-print.js'
+]);
+</script>
 </body>
 </html>
 

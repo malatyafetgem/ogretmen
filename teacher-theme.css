@@ -39,7 +39,6 @@ body {
 .obs-panel,
 .login-card,
 .modal-content,
-.settings-editor,
 .teacher-selected-preview,
 .metric-card {
   border: var(--border-ink-thick);
@@ -49,8 +48,7 @@ body {
 
 .obs-panel,
 .metric-card,
-.login-card,
-.settings-editor {
+.login-card {
   box-shadow: var(--shadow-brutal-sm) !important;
 }
 
@@ -1600,9 +1598,19 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .teacher-action-row--single {
+    display: flex;
+    justify-content: center;
+  }
+
   .teacher-action-btn {
     width: 100%;
     flex: none;
+  }
+
+  .teacher-action-row--single .teacher-action-btn:not(.teacher-action-btn--profile) {
+    width: min(220px, 100%);
+    flex: 0 1 220px;
   }
 }
 
@@ -1770,6 +1778,143 @@ body {
   .prog-slot span {
     font-size: .68rem;
   }
+}
+
+.settings-scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 4px 0;
+  color: var(--c-muted);
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.settings-section-panel .settings-table-scroll[data-scroll-hint]::before {
+  display: none !important;
+}
+
+.settings-section-panel .settings-table-scroll .table {
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.settings-section-panel .settings-table-scroll-wide .duty-settings-table,
+.settings-section-panel .settings-table-scroll-wide .class-program-settings-table {
+  width: max-content !important;
+  min-width: 100% !important;
+}
+
+.settings-section-panel .day-settings-table,
+.settings-section-panel .lesson-time-settings-table,
+.settings-section-panel .subject-settings-table,
+.settings-section-panel .shared-lessons-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed;
+}
+
+.settings-section-panel .settings-matrix th,
+.settings-section-panel .settings-matrix td {
+  min-width: 0 !important;
+}
+
+.settings-section-panel .settings-matrix th:first-child,
+.settings-section-panel .settings-matrix td:first-child {
+  position: static !important;
+  box-shadow: none !important;
+}
+
+.settings-section-panel .settings-matrix input,
+.settings-section-panel .settings-matrix select {
+  min-width: 0 !important;
+}
+
+.settings-section-panel .duty-settings-table th:first-child,
+.settings-section-panel .duty-settings-table td:first-child {
+  width: 12ch !important;
+  min-width: 12ch !important;
+  max-width: 12ch !important;
+}
+
+.settings-section-panel .duty-settings-table .duty-place-input {
+  width: 12ch !important;
+}
+
+.settings-section-panel .duty-settings-table th:not(:first-child):not(.no-print),
+.settings-section-panel .duty-settings-table td:not(:first-child):not(.no-print) {
+  min-width: 16ch !important;
+}
+
+.settings-section-panel .day-settings-table th:first-child,
+.settings-section-panel .day-settings-table td:first-child {
+  width: 10ch !important;
+}
+
+.settings-section-panel .day-settings-table th.no-print,
+.settings-section-panel .day-settings-table td.no-print,
+.settings-section-panel .lesson-time-settings-table th.no-print,
+.settings-section-panel .lesson-time-settings-table td.no-print,
+.settings-section-panel .subject-settings-table th.no-print,
+.settings-section-panel .subject-settings-table td.no-print,
+.settings-section-panel .shared-lessons-table th.no-print,
+.settings-section-panel .shared-lessons-table td.no-print {
+  width: 58px !important;
+}
+
+.settings-section-panel .lesson-time-settings-table th:first-child,
+.settings-section-panel .lesson-time-settings-table td:first-child {
+  width: 5ch !important;
+}
+
+.settings-section-panel .lesson-time-settings-table th:nth-child(2),
+.settings-section-panel .lesson-time-settings-table td:nth-child(2),
+.settings-section-panel .lesson-time-settings-table th:nth-child(3),
+.settings-section-panel .lesson-time-settings-table td:nth-child(3) {
+  width: 12ch !important;
+}
+
+.settings-section-panel .class-program-settings-table th:first-child,
+.settings-section-panel .class-program-settings-table td:first-child {
+  width: 6ch !important;
+  min-width: 6ch !important;
+  max-width: 6ch !important;
+}
+
+.settings-section-panel .class-program-settings-table .class-name-input {
+  width: 6ch !important;
+}
+
+.settings-section-panel .class-program-settings-table th:not(:first-child):not(.no-print),
+.settings-section-panel .class-program-settings-table .class-program-slot {
+  min-width: 148px !important;
+}
+
+.settings-section-panel .subject-settings-table th:nth-child(2),
+.settings-section-panel .subject-settings-table td:nth-child(2) {
+  width: 10ch !important;
+}
+
+.settings-section-panel .subject-settings-table .subject-code-input {
+  width: 10ch !important;
+  max-width: 10ch !important;
+}
+
+.settings-section-panel .shared-lessons-table th:nth-child(2),
+.settings-section-panel .shared-lessons-table td:nth-child(2) {
+  width: 2.25ch !important;
+  min-width: 2.25ch !important;
+  max-width: 2.25ch !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.settings-section-panel .shared-lessons-table th:first-child,
+.settings-section-panel .shared-lessons-table td:first-child,
+.settings-section-panel .shared-lessons-table th:nth-child(3),
+.settings-section-panel .shared-lessons-table td:nth-child(3) {
+  width: calc((100% - 2.25ch - 58px) / 2) !important;
 }
 
 @media print {

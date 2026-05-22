@@ -95,7 +95,15 @@ function syncReportPrimaryAction(mode='schedule'){
   button.innerHTML=`<i class="${action.icon} me-1"></i>${action.label}`;
 }
 function renderReports(){ setReportMode(window.reportMode||'schedule'); }
-function showToast(msg,type='info',timeout=3000){ const c=getEl('toastContainer'), t=document.createElement('div'); t.className='obs-toast obs-toast-'+type; t.innerHTML=`<i class="fas fa-circle-info"></i><span>${escapeHtml(msg)}</span>`; c.appendChild(t); setTimeout(()=>t.remove(),timeout); }
+function showToast(msg,type='info',timeout=3000){
+  const c=getEl('toastContainer');
+  if(!c) return;
+  const t=document.createElement('div');
+  t.className='obs-toast obs-toast-'+type;
+  t.innerHTML=`<i class="fas fa-circle-info"></i><span>${escapeHtml(msg)}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),timeout);
+}
 const disclosureState=new Map();
 function rememberDisclosure(el){
   if(el?.dataset?.sectionKey) disclosureState.set(el.dataset.sectionKey, !!el.open);

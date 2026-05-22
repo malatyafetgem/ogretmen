@@ -272,6 +272,15 @@ function initFirebase(){
   FIREBASE_DB=window.firebase.database();
   return true;
 }
+function canUseLocalAuthFallback(){
+  return location.protocol==='file:' || ['localhost','127.0.0.1','::1'].includes(location.hostname);
+}
+function showLoginSystemMessage(message){
+  const err=getEl('loginError');
+  if(!err) return;
+  err.textContent=message;
+  err.classList.remove('d-none');
+}
 function remoteRef(){ return FIREBASE_DB?.ref(REMOTE_DB_PATH); }
 function queueRemoteSave(){
   if(!isAdminUser()||!REMOTE_READY||!remoteRef()) return;
@@ -594,11 +603,16 @@ async function logout(){
   getEl('mainApp').style.display='none';
   getEl('loginScreen').style.display='flex';
 }
-function togglePassword(){ const i=getEl('loginPass'), icon=getEl('togglePassIcon'); i.type=i.type==='password'?'text':'password'; icon.className=i.type==='password'?'fas fa-eye':'fas fa-eye-slash'; }
+function togglePassword(){
+  const i=getEl('loginPass'), icon=getEl('togglePassIcon');
+  if(!i||!icon) return;
+  i.type=i.type==='password'?'text':'password';
+  icon.className=i.type==='password'?'fas fa-eye':'fas fa-eye-slash';
+}
 function startApp(){
   getEl('loginScreen').style.display='none';
   getEl('mainApp').style.display='block';
-  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB41';
+  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'dev';
   applyAuthUiState();
   hydrateStaticSelects();
   renderDashboard();
@@ -636,6 +650,7 @@ async function handleAuthUser(user){
 document.addEventListener('DOMContentLoaded',()=>{
   hydrateStaticSelects();
   if(initFirebase()) FIREBASE_AUTH.onAuthStateChanged(handleAuthUser);
-  else if(readSession()) startApp();
+  else if(canUseLocalAuthFallback()&&readSession()) startApp();
+  else if(!canUseLocalAuthFallback()) showLoginSystemMessage('Firebase bağlantısı kurulamadı. Lütfen internet bağlantısını ve Firebase ayarlarını kontrol edin.');
   if('serviceWorker' in navigator&&location.protocol!=='file:') navigator.serviceWorker.register('./sw.js?v='+(window.OBS_APP_VERSION||'dev'),{scope:'./',updateViaCache:'none'}).catch(()=>{});
 });

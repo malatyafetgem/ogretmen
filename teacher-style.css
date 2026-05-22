@@ -1035,6 +1035,13 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   margin-top:12px; padding-top:12px;
   border-top:var(--border-light);
 }
+.teacher-action-row--single {
+  justify-content:center !important;
+}
+.teacher-action-row--single .teacher-action-btn:not(.teacher-action-btn--profile) {
+  flex:0 1 220px;
+  margin-inline:auto;
+}
 .teacher-action-btn {
   flex:1; font-size:.82rem; font-weight:700; padding:7px 10px;
   border-radius:var(--r);
@@ -1136,6 +1143,26 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .settings-group-head { margin:0 0 14px; }
 .settings-group-head h3 { font-size:1rem; font-weight:800; letter-spacing:-.02em; margin:0; }
 .settings-group-head p  { margin:3px 0 0; color:var(--c-muted); font-size:.85rem; }
+.settings-section-panel {
+  border:var(--border-ink);
+  border-radius:var(--r);
+  background:var(--c-surface);
+  box-shadow:var(--shadow-brutal-sm);
+  overflow:hidden;
+}
+.settings-section-panel > .content-disclosure {
+  border-top:0;
+}
+.settings-section-panel .content-disclosure summary {
+  padding:15px 17px;
+  border-bottom:var(--border-ink);
+}
+.settings-section-panel .content-disclosure:not([open]) summary {
+  border-bottom:0;
+}
+.settings-section-panel .disclosure-body {
+  padding:0;
+}
 .settings-editor { /* sarmalayıcı — çerçeve yok, kart zaten var */ }
 .settings-editor-toolbar {
   display:flex;
@@ -1149,6 +1176,13 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 }
 .settings-editor-body {
   padding:0;
+}
+.settings-section-panel .settings-editor-toolbar {
+  padding:12px 17px;
+  border-bottom:var(--border-light);
+}
+.settings-section-panel .settings-editor-body {
+  padding:15px 17px 17px;
 }
 .settings-filter-row {
   display:grid;

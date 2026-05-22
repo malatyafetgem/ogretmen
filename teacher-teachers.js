@@ -97,8 +97,10 @@ function updateTeacherBadge(t){
 }
 function showProfileButtons(visible){
   const editBtn=getEl('teacherEditBtn'), printBtn=getEl('teacherPrintBtn');
+  const row=document.querySelector('.teacher-action-row');
   if(editBtn) editBtn.style.display=visible?'':'none';
   if(printBtn) printBtn.style.display=visible?'':'none';
+  if(row) row.classList.toggle('teacher-action-row--single',!visible);
 }
 function renderTeachers(){
   const rows=filteredTeachers(), table=getEl('teacherTable'), profile=getEl('teacherProfile');
