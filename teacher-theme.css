@@ -760,15 +760,11 @@ body {
 
   .settings-matrix th:first-child,
   .settings-matrix td:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 2;
     background: #fff;
-    box-shadow: 2px 0 0 var(--c-ink);
+    box-shadow: none;
   }
 
   .settings-matrix thead th:first-child {
-    z-index: 4;
     background: #f3f4f6;
   }
 
@@ -879,7 +875,7 @@ body {
   }
 }
 
-/* OB36: kalan etkileşimli yüzeyler, modallar ve açılır bölümler. */
+  /* Etkileşimli yüzeyler, modallar ve açılır bölümler. */
 @media screen {
   .content-disclosure {
     border: var(--border-ink) !important;
@@ -1663,6 +1659,116 @@ body {
   .class-program-settings-table th:not(:first-child),
   .class-program-settings-table .class-program-slot {
     min-width: 230px;
+  }
+}
+
+@media screen {
+  .obs-panel,
+  .settings-editor {
+    overflow: visible !important;
+  }
+
+  .soft-chip {
+    border: 1px solid var(--c-border) !important;
+    box-shadow: none !important;
+    font-weight: 650;
+  }
+
+  .table th,
+  .prog-table thead th,
+  .prog-table tbody th.prog-th-day,
+  .schedule-sheet th,
+  .schedule-sheet .sheet-name {
+    font-weight: 700 !important;
+    letter-spacing: .04em !important;
+  }
+
+  .prog-table th,
+  .prog-table td {
+    border: 1px solid var(--c-border) !important;
+  }
+
+  .prog-table {
+    border: var(--border-ink);
+  }
+
+  .prog-slot {
+    min-height: 0 !important;
+    padding: 5px 6px !important;
+  }
+
+  .prog-slot strong,
+  .class-board-slot strong,
+  .teacher-board-slot strong,
+  .daily-slot strong,
+  .lesson-cell strong,
+  .sheet-cell-content strong {
+    font-weight: 750 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .modal-body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .obs-toast {
+    font-weight: 600;
+  }
+}
+
+@media screen and (max-width: 575.98px) {
+  .sidebar-menu .nav-link,
+  .bnav-item {
+    font-weight: 600 !important;
+    letter-spacing: .02em;
+  }
+
+  .page-title-row h2,
+  .settings-group-head h3 {
+    font-weight: 750 !important;
+    letter-spacing: -.02em !important;
+  }
+
+  .card-title,
+  .obs-panel .card-title,
+  .disclosure-title,
+  .import-block h4,
+  .section-title-row h4 {
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .metric-label,
+  .form-label,
+  .info-line span {
+    font-weight: 650 !important;
+    letter-spacing: .04em !important;
+  }
+
+  .metric-value {
+    font-size: 1.78rem;
+    font-weight: 760 !important;
+    letter-spacing: -.04em;
+  }
+
+  .table th,
+  .prog-table thead th,
+  .prog-table tbody th.prog-th-day,
+  .schedule-sheet th {
+    font-weight: 650 !important;
+    letter-spacing: .035em !important;
+  }
+
+  .prog-slot {
+    padding: 4px 5px !important;
+  }
+
+  .prog-slot strong {
+    font-size: .78rem;
+  }
+
+  .prog-slot span {
+    font-size: .68rem;
   }
 }
 

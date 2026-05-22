@@ -60,6 +60,31 @@ function isMobilePrintViewport() {
   }
 }
 
+function shouldWarnForLandscapePrint(type, orientation) {
+  if (orientation !== 'A4 landscape') return false;
+  if (!isMobilePrintViewport()) return false;
+  return [
+    'teacher-sheet',
+    'class-sheet',
+    'program-list',
+    'entry-list',
+    'teachers',
+    'duty',
+    'tasks',
+    'class-profile',
+    'teacher-profile'
+  ].includes(type);
+}
+
+function notifyLandscapePrintHint(type) {
+  const isSheet = ['teacher-sheet', 'class-sheet'].includes(type);
+  const message = isSheet
+    ? 'Çarşaf programı geniştir. Mobil yazdırmada yazdırma ekranından Yatay yönü seçmeniz önerilir.'
+    : 'Bu çıktı yatay sayfaya göre hazırlandı. Mobil yazdırmada yazdırma ekranından Yatay yönü seçmeniz önerilir.';
+  if (typeof showToast === 'function') showToast(message, 'info');
+  else console.info('[teacher-print]', message);
+}
+
 /**
  * Sayfa yönünü belirler.
  * orientation='auto' ise DOM'u inceleyerek karar verir.
@@ -436,7 +461,17 @@ function buildBasePrintCss(orientation) {
 html,body { margin:0!important; padding:0!important; height:auto!important; min-height:0!important; overflow:visible!important; }
 body { font-family:Arial,sans-serif; font-size:10pt; color:#0f172a; }
 body > :last-child,
-body > :last-child *:last-child {
+body > :last-child *:last-child,
+.card:last-child,
+.profile-card:last-child,
+.profile-card > :last-child,
+.profile-disclosures:last-child,
+.profile-disclosures > :last-child,
+.content-disclosure:last-child,
+.content-disclosure > .disclosure-body:last-child,
+.content-disclosure > .disclosure-body > :last-child,
+.print-program-section:last-child,
+.table-responsive:last-child {
   margin-bottom:0!important;
   padding-bottom:0!important;
   break-after:auto!important;
@@ -461,6 +496,11 @@ thead { display:table-header-group; }
 .report-switch,.task-filter-details,.schedule-filter-details { display:none!important; }
 .profile-info-empty,
 details.content-disclosure[data-section-key*="-duty"] { display:none!important; }
+.profile-disclosures {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+}
 .mobile-print .card:last-child,
 .mobile-print .content-disclosure:last-child,
 .mobile-print .print-program-section:last-child,
@@ -1133,10 +1173,12 @@ function printFrameAndCleanup(iframe) {
 
   const win = iframe.contentWindow;
   let cleaned = false;
+  const fallback = setTimeout(cleanup, 8000);
 
   function cleanup() {
     if (cleaned) return;
     cleaned = true;
+    clearTimeout(fallback);
     try { iframe.remove(); } catch (e) { /* sessiz */ }
   }
 
@@ -1144,15 +1186,30 @@ function printFrameAndCleanup(iframe) {
     win.addEventListener('afterprint', cleanup, { once: true });
   } catch (e) { /* eski tarayıcılarda afterprint yoksa timeout yeterli */ }
 
-  // Timeout fallback: afterprint tetiklenmese bile 8 saniyede temizle
-  const fallback = setTimeout(cleanup, 8000);
-
   win.focus();
   try {
     win.print();
   } catch (e) {
     cleanup();
   }
+}
+
+function waitForPrintFrameReady(iframe, callback) {
+  if (!iframe || typeof callback !== 'function') return;
+  let fired = false;
+  const win = iframe.contentWindow || window;
+  const raf = win.requestAnimationFrame || window.requestAnimationFrame || (fn => setTimeout(fn, 16));
+  const fire = () => {
+    if (fired) return;
+    fired = true;
+    raf(() => setTimeout(callback, 100));
+  };
+
+  try {
+    iframe.addEventListener('load', fire, { once: true });
+  } catch (e) { /* bazı eski tarayıcılar iframe load dinleyicisini desteklemeyebilir */ }
+
+  setTimeout(fire, isMobilePrintViewport() ? 500 : 250);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1246,6 +1303,7 @@ function printDocument(options) {
 
     // Sayfa yönü
     const orientation = resolvePrintOrientation(opts.type, opts.orientation, root, opts.sourceId);
+    if (shouldWarnForLandscapePrint(opts.type, orientation)) notifyLandscapePrintHint(opts.type);
 
     // CSS
     const css = buildPrintCss(opts.type, orientation, root, opts);
@@ -1275,12 +1333,10 @@ function printDocument(options) {
 
     const iframe = openPrintFrame(printHtml);
 
-    // doc.write ile doldurulan iframe'lerde onload güvenilmez (özellikle mobil).
-    // Kısa bir timeout sonra doğrudan yazdır.
-    setTimeout(() => {
+    waitForPrintFrameReady(iframe, () => {
       printFrameAndCleanup(iframe);
       setPrintButtonBusy(opts.button, false);
-    }, 300);
+    });
 
     // Güvenlik: buton takılı kalmasın
     setTimeout(() => setPrintButtonBusy(opts.button, false), 5000);

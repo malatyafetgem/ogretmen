@@ -1,44 +1,34 @@
 importScripts('./version.js');
 
 const CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
-const ASSETS = [
-  '/ogretmen/',
-  '/ogretmen/index.html',
-  '/ogretmen/version.js',
-  '/ogretmen/teacher-style.css',
-  '/ogretmen/teacher-core.js',
-  '/ogretmen/teacher-firebase-config.js',
-  '/ogretmen/teacher-ui.js',
-  '/ogretmen/teacher-teachers.js',
-  '/ogretmen/teacher-classes.js',
-  '/ogretmen/teacher-schedule.js',
-  '/ogretmen/teacher-duty.js',
-  '/ogretmen/teacher-settings.js',
-  '/ogretmen/teacher-print.js',
-  '/ogretmen/manifest.json',
-  '/ogretmen/icon.png'
+const BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/?$/, '/');
+const APP_FILES = [
+  '',
+  'index.html',
+  'version.js',
+  'teacher-style.css',
+  'teacher-theme.css',
+  'teacher-core.js',
+  'teacher-firebase-config.js',
+  'teacher-ui.js',
+  'teacher-teachers.js',
+  'teacher-classes.js',
+  'teacher-schedule.js',
+  'teacher-duty.js',
+  'teacher-settings.js',
+  'teacher-print.js',
+  'manifest.json',
+  'icon.png',
+  'sw.js'
 ];
+const appPath = file => BASE_PATH + file;
+const ASSETS = APP_FILES.map(appPath);
+const INDEX_URL = appPath('index.html');
 
 function isAppAsset(url) {
-  if (!url.pathname.startsWith('/ogretmen/')) return false;
-  const name = url.pathname.split('/').pop();
-  return [
-    'index.html',
-    'version.js',
-    'teacher-style.css',
-    'teacher-core.js',
-    'teacher-firebase-config.js',
-    'teacher-ui.js',
-    'teacher-teachers.js',
-    'teacher-classes.js',
-    'teacher-schedule.js',
-    'teacher-duty.js',
-    'teacher-settings.js',
-    'teacher-print.js',
-    'manifest.json',
-    'icon.png',
-    'sw.js'
-  ].includes(name);
+  if (!url.pathname.startsWith(BASE_PATH)) return false;
+  const name = url.pathname.slice(BASE_PATH.length).split('/').pop() || '';
+  return APP_FILES.includes(name);
 }
 
 function safeCachePut(cache, request, response) {
@@ -48,7 +38,7 @@ function safeCachePut(cache, request, response) {
 }
 
 function precache(cache) {
-  return cache.addAll(ASSETS.map(asset => new Request(asset, { cache: 'reload' })));
+  return cache.addAll(ASSETS.map(asset => new Request(asset, { cache: 'reload' }))).catch(() => {});
 }
 
 self.addEventListener('install', event => {
@@ -68,13 +58,13 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (event.request.mode === 'navigate' || url.pathname === '/ogretmen/' || url.pathname === '/ogretmen/index.html') {
+  if (event.request.mode === 'navigate' || url.pathname === BASE_PATH || url.pathname === INDEX_URL) {
     event.respondWith(
       fetch(event.request).then(response => {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => safeCachePut(cache, '/ogretmen/index.html', copy));
+        caches.open(CACHE_NAME).then(cache => safeCachePut(cache, INDEX_URL, copy));
         return response;
-      }).catch(() => caches.match('/ogretmen/index.html', { ignoreSearch: true }))
+      }).catch(() => caches.match(INDEX_URL, { ignoreSearch: true }))
     );
     return;
   }

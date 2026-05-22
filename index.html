@@ -10,7 +10,7 @@
 <link rel="icon" href="./icon.png" type="image/png">
 <link rel="manifest" href="./manifest.json">
 <title>Öğretmen Bilgi Sistemi</title>
-<script src="./version.js?v=OB37"></script>
+<script src="./version.js?v=OB41"></script>
 <script>
 window.OBS_APP_VERSION = APP_VERSION;
 window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
@@ -18,8 +18,8 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc7/dist/css/adminlte.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-<link rel="stylesheet" href="./teacher-style.css?v=OB37">
-<link rel="stylesheet" href="./teacher-theme.css?v=OB37">
+<link rel="stylesheet" href="./teacher-style.css?v=OB41">
+<link rel="stylesheet" href="./teacher-theme.css?v=OB41">
 </head>
 <body class="layout-fixed sidebar-expand-lg sidebar-mini">
 
@@ -100,8 +100,8 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
         <ul class="nav sidebar-menu flex-column" role="menu">
           <li class="nav-item"><a id="nav-dashboard" href="#dashboard" class="nav-link active" onclick="return sTab('dashboard')"><i class="nav-icon fas fa-house"></i><p>Ana Sayfa</p></a></li>
           <li class="nav-item"><a id="nav-teachers" href="#teachers" class="nav-link" onclick="return sTab('teachers')"><i class="nav-icon fas fa-user-tie"></i><p>Öğretmen</p></a></li>
-          <li class="nav-item"><a id="nav-classes" href="#classes" class="nav-link" onclick="return sTab('classes')"><i class="nav-icon fas fa-users"></i><p>Sınıflar</p></a></li>
-          <li class="nav-item"><a id="nav-reports" href="#reports" class="nav-link" onclick="return sTab('reports')"><i class="nav-icon fas fa-calendar-days"></i><p>Raporlar</p></a></li>
+          <li class="nav-item"><a id="nav-classes" href="#classes" class="nav-link" onclick="return sTab('classes')"><i class="nav-icon fas fa-users"></i><p>Sınıf</p></a></li>
+          <li class="nav-item"><a id="nav-reports" href="#reports" class="nav-link" onclick="return sTab('reports')"><i class="nav-icon fas fa-calendar-days"></i><p>Rapor</p></a></li>
           <li class="nav-item"><a id="nav-settings" href="#settings" class="nav-link" onclick="return sTab('settings')"><i class="nav-icon fas fa-gear"></i><p>Ayarlar</p></a></li>
         </ul>
       </nav>
@@ -143,7 +143,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
               <div class="card-body" id="todayPanel"></div>
             </div>
             <div class="card obs-panel dashboard-quick-card">
-              <div class="card-header"><h3 class="card-title"><i class="fas fa-magnifying-glass-chart me-2"></i>Şu anda dersi olanlar</h3></div>
+              <div class="card-header"><h3 class="card-title"><i class="fas fa-chalkboard-user me-2"></i>Şu anda dersi olanlar</h3></div>
               <div class="card-body" id="quickQueryPanel"></div>
             </div>
             <div class="card obs-panel dashboard-free-card">
@@ -315,16 +315,16 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
   <!-- MOBİL ALT NAVİGASYON -->
   <nav id="bottomNav" class="bottom-nav" aria-label="Alt navigasyon">
     <a id="bnav-dashboard" href="#dashboard" class="bnav-item active" onclick="return sTab('dashboard')">
-      <i class="fas fa-house"></i><span>Panel</span>
+      <i class="fas fa-house"></i><span>Ana Sayfa</span>
     </a>
     <a id="bnav-teachers" href="#teachers" class="bnav-item" onclick="return sTab('teachers')">
       <i class="fas fa-user-tie"></i><span>Öğretmen</span>
     </a>
     <a id="bnav-classes" href="#classes" class="bnav-item" onclick="return sTab('classes')">
-      <i class="fas fa-graduation-cap"></i><span>Sınıflar</span>
+      <i class="fas fa-users"></i><span>Sınıf</span>
     </a>
     <a id="bnav-reports" href="#reports" class="bnav-item" onclick="return sTab('reports')">
-      <i class="fas fa-calendar-days"></i><span>Program</span>
+      <i class="fas fa-calendar-days"></i><span>Rapor</span>
     </a>
     <a id="bnav-settings" href="#settings" class="bnav-item" onclick="return sTab('settings')">
       <i class="fas fa-gear"></i><span>Ayarlar</span>
@@ -576,19 +576,19 @@ if(!window.bootstrap||!window.bootstrap.Modal){
 }
 </script>
 <!-- Firebase -->
-<script src="./teacher-firebase-config.js?v=OB37"></script>
+<script src="./teacher-firebase-config.js?v=OB41"></script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.4.0/firebase-database-compat.js"></script>
 <!-- Uygulama JS dosyaları — sıraya dikkat! -->
-<script src="./teacher-core.js?v=OB37"></script>
-<script src="./teacher-ui.js?v=OB37"></script>
-<script src="./teacher-teachers.js?v=OB37"></script>
-<script src="./teacher-classes.js?v=OB37"></script>
-<script src="./teacher-schedule.js?v=OB37"></script>
-<script src="./teacher-duty.js?v=OB37"></script>
-<script src="./teacher-settings.js?v=OB37"></script>
-<script src="./teacher-print.js?v=OB37"></script>
+<script src="./teacher-core.js?v=OB41"></script>
+<script src="./teacher-ui.js?v=OB41"></script>
+<script src="./teacher-teachers.js?v=OB41"></script>
+<script src="./teacher-classes.js?v=OB41"></script>
+<script src="./teacher-schedule.js?v=OB41"></script>
+<script src="./teacher-duty.js?v=OB41"></script>
+<script src="./teacher-settings.js?v=OB41"></script>
+<script src="./teacher-print.js?v=OB41"></script>
 </body>
 </html>
 

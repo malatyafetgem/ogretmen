@@ -90,6 +90,12 @@ let APP_STARTED = false;
 let CURRENT_USER = null;
 let CURRENT_ROLE = 'guest';
 
+function uid(prefix='id'){
+  const safePrefix=String(prefix||'id').replace(/[^a-z0-9_-]/gi,'')||'id';
+  if(globalThis.crypto?.randomUUID) return `${safePrefix}_${crypto.randomUUID().replace(/-/g,'').slice(0,12)}`;
+  return `${safePrefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,9)}`;
+}
+
 let DB = loadDB();
 
 function makeEmptyDB(){ return { teachers: [], schedules: [], tasks: [], meta: {}, settings: { classes: [...CLASS_LIST], days: DAY_NAMES, hours: HOURS, lessonTimes: LESSON_TIMES, sharedLessonPairs: DEFAULT_SHARED_LESSON_PAIRS } }; }
@@ -339,8 +345,6 @@ function teacherNameParts(t){
   const rawFirst=String(t?.firstName||'').replace(/\s+/g,' ').trim();
   const rawLast=String(t?.lastName||'').replace(/\s+/g,' ').trim();
   const full=`${rawFirst} ${rawLast}`.replace(/\s+/g,' ').trim();
-  const key=dutyPlaceKey(full);
-  if(key==='pinar demirhan akgok') return {first:'Pınar', last:'DEMİRHAN AKGÖK'};
   if(rawLast) return {first:titleCaseNamePart(rawFirst), last:upperNamePart(rawLast)};
   const parts=full.split(' ').filter(Boolean);
   if(parts.length>1) return {first:titleCaseNamePart(parts.slice(0,-1).join(' ')), last:upperNamePart(parts[parts.length-1])};
@@ -448,7 +452,8 @@ function subjectInfo(subject){
 function normalizeSubjectName(subject, teacherId=''){
   const key=plainKey(subject);
   if(key==='gorsel sanatlar muzik'){
-    if(teacherId==='40522761546') return 'Müzik';
+    const teacher=teacherById(teacherId);
+    if(plainKey(teacher?.branch||'').includes('muzik')) return 'Müzik';
     return 'Görsel Sanatlar';
   }
   return subjectInfo(subject)?.name || migrateSubjectName(titleCaseNamePart(String(subject||'Ders').replace(/\s+/g,' ').trim()));
@@ -459,18 +464,8 @@ function subjectCode(subject, teacherId=''){
   return subjectInfo(name)?.code || name.split(/\s+/).filter(Boolean).map(w=>upperNamePart(w.slice(0,1))).join('').slice(0,6);
 }
 function normalizeScheduleRecords(schedules){
-  const result=[], seen=new Set();
+  const result=[];
   schedules.forEach(raw=>{
-    const subjectKey=plainKey(raw.subject);
-    if(subjectKey.includes('klasik ahlak')&&subjectKey.includes('turk sosyal')){
-      const base={...raw, subject:'S. Klasik Ahlak Metinleri', note:raw.note||'Grup X'};
-      result.push(normalizeScheduleRecord(base));
-      const hacId=`${raw.id||uid('s')}_ha`;
-      const exists=schedules.some(s=>s.id===hacId) || seen.has(hacId);
-      if(!exists) result.push(normalizeScheduleRecord({...raw,id:hacId,teacherId:'24836297168',subject:'S. Türk Sosyal Hayatında Aile',note:raw.note||'Grup Y'}));
-      seen.add(hacId);
-      return;
-    }
     result.push(normalizeScheduleRecord(raw));
   });
   return result;
@@ -603,7 +598,7 @@ function togglePassword(){ const i=getEl('loginPass'), icon=getEl('togglePassIco
 function startApp(){
   getEl('loginScreen').style.display='none';
   getEl('mainApp').style.display='block';
-  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB37';
+  const b=getEl('versionBadge'); if(b)b.textContent=window.OBS_APP_VERSION||'OB41';
   applyAuthUiState();
   hydrateStaticSelects();
   renderDashboard();
