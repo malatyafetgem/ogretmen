@@ -1900,3 +1900,47 @@ body {
     transform: none !important;
   }
 }
+/* Geçici gölgesiz görünüm */
+:root {
+  --shadow-brutal-sm: none;
+  --shadow-brutal-xs: none;
+}
+
+@media screen {
+  .btn:hover,
+  .top-action-link:hover,
+  .prog-mode-btn:hover,
+  .teacher-action-btn:hover,
+  .dashboard-add-btn:hover,
+  .btn:active,
+  .top-action-link:active,
+  .prog-mode-btn:active,
+  .teacher-action-btn:active,
+  .dashboard-add-btn:active,
+  .modal-content,
+  .bottom-nav,
+  .class-board-slot,
+  .teacher-board-slot,
+  .daily-lesson-card,
+  .lesson-cell,
+  .free-day,
+  .free-query-card,
+  .free-day-summary,
+  .prog-table tbody td.prog-td-filled,
+  .schedule-sheet tbody td.sheet-filled {
+    box-shadow: none !important;
+  }
+
+  .btn:hover,
+  .top-action-link:hover,
+  .prog-mode-btn:hover,
+  .teacher-action-btn:hover,
+  .dashboard-add-btn:hover,
+  .btn:active,
+  .top-action-link:active,
+  .prog-mode-btn:active,
+  .teacher-action-btn:active,
+  .dashboard-add-btn:active {
+    transform: none !important;
+  }
+}
