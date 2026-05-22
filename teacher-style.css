@@ -938,7 +938,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 .report-switch { display:flex; gap:0; flex-wrap:nowrap; overflow-x:auto; }
 .report-switch .btn {
   border-radius:0 !important; border-right-width:0;
-  flex:0 0 auto;
+  flex:0 0 auto; white-space:normal; text-align:center; min-width:0;
 }
 .report-switch .btn:first-child { border-radius:var(--r) 0 0 var(--r) !important; }
 .report-switch .btn:last-child  { border-radius:0 var(--r) var(--r) 0 !important; border-right-width:2px; }
@@ -1033,7 +1033,6 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 /* Haftalık program — yatay kaydırma wrapper */
 .teacher-weekly-scroll {
   overflow-x:auto; -webkit-overflow-scrolling:touch;
-  border-radius:var(--r); border:var(--border-ink);
   margin-top:8px;
 }
 @media (min-width:576px){
