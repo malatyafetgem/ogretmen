@@ -16,7 +16,7 @@ window.OBS_APP_VERSION = APP_VERSION;
 window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc7/dist/css/adminlte.min.css">
+<!-- adminlte.min.css kaldırıldı (Madde 17) — teacher-style.css tüm layout'u override ediyor -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" href="./teacher-style.css?v=OB41">
 <link rel="stylesheet" href="./teacher-theme.css?v=OB41">
@@ -426,8 +426,8 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
           <div class="col-12"><label class="form-label">Görev Tanımı</label><input id="taskTitle" class="form-control"></div>
           <div class="col-12"><label class="form-label">Açıklamalar</label><input id="taskDescription" class="form-control"></div>
           <div class="col-12"><label class="form-label">Ayrıntılar</label><textarea id="taskDetails" class="form-control" rows="2"></textarea></div>
-          <div class="col-md-6"><label class="form-label">Başlangıç</label><input id="taskStart" type="date" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Bitiş</label><input id="taskEnd" type="date" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Başlangıç</label><input id="taskStartDate" type="date" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Bitiş</label><input id="taskEndDate" type="date" class="form-control"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -534,7 +534,7 @@ window.OBS_CACHE_NAME = 'ogretmen-bilgi-' + APP_VERSION;
 
 <!-- ── JS KÜTÜPHANELER ── -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc7/dist/js/adminlte.min.js"></script>
+<!-- adminlte.min.js kaldırıldı (Madde 17) — sidebar toggle teacher-ui.js:initSidebarToggle() içinde -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 if(!window.bootstrap||!window.bootstrap.Modal){

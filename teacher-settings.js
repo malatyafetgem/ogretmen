@@ -1,32 +1,28 @@
 function renderSettings(){
   const dayValue=getEl('classProgramDay')?.value||window.settingsProgramDay||schoolDays()[0]||'Pazartesi';
   window.settingsProgramDay=dayValue;
+  const mkCard=(...sections)=>`<div class="card obs-panel profile-card"><div class="card-body profile-disclosures">${sections.join('')}</div></div>`;
   getEl('settingsContent').innerHTML=`
     <section class="settings-group">
-      <div class="settings-group-head"><h3>Günlük İşler</h3><p>İçe aktarma, yedekleme ve sık kullanılan program işlemleri.</p></div>
       <div class="row g-3">
         <div class="col-lg-6">${buildImportSettings()}</div>
         <div class="col-lg-6">${buildBackupSettings()}</div>
       </div>
     </section>
     <section class="settings-group">
-      <div class="settings-group-head"><h3>Okul Yapısı</h3><p>Nöbet düzeni ile günler ve ders saatleri gibi temel yapısal tanımlar.</p></div>
-      <div class="row g-3">
-        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-          ${disclosureSection({key:'settings-duty',title:'Nöbet Düzeni',icon:'fas fa-clipboard-check',meta:`${DB.teachers.filter(t=>t.dutyDay&&t.dutyPlace).length} nöbet`,content:buildDutySettings(),open:false})}
-          ${disclosureSection({key:'settings-calendar',title:'Günler ve Ders Saatleri',icon:'fas fa-clock',meta:`${schoolDays().length} gün · ${schoolHours().length} ders saati`,content:buildCalendarSettings(),open:false})}
-        </div></div></div>
-      </div>
+      ${mkCard(disclosureSection({key:'settings-duty',title:'Nöbet Düzeni',icon:'fas fa-clipboard-check',meta:`${DB.teachers.filter(t=>t.dutyDay&&t.dutyPlace).length} nöbet`,content:buildDutySettings(),open:false}))}
     </section>
     <section class="settings-group">
-      <div class="settings-group-head"><h3>Ders Programı Düzenleme</h3><p>Hızlı düzenleme, ders tanımları ve ortak ders çiftleri.</p></div>
-      <div class="row g-3">
-        <div class="col-12"><div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-          ${disclosureSection({key:'settings-class-program',title:'Ders Programı Hızlı Düzenleme',icon:'fas fa-calendar-days',meta:dayValue,content:buildClassProgramSettings(dayValue),open:false})}
-          ${disclosureSection({key:'settings-subjects',title:'Dersler ve Kısaltmalar',icon:'fas fa-book-open',meta:`${(DB.settings.subjects||[]).length} ders`,content:buildSubjectSettings(),open:false})}
-          ${disclosureSection({key:'settings-shared-lessons',title:'Ortak Ders Çiftleri',icon:'fas fa-link',meta:`${(DB.settings.sharedLessonPairs||[]).length} çift`,content:buildSharedLessonSettings(),open:false})}
-        </div></div></div>
-      </div>
+      ${mkCard(disclosureSection({key:'settings-calendar',title:'Günler ve Ders Saatleri',icon:'fas fa-clock',meta:`${schoolDays().length} gün · ${schoolHours().length} ders saati`,content:buildCalendarSettings(),open:false}))}
+    </section>
+    <section class="settings-group">
+      ${mkCard(disclosureSection({key:'settings-class-program',title:'Ders Programı Hızlı Düzenleme',icon:'fas fa-calendar-days',meta:dayValue,content:buildClassProgramSettings(dayValue),open:false}))}
+    </section>
+    <section class="settings-group">
+      ${mkCard(disclosureSection({key:'settings-subjects',title:'Dersler ve Kısaltmalar',icon:'fas fa-book-open',meta:`${(DB.settings.subjects||[]).length} ders`,content:buildSubjectSettings(),open:false}))}
+    </section>
+    <section class="settings-group">
+      ${mkCard(disclosureSection({key:'settings-shared-lessons',title:'Ortak Ders Çiftleri',icon:'fas fa-link',meta:`${(DB.settings.sharedLessonPairs||[]).length} çift`,content:buildSharedLessonSettings(),open:false}))}
     </section>`;
 }
 
@@ -171,7 +167,7 @@ function buildClassProgramSettings(dayValue){
   const days=schoolDays(), hours=schoolHours();
   const dayOptions=days.map(d=>`<option value="${escapeHtml(d)}" ${d===dayValue?'selected':''}>${escapeHtml(d)}</option>`).join('');
   const rows=(DB.settings.classes||CLASS_LIST).map((cls,i)=>classProgramRow(cls,cls,dayValue,i)).join('');
-  return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div><div class="settings-editor-body"><div class="settings-filter-row"><div><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div><div class="settings-table-scroll settings-table-scroll-wide mt-3" data-scroll-hint="Yana kaydırın"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th>${h}. Ders<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
+  return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div><div class="settings-editor-body"><div class="settings-filter-row"><div><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div><div class="settings-table-scroll settings-table-scroll-wide mt-3" data-scroll-hint="Yana kaydırın"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th class="text-center">${h}.<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
 }
 
 function classProgramRow(className,originalClass,day,index){

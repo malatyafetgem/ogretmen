@@ -486,6 +486,8 @@ a,.contact-link,.teacher-name-link { color:#0f172a!important; text-decoration:no
 .card-header { padding:3px 0; }
 .card-body   { padding:0; }
 .card-title  { margin:0; font-size:11pt; }
+/* Madde 9: üst wrapper margin'ları sıfırla — sonda boş sayfa önleme */
+.obs-panel, .card, .profile-card, .mt-2, .mt-3 { margin-top:0!important; }
 .table { width:100%; border-collapse:collapse; }
 .table th,.table td { border:1px solid #cbd5e1!important; padding:3px 5px!important; vertical-align:middle; }
 .table th { background:#f1f5f9!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -1209,7 +1211,8 @@ function waitForPrintFrameReady(iframe, callback) {
     iframe.addEventListener('load', fire, { once: true });
   } catch (e) { /* bazı eski tarayıcılar iframe load dinleyicisini desteklemeyebilir */ }
 
-  setTimeout(fire, isMobilePrintViewport() ? 500 : 250);
+  // Madde 9: mobilde 500ms yetersiz kalabiliyordu → 800ms + rAF kombinasyonu
+  setTimeout(fire, isMobilePrintViewport() ? 800 : 250);
 }
 
 /* ──────────────────────────────────────────────────────────────

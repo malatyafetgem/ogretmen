@@ -47,18 +47,30 @@ function renderTasks(){
   getEl('tasksContent').innerHTML=`<div class="card obs-panel mb-3 no-print"><div class="card-header"><h3 class="card-title"><i class="fas fa-list-check me-2"></i>Görev Özeti</h3></div><div class="card-body"><div class="chip-wrap">${counts||'<span class="text-muted">Kayıt yok.</span>'}</div></div></div><div class="card obs-panel"><div class="card-header d-flex align-items-center justify-content-between"><h3 class="card-title"><i class="fas fa-sitemap me-2"></i>Görev Listesi</h3><span class="small text-muted">${tasks.length} / ${allTasks.length} görev</span></div><div class="card-body p-0">${rows?`<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Öğretmen</th><th>Görev Tanımı</th><th>Açıklamalar</th><th>Ayrıntılar</th><th>Başlangıç</th><th>Bitiş</th><th class="no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></div>`:emptyState('Seçili filtrelere uygun görev kaydı yok.')}</div></div>`;
 }
 
+function filterTasksByTeacher(teacherId){
+  const el=getEl('taskReportTeacher');
+  if(el){ el.value=teacherId; }
+  renderTasks();
+}
+
 function syncTaskToolbar(teacherId='',kind='',search=''){
-  const descriptors=[
-    teacherId?{label:'Öğretmen',value:teacherName(teacherById(teacherId))}:null,
-    kind?{label:'Tür',value:kind}:null,
-    search?{label:'Arama',value:search}:null
-  ].filter(Boolean);
+  // Madde 5: her aktif filtre chip-active ile vurgulanır, tıklayınca temizlenir
+  const chips=[];
+  if(teacherId){
+    chips.push(`<span class="soft-chip chip-clickable chip-active" title="Filtreyi kaldır" onclick="filterTasksByTeacher('')"><i class="fas fa-times me-1" style="font-size:.7rem"></i>Öğretmen: ${escapeHtml(teacherName(teacherById(teacherId)))}</span>`);
+  }
+  if(kind){
+    chips.push(`<span class="soft-chip chip-clickable chip-active" title="Filtreyi kaldır" onclick="filterTasksByKind('')"><i class="fas fa-times me-1" style="font-size:.7rem"></i>Tür: ${escapeHtml(kind)}</span>`);
+  }
+  if(search){
+    chips.push(`<span class="soft-chip chip-clickable chip-active" title="Filtreyi kaldır" onclick="(function(){const el=getEl('taskReportSearch');if(el)el.value='';renderTasks();})()"><i class="fas fa-times me-1" style="font-size:.7rem"></i>Arama: ${escapeHtml(search)}</span>`);
+  }
   const summary=getEl('taskFilterSummary');
-  if(summary) summary.innerHTML=descriptors.length
-    ? descriptors.map(item=>`<span class="soft-chip">${escapeHtml(item.label)}: ${escapeHtml(item.value)}</span>`).join('')
+  if(summary) summary.innerHTML=chips.length
+    ? chips.join('')
     : '<span class="text-muted">Tüm görevler</span>';
   const count=getEl('taskFilterCount');
-  if(count) count.textContent=descriptors.length?`${descriptors.length} etkin`:'';
+  if(count) count.textContent=chips.length?`${chips.length} etkin`:'';
 }
 
 function clearTaskFilters(){
@@ -80,8 +92,8 @@ function openTaskModal(id=''){
   getEl('taskTitle').value=task?.title||'';
   getEl('taskDescription').value=task?.description||'';
   getEl('taskDetails').value=task?.details||'';
-  getEl('taskStart').value=task?.startDate||'';
-  getEl('taskEnd').value=task?.endDate||'';
+  getEl('taskStartDate').value=task?.startDate||'';
+  getEl('taskEndDate').value=task?.endDate||'';
   bootstrap.Modal.getOrCreateInstance(getEl('taskModal')).show();
 }
 
@@ -91,7 +103,7 @@ function saveTaskForm(){
     return;
   }
   const id=getEl('taskId').value||uid('g');
-  const task={id,teacherId:getEl('taskTeacher').value,kind:getEl('taskKind').value.trim()||'Genel',title:getEl('taskTitle').value.trim(),description:getEl('taskDescription').value.trim(),details:getEl('taskDetails').value.trim(),startDate:getEl('taskStart').value,endDate:getEl('taskEnd').value};
+  const task={id,teacherId:getEl('taskTeacher').value,kind:getEl('taskKind').value.trim()||'Genel',title:getEl('taskTitle').value.trim(),description:getEl('taskDescription').value.trim(),details:getEl('taskDetails').value.trim(),startDate:getEl('taskStartDate').value,endDate:getEl('taskEndDate').value};
   if(!task.teacherId||!task.title){ showToast('Öğretmen ve görev tanımı zorunlu.','warning'); return; }
   DB.tasks=DB.tasks||[];
   const i=DB.tasks.findIndex(t=>t.id===id);
