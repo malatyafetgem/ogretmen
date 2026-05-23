@@ -1389,6 +1389,8 @@ body.obs-desktop-site .app-main,
 body.obs-desktop-site .app-footer { margin-left:0 !important; }
 body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); padding-left:0; }
 body.obs-desktop-site .top-mobile-brand { display:none !important; }
+/* Masaüstü sitesi: dar viewport'ta Bootstrap d-none d-lg-flex'i geçersiz kıl */
+body.obs-desktop-site .obs-topbar-left .d-none { display:flex !important; }
 body.obs-desktop-site .obs-topnav { display:flex !important; }
 
 /* ─── 36. YAZDIRMA ─── */
