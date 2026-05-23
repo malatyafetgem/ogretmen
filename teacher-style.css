@@ -1404,19 +1404,42 @@ body {
 /* Varsayılan: masaüstünde gizli, mobilde (@media max-width:991px) gösterilir */
 .bottom-nav { display:none; }
 
-/* JS obs-mobile-mode sınıfı ekleyince bottom-nav görünür olur (masaüstü viewport'ta bile) */
+/* JS obs-mobile-mode sınıfı ekleyince bottom-nav görünür olur */
 body.obs-mobile-mode .bottom-nav { display:grid !important; }
-/* JS obs-mobile-mode sınıfını kaldırınca sidebar görünür (masaüstü viewport'ta) */
-body:not(.obs-mobile-mode) .obs-sidebar { display:block !important; }
+/* Gerçek masaüstü (dar viewport değil): sidebar CSS @media (min-width:992px) ile zaten görünür */
 
-/* Masaüstü sitesi istendi: bottom-nav kesinlikle gizli, sidebar görünür */
+/* Masaüstü sitesi istendi: bottom-nav kesinlikle gizli, sidebar masaüstü gibi davranır */
 body.obs-desktop-site .bottom-nav { display:none !important; }
-body.obs-desktop-site .obs-sidebar { display:block !important; }
-body.obs-desktop-site .app-header,
-body.obs-desktop-site .app-main,
-body.obs-desktop-site .app-footer { margin-left:240px; }
 body.obs-desktop-site .app-main,
 body.obs-desktop-site .app-content { padding-bottom:0 !important; }
+
+/* Sidebar sabit konumlandırma — masaüstü @media kuralı dar viewport'ta uygulanmaz,
+   obs-desktop-site sınıfıyla aynı davranışı zorla */
+body.obs-desktop-site .obs-sidebar {
+  display:block !important;
+  position:fixed !important;
+  top:0 !important; left:0 !important; bottom:0 !important;
+  width:240px;
+  z-index:var(--z-sidebar);
+  overflow-y:auto;
+  background:var(--c-surface) !important;
+  border-right:var(--border-ink);
+  transition: width .2s ease;
+}
+body.obs-desktop-site .app-header,
+body.obs-desktop-site .app-main,
+body.obs-desktop-site .app-footer { margin-left:240px; transition: margin-left .2s ease; }
+body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); }
+
+/* sidebar-collapse: obs-desktop-site modunda da ikon-only çalışsın */
+body.obs-desktop-site.sidebar-collapse .obs-sidebar:not(:hover) { width:56px; overflow:hidden; }
+body.obs-desktop-site.sidebar-collapse .app-header,
+body.obs-desktop-site.sidebar-collapse .app-main,
+body.obs-desktop-site.sidebar-collapse .app-footer { margin-left:56px; }
+
+/* Masaüstü sitesi modunda topbar: hamburger + masaüstü marka görünür, mobil marka gizli */
+body.obs-desktop-site .d-none.d-lg-flex { display:flex !important; }
+body.obs-desktop-site .top-mobile-brand { display:none !important; }
 
 /* ─── 36. YAZDIRMA ─── */
 
