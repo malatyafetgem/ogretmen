@@ -256,7 +256,7 @@ body {
     transition: width .2s ease;
   }
   .app-main, .app-footer { margin-left:240px; transition: margin-left .2s ease; }
-  .app-header { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; }
+  .app-header { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; padding-left:240px; transition: padding-left .2s ease; }
   .app-main   { min-height:calc(100vh - 57px); }
 
   /* ── Kapalı sidebar: sadece ikon görünür ── */
@@ -264,6 +264,7 @@ body {
     width:56px;
     overflow:hidden;
   }
+  body.sidebar-collapse .app-header { padding-left:56px; }
   body.sidebar-collapse .app-main,
   body.sidebar-collapse .app-footer {
     margin-left:56px;
@@ -1441,10 +1442,11 @@ body.obs-desktop-site .obs-sidebar {
 }
 body.obs-desktop-site .app-main,
 body.obs-desktop-site .app-footer { margin-left:240px; transition: margin-left .2s ease; }
-body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; }
+body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; padding-left:240px; transition: padding-left .2s ease; }
 
 /* sidebar-collapse: obs-desktop-site modunda da ikon-only çalışsın */
 body.obs-desktop-site.sidebar-collapse .obs-sidebar:not(:hover) { width:56px; overflow:hidden; }
+body.obs-desktop-site.sidebar-collapse .app-header { padding-left:56px; }
 body.obs-desktop-site.sidebar-collapse .app-main,
 body.obs-desktop-site.sidebar-collapse .app-footer { margin-left:56px; }
 
