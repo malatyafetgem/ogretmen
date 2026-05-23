@@ -253,13 +253,25 @@ body {
     width:240px; z-index:var(--z-sidebar); overflow-y:auto;
     background:var(--c-surface) !important;
     border-right: var(--border-ink);
+    transition: width .2s ease;
   }
-  .app-header, .app-main, .app-footer { margin-left:240px; }
+  .app-header, .app-main, .app-footer { margin-left:240px; transition: margin-left .2s ease; }
   .app-header { position:sticky; top:0; z-index:var(--z-topbar); }
   .app-main   { min-height:calc(100vh - 57px); }
+
+  /* ── Kapalı sidebar: sadece ikon görünür ── */
+  body.sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) {
+    width:56px;
+    overflow:hidden;
+  }
+  body.sidebar-collapse .app-header,
+  body.sidebar-collapse .app-main,
+  body.sidebar-collapse .app-footer {
+    margin-left:56px;
+  }
 }
 .sidebar-brand {
-  height:70px;
+  height:56px;
   display:flex;
   align-items:center;
   border-bottom:var(--border-light);
@@ -296,24 +308,65 @@ body {
 .sidebar-menu .nav-link.active .nav-icon { color:var(--c-blue); }
 .sidebar-menu .nav-link p { margin:0; }
 
-body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand,
-.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand {
-  height:70px;
-}
-body.sidebar-collapse .app-sidebar:not(:hover) .brand-link,
-.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-}
-body.sidebar-collapse .app-sidebar:not(:hover) .brand-text,
-.sidebar-collapse .app-sidebar:not(:hover) .brand-text {
-  display:none!important;
-}
-body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
-.sidebar-collapse .app-sidebar:not(:hover) .brand-image {
-  width:34px; height:34px;
+/* ── Kapalı sidebar: tüm stiller sadece masaüstünde geçerli ── */
+@media (min-width:992px) {
+  /* Brand */
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand {
+    height:56px;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    width:100%;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .brand-text {
+    display:none!important;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .brand-image {
+    width:28px; height:28px;
+  }
+
+  /* Menü öğeleri */
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu {
+    padding:8px 0;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-item {
+    display:flex;
+    justify-content:center;
+    margin-bottom:2px;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:10px;
+    gap:0;
+    width:40px;
+    margin:0;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link p,
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link .nav-text {
+    display:none!important;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-icon {
+    width:20px;
+    text-align:center;
+    font-size:1rem;
+    margin:0;
+  }
+
+  /* Hamburger — topbar'daki ilk li sidebar genişliğiyle hizalanır */
+  body.sidebar-collapse .obs-topbar .navbar-nav > li:first-child {
+    width:56px;
+    justify-content:center;
+    margin:0;
+    padding:0;
+  }
+  body.sidebar-collapse .obs-topbar .navbar-nav > li:first-child .top-icon-link {
+    margin:0 auto;
+  }
 }
 
 /* ─── 8. BUTONLAR ─── */
@@ -1450,7 +1503,7 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
 
 /* ─── 37. MOBİL RESPONSIVE (≤991px) ─── */
 @media (max-width:991px) {
-  .obs-sidebar { display:none !important; }
+  .obs-sidebar { display:none; }
   .obs-topbar { padding-left:28px; padding-right:18px; }
   /* Sürüm badge ve çıkış butonu — AdminLTE mobil gizlemesini iptal et */
   .obs-topbar .navbar-nav.ms-auto { display:flex !important; flex-direction:row !important; align-items:center !important; }
@@ -1674,4 +1727,13 @@ body.sidebar-collapse .app-sidebar:not(:hover) .brand-image,
   .ti-extra-row { grid-template-columns:1fr auto; grid-template-rows:auto auto; }
   .ti-extra-row .ti-extra-arrow { display:none; }
   .ti-preview-summary { gap:6px; }
+}
+
+/* ─── 38. MOBİL "MASAÜSTÜ SİTESİ" MODU ─── */
+/* JS applyViewportLayout() sidebar ve bottom-nav'ı inline style ile yönetir.
+   CSS media query varsayılan durumu kontrol eder, JS override yapar. */
+
+/* Mobil modda sidebar gizli (JS tarafından da kontrol edilir) */
+body.obs-mobile-mode .obs-sidebar {
+  display:none;
 }

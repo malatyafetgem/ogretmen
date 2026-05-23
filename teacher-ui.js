@@ -165,3 +165,37 @@ if(document.readyState==='loading'){
 } else {
   initSidebarToggle();
 }
+
+/* ── Viewport genişliğini izle: "Masaüstü sitesi" modunda bottom-nav/sidebar düzeltmesi ── */
+function applyViewportLayout(){
+  const isDesktop = window.innerWidth >= 992;
+  const bottomNav = document.getElementById('bottomNav');
+  const sidebar   = document.querySelector('.obs-sidebar');
+  if(isDesktop){
+    // Masaüstü: bottom-nav gizle, sidebar göster
+    if(bottomNav) bottomNav.style.setProperty('display','none','important');
+    if(sidebar)   sidebar.style.removeProperty('display');
+    document.body.classList.remove('obs-mobile-mode');
+  } else {
+    // Mobil: bottom-nav görünür olsun (CSS media query zaten halleder, inline override'ı kaldır)
+    if(bottomNav) bottomNav.style.removeProperty('display');
+    if(sidebar)   sidebar.style.setProperty('display','none','important');
+    document.body.classList.add('obs-mobile-mode');
+  }
+}
+
+function initViewportWatcher(){
+  applyViewportLayout();
+  if(typeof ResizeObserver !== 'undefined'){
+    const ro = new ResizeObserver(()=>applyViewportLayout());
+    ro.observe(document.documentElement);
+  } else {
+    window.addEventListener('resize', applyViewportLayout);
+  }
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', initViewportWatcher);
+} else {
+  initViewportWatcher();
+}
