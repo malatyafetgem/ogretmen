@@ -274,19 +274,16 @@ body {
   height:57px;
   display:flex;
   align-items:center;
-  gap:4px;
-  padding:0 8px;
+  padding:0 12px 0 58px; /* sol: hamburger (42px) + boşluk */
+  gap:8px;
   border-bottom:var(--border-light);
 }
-.sidebar-toggle-btn {
-  flex-shrink:0;
-}
 .brand-link {
-  width:100%; height:100%;
   display:flex;
   align-items:center; gap:10px;
-  padding:0 8px 0 4px;
   text-decoration:none; border-bottom:0;
+  min-width:0;
+  flex:1;
 }
 .brand-image {
   width:34px; height:34px;
@@ -318,7 +315,6 @@ body {
   /* Brand */
   body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand {
     height:57px;
-    justify-content:center;
     padding:0;
   }
   body.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
@@ -328,7 +324,7 @@ body {
     display:none!important;
   }
   body.sidebar-collapse .app-sidebar:not(:hover) .brand-image {
-    width:28px; height:28px;
+    display:none;
   }
 
   /* Menü öğeleri */
@@ -383,7 +379,32 @@ body {
   }
 }
 
-/* ─── 8. BUTONLAR ─── */
+/* ─── 7b. HAMBURGEr — sidebar-brand üzerine sabit ── */
+@media (min-width:992px) {
+  /* Hamburger li: fixed konumda, sidebar-brand alanına bindirme */
+  .obs-hamburger-wrap {
+    position:fixed;
+    top:0; left:0;
+    width:240px;
+    height:57px;
+    z-index:calc(var(--z-topbar) + 1);
+    display:flex !important;
+    align-items:center;
+    justify-content:flex-start;
+    padding-left:8px;
+    pointer-events:none; /* tıklama link'e geçsin */
+  }
+  .obs-hamburger-wrap .top-icon-link {
+    pointer-events:auto;
+  }
+  /* Collapse modunda hamburger sidebar genişliği kadar küçülsün */
+  body.sidebar-collapse .obs-hamburger-wrap {
+    width:56px;
+    justify-content:center;
+    padding-left:0;
+    transition: width .2s ease;
+  }
+}
 .btn {
   display:inline-flex; align-items:center; justify-content:center; gap:5px;
   border: var(--border-ink); border-radius:var(--r);
@@ -1452,6 +1473,7 @@ body.obs-desktop-site.sidebar-collapse .app-footer { margin-left:56px; }
 
 /* Masaüstü sitesi modunda topbar: masaüstü marka görünür, mobil marka gizli */
 body.obs-desktop-site .top-mobile-brand { display:none !important; }
+body.obs-desktop-site .obs-hamburger-wrap { display:flex !important; }
 
 /* ─── 36. YAZDIRMA ─── */
 
