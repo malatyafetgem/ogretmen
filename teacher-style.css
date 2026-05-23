@@ -991,7 +991,11 @@ body {
 .report-switch { display:flex; gap:0; flex-wrap:nowrap; overflow-x:auto; }
 .report-switch .btn {
   border-radius:0 !important; border-right-width:0;
-  flex:0 0 auto;
+  flex:1 1 0;
+  min-width:0;
+  white-space:normal;
+  text-align:center;
+  line-height:1.2;
 }
 .report-switch .btn:first-child { border-radius:var(--r) 0 0 var(--r) !important; }
 .report-switch .btn:last-child  { border-radius:0 var(--r) var(--r) 0 !important; border-right-width:2px; }
@@ -1660,7 +1664,7 @@ body {
   .metric-icon  { font-size:1rem; top:11px; right:10px; }
 
   .report-switch { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-wrap:wrap; }
-  .report-switch .btn { border-radius:var(--r) !important; border-right-width:2px; flex:none; }
+  .report-switch .btn { border-radius:var(--r) !important; border-right-width:2px; flex:none; white-space:normal; text-align:center; line-height:1.2; }
   .report-switch .btn:first-child { border-radius:var(--r) !important; }
   .report-switch .btn:last-child  { border-radius:var(--r) !important; }
 

@@ -166,18 +166,18 @@ if(document.readyState==='loading'){
   initSidebarToggle();
 }
 
-/* ── Viewport genişliğini izle: "Masaüstü sitesi" modunda bottom-nav/sidebar düzeltmesi ── */
+/* ── Viewport düzeni: CSS media query ile eşleşen breakpoint kontrolü ── */
+const _desktopMQ = window.matchMedia('(min-width:992px)');
+
 function applyViewportLayout(){
-  const isDesktop = window.innerWidth >= 992;
+  const isDesktop = _desktopMQ.matches;
   const bottomNav = document.getElementById('bottomNav');
   const sidebar   = document.querySelector('.obs-sidebar');
   if(isDesktop){
-    // Masaüstü: bottom-nav gizle, sidebar göster
     if(bottomNav) bottomNav.style.setProperty('display','none','important');
     if(sidebar)   sidebar.style.removeProperty('display');
     document.body.classList.remove('obs-mobile-mode');
   } else {
-    // Mobil: bottom-nav görünür olsun (CSS media query zaten halleder, inline override'ı kaldır)
     if(bottomNav) bottomNav.style.removeProperty('display');
     if(sidebar)   sidebar.style.setProperty('display','none','important');
     document.body.classList.add('obs-mobile-mode');
@@ -186,11 +186,11 @@ function applyViewportLayout(){
 
 function initViewportWatcher(){
   applyViewportLayout();
-  if(typeof ResizeObserver !== 'undefined'){
-    const ro = new ResizeObserver(()=>applyViewportLayout());
-    ro.observe(document.documentElement);
+  // matchMedia listener: CSS breakpoint değiştiğinde tetiklenir (masaüstü sitesi dahil)
+  if(_desktopMQ.addEventListener){
+    _desktopMQ.addEventListener('change', applyViewportLayout);
   } else {
-    window.addEventListener('resize', applyViewportLayout);
+    _desktopMQ.addListener(applyViewportLayout); // eski Safari fallback
   }
 }
 
