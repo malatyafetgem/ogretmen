@@ -32,7 +32,7 @@
   --z-sticky-cell: 2;
   --z-sticky-head: 4;
   --z-sticky-corner: 5;
-  --z-topbar: 1035;
+  --z-topbar: 1041;
   --z-sidebar: 1040;
   --z-bottom-nav: 1040;
   --z-toast: 2000;
@@ -162,7 +162,7 @@ body {
 /* ─── 6. TOPBAR ─── */
 .navbar {
   display:flex; align-items:center;
-  min-height:56px; padding:0 16px;
+  height:57px; min-height:57px; padding:0 16px;
   background:var(--c-surface);
 }
 .navbar-nav { display:flex; align-items:center; flex-direction:row; gap:4px; list-style:none; margin:0; padding:0; }
@@ -271,7 +271,7 @@ body {
   }
 }
 .sidebar-brand {
-  height:56px;
+  height:57px;
   display:flex;
   align-items:center;
   border-bottom:var(--border-light);
@@ -312,7 +312,7 @@ body {
 @media (min-width:992px) {
   /* Brand */
   body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand {
-    height:56px;
+    height:57px;
   }
   body.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
     display:flex;
@@ -344,7 +344,18 @@ body {
     padding:10px;
     gap:0;
     width:40px;
+    height:40px;
     margin:0;
+    border-radius:8px;
+  }
+  /* Aktif ikon: pill çerçeve, ikon tam ortada */
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link.active {
+    border-radius:8px;
+    background:#eff2ff;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link:hover {
+    background:#f3f4f6;
+    border-radius:8px;
   }
   body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link p,
   body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link .nav-text {
