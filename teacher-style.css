@@ -245,30 +245,55 @@ body {
 /* Bağlantı durumu: sadece kenarlık rengi değişir */
 .version-success { border-color:var(--c-green) !important; color:var(--c-green) !important; }
 .version-warning { border-color:var(--c-red) !important; color:var(--c-red) !important; }
+/* ─── 6b. TOP NAVİGASYON (Masaüstü orta menü) ─── */
+/* Topbar üç bölge: sol marka | orta nav | sağ aksiyonlar */
+.obs-topbar { position:relative; }
+/* Marka bağlantısı */
+.top-brand-link { text-decoration:none; }
+.top-brand-img {
+  width:28px; height:28px; object-fit:contain; flex-shrink:0;
+  border-radius:4px; display:block;
+}
+/* Orta nav grubu: mutlak konumlandırmayla tam ortalama */
+.obs-topnav {
+  position:absolute; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:4px;
+  list-style:none; margin:0; padding:0;
+}
+.obs-tnav-link {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 13px;
+  font-size:.84rem; font-weight:600; letter-spacing:-.01em;
+  color:var(--c-ink-2); text-decoration:none;
+  border-radius:var(--r);
+  border:1.5px solid transparent;
+  transition:background .1s, color .1s, border-color .1s;
+  white-space:nowrap;
+}
+.obs-tnav-link i {
+  font-size:.82rem; color:var(--c-muted);
+  transition:color .1s;
+}
+.obs-tnav-link:hover {
+  background:#f3f4f6;
+  color:var(--c-ink);
+}
+.obs-tnav-link:hover i { color:var(--c-ink-2); }
+.obs-tnav-link.active {
+  background:#eff2ff;
+  color:var(--c-blue);
+  border-color:#c7d2fe;
+  font-weight:700;
+}
+.obs-tnav-link.active i { color:var(--c-blue); }
 
 /* ─── 7. SIDEBAR ─── */
 @media (min-width:992px) {
-  .app-sidebar.obs-sidebar {
-    position:fixed !important; top:0 !important; left:0 !important; bottom:0 !important;
-    width:240px; z-index:var(--z-sidebar); overflow-y:auto;
-    background:var(--c-surface) !important;
-    border-right: var(--border-ink);
-    transition: width .2s ease;
-  }
-  .app-main, .app-footer { margin-left:240px; transition: margin-left .2s ease; }
-  .app-header { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; padding-left:240px; transition: padding-left .2s ease; }
+  /* Masaüstünde sol sidebar gizli — navigasyon topbar'da */
+  .app-sidebar.obs-sidebar { display:none !important; }
+  .app-main, .app-footer { margin-left:0 !important; }
+  .app-header { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; padding-left:0; }
   .app-main   { min-height:calc(100vh - 57px); }
-
-  /* ── Kapalı sidebar: sadece ikon görünür ── */
-  body.sidebar-collapse .app-sidebar.obs-sidebar:not(:hover) {
-    width:56px;
-    overflow:hidden;
-  }
-  body.sidebar-collapse .app-header { padding-left:56px; }
-  body.sidebar-collapse .app-main,
-  body.sidebar-collapse .app-footer {
-    margin-left:56px;
-  }
 }
 .sidebar-brand {
   height:57px;
@@ -311,100 +336,10 @@ body {
 .sidebar-menu .nav-link p { margin:0; }
 
 /* ── Kapalı sidebar: tüm stiller sadece masaüstünde geçerli ── */
-@media (min-width:992px) {
-  /* Brand */
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand {
-    height:57px;
-    padding:0;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
-    display:none;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .brand-text {
-    display:none!important;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .brand-image {
-    display:none;
-  }
+/* Sidebar collapse stilleri artık masaüstünde kullanılmıyor — sidebar gizli */
 
-  /* Menü öğeleri */
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu {
-    padding:8px 0;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-item {
-    display:flex;
-    justify-content:center;
-    margin-bottom:2px;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link {
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding:10px;
-    gap:0;
-    width:40px;
-    height:40px;
-    margin:0;
-    border-radius:8px;
-  }
-  /* Aktif ikon: pill çerçeve, ikon tam ortada */
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link.active {
-    border-radius:8px;
-    background:#eff2ff;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link:hover {
-    background:#f3f4f6;
-    border-radius:8px;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link p,
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-link .nav-text {
-    display:none!important;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-menu .nav-icon {
-    width:20px;
-    text-align:center;
-    font-size:1rem;
-    margin:0;
-  }
-
-  /* Hamburger — topbar'daki ilk li sidebar genişliğiyle hizalanır */
-  body.sidebar-collapse .obs-topbar .navbar-nav > li:first-child {
-    width:56px;
-    justify-content:center;
-    margin:0;
-    padding:0;
-  }
-  body.sidebar-collapse .obs-topbar .navbar-nav > li:first-child .top-icon-link {
-    margin:0 auto;
-  }
-}
-
-/* ─── 7b. HAMBURGEr — sidebar-brand üzerine sabit ── */
-@media (min-width:992px) {
-  /* Hamburger li: fixed konumda, sidebar-brand alanına bindirme */
-  .obs-hamburger-wrap {
-    position:fixed;
-    top:0; left:0;
-    width:240px;
-    height:57px;
-    z-index:calc(var(--z-topbar) + 1);
-    display:flex !important;
-    align-items:center;
-    justify-content:flex-start;
-    padding-left:8px;
-    pointer-events:none; /* tıklama link'e geçsin */
-  }
-  .obs-hamburger-wrap .top-icon-link {
-    pointer-events:auto;
-  }
-  /* Collapse modunda hamburger sidebar genişliği kadar küçülsün */
-  body.sidebar-collapse .obs-hamburger-wrap {
-    width:56px;
-    justify-content:center;
-    padding-left:0;
-    transition: width .2s ease;
-  }
-}
+/* Hamburger wrap: topbar navigasyonuna geçildi, hamburger artık kullanılmıyor */
+.obs-hamburger-wrap { display:none !important; }
 .btn {
   display:inline-flex; align-items:center; justify-content:center; gap:5px;
   border: var(--border-ink); border-radius:var(--r);
@@ -1448,32 +1383,13 @@ body.obs-desktop-site .bottom-nav { display:none !important; }
 body.obs-desktop-site .app-main,
 body.obs-desktop-site .app-content { padding-bottom:0 !important; }
 
-/* Sidebar sabit konumlandırma — masaüstü @media kuralı dar viewport'ta uygulanmaz,
-   obs-desktop-site sınıfıyla aynı davranışı zorla */
-body.obs-desktop-site .obs-sidebar {
-  display:block !important;
-  position:fixed !important;
-  top:0 !important; left:0 !important; bottom:0 !important;
-  width:240px;
-  z-index:var(--z-sidebar);
-  overflow-y:auto;
-  background:var(--c-surface) !important;
-  border-right:var(--border-ink);
-  transition: width .2s ease;
-}
+/* obs-desktop-site: mobil cihazda masaüstü sitesi — sidebar gizli, topnav aktif */
+body.obs-desktop-site .obs-sidebar { display:none !important; }
 body.obs-desktop-site .app-main,
-body.obs-desktop-site .app-footer { margin-left:240px; transition: margin-left .2s ease; }
-body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; padding-left:240px; transition: padding-left .2s ease; }
-
-/* sidebar-collapse: obs-desktop-site modunda da ikon-only çalışsın */
-body.obs-desktop-site.sidebar-collapse .obs-sidebar:not(:hover) { width:56px; overflow:hidden; }
-body.obs-desktop-site.sidebar-collapse .app-header { padding-left:56px; }
-body.obs-desktop-site.sidebar-collapse .app-main,
-body.obs-desktop-site.sidebar-collapse .app-footer { margin-left:56px; }
-
-/* Masaüstü sitesi modunda topbar: masaüstü marka görünür, mobil marka gizli */
+body.obs-desktop-site .app-footer { margin-left:0 !important; }
+body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); padding-left:0; }
 body.obs-desktop-site .top-mobile-brand { display:none !important; }
-body.obs-desktop-site .obs-hamburger-wrap { display:flex !important; }
+body.obs-desktop-site .obs-topnav { display:flex !important; }
 
 /* ─── 36. YAZDIRMA ─── */
 

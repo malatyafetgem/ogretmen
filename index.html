@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -67,20 +67,13 @@ window.writeVersionedScripts = function(paths) {
 
   <!-- TOPBAR -->
   <nav class="app-header navbar navbar-expand bg-body obs-topbar">
-    <ul class="navbar-nav">
-      <!-- Hamburger: fixed, sidebar-brand üzerine bindirme -->
-      <li class="nav-item obs-hamburger-wrap d-none d-lg-flex">
-        <a class="nav-link top-icon-link" data-lte-toggle="sidebar" href="#" role="button"
-           onclick="event.preventDefault()" aria-label="Menüyü aç/kapat">
-          <i class="fas fa-bars"></i>
-        </a>
-      </li>
-      <!-- Masaüstü marka -->
+    <!-- Sol: marka (masaüstü) -->
+    <ul class="navbar-nav obs-topbar-left">
       <li class="nav-item d-none d-lg-flex align-items-center">
-        <span class="nav-link top-brand-inline">
-          <i class="fas fa-chalkboard-user top-brand-icon"></i>
+        <a href="#dashboard" class="top-brand-inline top-brand-link" onclick="return sTab('dashboard')" aria-label="Ana Sayfa">
+          <img src="./icon.png" alt="" class="top-brand-img">
           <span class="top-brand-title">Öğretmen Bilgi Sistemi</span>
-        </span>
+        </a>
       </li>
       <!-- Mobil marka -->
       <li class="nav-item d-flex d-lg-none align-items-center">
@@ -90,8 +83,17 @@ window.writeVersionedScripts = function(paths) {
         </a>
       </li>
     </ul>
-    <ul class="navbar-nav ms-auto">
-      <li class="nav-item"><span class="nav-link version-pill" id="versionBadge"></span></li>
+    <!-- Orta: ana navigasyon (yalnızca masaüstü) -->
+    <ul class="navbar-nav obs-topnav d-none d-lg-flex" role="menubar" aria-label="Ana menü">
+      <li class="nav-item"><a id="nav-dashboard" href="#dashboard" class="nav-link obs-tnav-link active" onclick="return sTab('dashboard')" role="menuitem"><i class="fas fa-house"></i><span>Ana Sayfa</span></a></li>
+      <li class="nav-item"><a id="nav-teachers" href="#teachers" class="nav-link obs-tnav-link" onclick="return sTab('teachers')" role="menuitem"><i class="fas fa-user-tie"></i><span>Öğretmen</span></a></li>
+      <li class="nav-item"><a id="nav-classes" href="#classes" class="nav-link obs-tnav-link" onclick="return sTab('classes')" role="menuitem"><i class="fas fa-users"></i><span>Sınıf</span></a></li>
+      <li class="nav-item"><a id="nav-reports" href="#reports" class="nav-link obs-tnav-link" onclick="return sTab('reports')" role="menuitem"><i class="fas fa-calendar-days"></i><span>Rapor</span></a></li>
+      <li class="nav-item"><a id="nav-settings" href="#settings" class="nav-link obs-tnav-link" onclick="return sTab('settings')" role="menuitem"><i class="fas fa-gear"></i><span>Ayarlar</span></a></li>
+    </ul>
+    <!-- Sağ: sürüm + çıkış -->
+    <ul class="navbar-nav ms-auto obs-topbar-right">
+      <li class="nav-item d-none d-lg-flex align-items-center"><span class="nav-link version-pill" id="versionBadge"></span></li>
       <li class="nav-item">
         <a href="#" class="nav-link top-action-link" onclick="logout(); return false;">
           <i class="fas fa-arrow-right-from-bracket me-1"></i><span class="d-none d-sm-inline">Çıkış</span>
@@ -111,11 +113,11 @@ window.writeVersionedScripts = function(paths) {
     <div class="sidebar-wrapper">
       <nav class="mt-2">
         <ul class="nav sidebar-menu flex-column" role="menu">
-          <li class="nav-item"><a id="nav-dashboard" href="#dashboard" class="nav-link active" onclick="return sTab('dashboard')"><i class="nav-icon fas fa-house"></i><p>Ana Sayfa</p></a></li>
-          <li class="nav-item"><a id="nav-teachers" href="#teachers" class="nav-link" onclick="return sTab('teachers')"><i class="nav-icon fas fa-user-tie"></i><p>Öğretmen</p></a></li>
-          <li class="nav-item"><a id="nav-classes" href="#classes" class="nav-link" onclick="return sTab('classes')"><i class="nav-icon fas fa-users"></i><p>Sınıf</p></a></li>
-          <li class="nav-item"><a id="nav-reports" href="#reports" class="nav-link" onclick="return sTab('reports')"><i class="nav-icon fas fa-calendar-days"></i><p>Rapor</p></a></li>
-          <li class="nav-item"><a id="nav-settings" href="#settings" class="nav-link" onclick="return sTab('settings')"><i class="nav-icon fas fa-gear"></i><p>Ayarlar</p></a></li>
+          <li class="nav-item"><a href="#dashboard" class="nav-link active" onclick="return sTab('dashboard')"><i class="nav-icon fas fa-house"></i><p>Ana Sayfa</p></a></li>
+          <li class="nav-item"><a href="#teachers" class="nav-link" onclick="return sTab('teachers')"><i class="nav-icon fas fa-user-tie"></i><p>Öğretmen</p></a></li>
+          <li class="nav-item"><a href="#classes" class="nav-link" onclick="return sTab('classes')"><i class="nav-icon fas fa-users"></i><p>Sınıf</p></a></li>
+          <li class="nav-item"><a href="#reports" class="nav-link" onclick="return sTab('reports')"><i class="nav-icon fas fa-calendar-days"></i><p>Rapor</p></a></li>
+          <li class="nav-item"><a href="#settings" class="nav-link" onclick="return sTab('settings')"><i class="nav-icon fas fa-gear"></i><p>Ayarlar</p></a></li>
         </ul>
       </nav>
     </div>
