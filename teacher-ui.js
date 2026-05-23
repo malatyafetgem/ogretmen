@@ -166,36 +166,49 @@ if(document.readyState==='loading'){
   initSidebarToggle();
 }
 
-/* ── Viewport düzeni: CSS media query ile eşleşen breakpoint kontrolü ── */
-const _desktopMQ = window.matchMedia('(min-width:992px)');
+/* ── Masaüstü/mobil mod tespiti: body.obs-mobile-mode sınıfını toggle eder ── */
+/* CSS bu sınıfa göre sidebar ve bottom-nav gösterir/gizler.                   */
 
-function applyViewportLayout(){
-  const isDesktop = _desktopMQ.matches;
-  const bottomNav = document.getElementById('bottomNav');
-  const sidebar   = document.querySelector('.obs-sidebar');
-  if(isDesktop){
-    if(bottomNav) bottomNav.style.setProperty('display','none','important');
-    if(sidebar)   sidebar.style.removeProperty('display');
-    document.body.classList.remove('obs-mobile-mode');
-  } else {
-    if(bottomNav) bottomNav.style.removeProperty('display');
-    if(sidebar)   sidebar.style.setProperty('display','none','important');
-    document.body.classList.add('obs-mobile-mode');
-  }
+function _mediaMatches(query, fallback) {
+  try { if(window.matchMedia) return window.matchMedia(query).matches; } catch(e) {}
+  return fallback;
 }
 
-function initViewportWatcher(){
+function isLikelyDesktopSiteRequest() {
+  const ua = navigator.userAgent || '';
+  let uaDataMobile = null;
+  try {
+    if(navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+      uaDataMobile = navigator.userAgentData.mobile;
+    }
+  } catch(e) {}
+  const coarsePointer = _mediaMatches('(pointer: coarse)', false);
+  const touchDevice   = coarsePointer || (navigator.maxTouchPoints || 0) > 0;
+  const mobileUa      = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+  const narrowLayout  = _mediaMatches('(max-width: 991px)', window.innerWidth < 992);
+  const screenShortSide = window.screen ? Math.min(window.screen.width || 0, window.screen.height || 0) : 0;
+  // Dokunmatik cihaz ama viewport ekranın kısa kenarından belirgin geniş = masaüstü sitesi modu
+  const desktopLikeViewport = touchDevice && screenShortSide > 0 && window.innerWidth >= 900 && window.innerWidth > screenShortSide * 1.35;
+  return narrowLayout && touchDevice && (uaDataMobile === false || !mobileUa || desktopLikeViewport);
+}
+
+function applyViewportLayout() {
+  if(!document.body) return;
+  const narrowNav   = _mediaMatches('(max-width: 991px)', window.innerWidth < 992);
+  const desktopSite = isLikelyDesktopSiteRequest();
+  // desktop-site-mode: mobil cihazda masaüstü sitesi istendi
+  document.body.classList.toggle('obs-desktop-site', desktopSite);
+  // obs-mobile-mode: gerçek mobil görünüm (dar + dokunmatik + masaüstü sitesi istenmedi)
+  document.body.classList.toggle('obs-mobile-mode', narrowNav && !desktopSite);
+}
+
+function scheduleViewportLayout() {
   applyViewportLayout();
-  // matchMedia listener: CSS breakpoint değiştiğinde tetiklenir (masaüstü sitesi dahil)
-  if(_desktopMQ.addEventListener){
-    _desktopMQ.addEventListener('change', applyViewportLayout);
-  } else {
-    _desktopMQ.addListener(applyViewportLayout); // eski Safari fallback
-  }
+  setTimeout(applyViewportLayout, 180); // tarayıcı yeniden boyutlandırma gecikmesi için
 }
 
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', initViewportWatcher);
-} else {
-  initViewportWatcher();
-}
+applyViewportLayout();
+window.addEventListener('resize', scheduleViewportLayout);
+window.addEventListener('orientationchange', scheduleViewportLayout);
+document.addEventListener('DOMContentLoaded', applyViewportLayout);
+if(window.visualViewport) window.visualViewport.addEventListener('resize', scheduleViewportLayout);

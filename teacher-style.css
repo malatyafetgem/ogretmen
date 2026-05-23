@@ -991,11 +991,7 @@ body {
 .report-switch { display:flex; gap:0; flex-wrap:nowrap; overflow-x:auto; }
 .report-switch .btn {
   border-radius:0 !important; border-right-width:0;
-  flex:1 1 0;
-  min-width:0;
-  white-space:normal;
-  text-align:center;
-  line-height:1.2;
+  flex:0 0 auto;
 }
 .report-switch .btn:first-child { border-radius:var(--r) 0 0 var(--r) !important; }
 .report-switch .btn:last-child  { border-radius:0 var(--r) var(--r) 0 !important; border-right-width:2px; }
@@ -1405,7 +1401,22 @@ body {
 .quick-section + .quick-section { margin-top:12px; padding-top:12px; border-top:var(--border-light); }
 
 /* ─── 35. ALT NAVİGASYON ─── */
+/* Varsayılan: masaüstünde gizli, mobilde (@media max-width:991px) gösterilir */
 .bottom-nav { display:none; }
+
+/* JS obs-mobile-mode sınıfı ekleyince bottom-nav görünür olur (masaüstü viewport'ta bile) */
+body.obs-mobile-mode .bottom-nav { display:grid !important; }
+/* JS obs-mobile-mode sınıfını kaldırınca sidebar görünür (masaüstü viewport'ta) */
+body:not(.obs-mobile-mode) .obs-sidebar { display:block !important; }
+
+/* Masaüstü sitesi istendi: bottom-nav kesinlikle gizli, sidebar görünür */
+body.obs-desktop-site .bottom-nav { display:none !important; }
+body.obs-desktop-site .obs-sidebar { display:block !important; }
+body.obs-desktop-site .app-header,
+body.obs-desktop-site .app-main,
+body.obs-desktop-site .app-footer { margin-left:240px; }
+body.obs-desktop-site .app-main,
+body.obs-desktop-site .app-content { padding-bottom:0 !important; }
 
 /* ─── 36. YAZDIRMA ─── */
 
@@ -1507,7 +1518,7 @@ body {
 
 /* ─── 37. MOBİL RESPONSIVE (≤991px) ─── */
 @media (max-width:991px) {
-  .obs-sidebar { display:none; }
+  /* obs-sidebar gizleme artık body.obs-mobile-mode sınıfıyla yapılıyor */
   .obs-topbar { padding-left:28px; padding-right:18px; }
   /* Sürüm badge ve çıkış butonu — AdminLTE mobil gizlemesini iptal et */
   .obs-topbar .navbar-nav.ms-auto { display:flex !important; flex-direction:row !important; align-items:center !important; }
@@ -1664,7 +1675,7 @@ body {
   .metric-icon  { font-size:1rem; top:11px; right:10px; }
 
   .report-switch { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-wrap:wrap; }
-  .report-switch .btn { border-radius:var(--r) !important; border-right-width:2px; flex:none; white-space:normal; text-align:center; line-height:1.2; }
+  .report-switch .btn { border-radius:var(--r) !important; border-right-width:2px; flex:none; }
   .report-switch .btn:first-child { border-radius:var(--r) !important; }
   .report-switch .btn:last-child  { border-radius:var(--r) !important; }
 

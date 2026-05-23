@@ -34,7 +34,7 @@ window.writeVersionedScripts = function(paths) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <script>window.writeVersionedStyles(['./teacher-style.css','./teacher-theme.css']);</script>
 </head>
-<body class="layout-fixed sidebar-expand-lg sidebar-mini">
+<body class="layout-fixed sidebar-expand-lg sidebar-mini obs-mobile-mode">
 
 <!-- ── GİRİŞ EKRANI ── -->
 <div id="loginScreen">
@@ -226,7 +226,7 @@ window.writeVersionedScripts = function(paths) {
             <div class="card-body">
               <div class="report-switch no-print">
                 <button id="reportBtn-schedule" class="btn btn-sm btn-primary" onclick="setReportMode('schedule')"><i class="fas fa-calendar-days me-1"></i>Ders Programı</button>
-                <button id="reportBtn-teachers" class="btn btn-sm btn-outline-secondary" onclick="setReportMode('teachers')"><i class="fas fa-user-tie me-1"></i>Öğretmen Listesi</button>
+                <button id="reportBtn-teachers" class="btn btn-sm btn-outline-secondary" onclick="setReportMode('teachers')"><i class="fas fa-user-tie me-1"></i>Öğretmenler</button>
                 <button id="reportBtn-duty"     class="btn btn-sm btn-outline-secondary" onclick="setReportMode('duty')"><i class="fas fa-clipboard-check me-1"></i>Nöbet</button>
                 <button id="reportBtn-tasks"    class="btn btn-sm btn-outline-secondary" onclick="setReportMode('tasks')"><i class="fas fa-sitemap me-1"></i>Görevler</button>
               </div>
