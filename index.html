@@ -68,13 +68,6 @@ window.writeVersionedScripts = function(paths) {
   <!-- TOPBAR -->
   <nav class="app-header navbar navbar-expand bg-body obs-topbar">
     <ul class="navbar-nav">
-      <!-- Hamburger — sadece masaüstünde görünür -->
-      <li class="nav-item d-none d-lg-flex">
-        <a class="nav-link top-icon-link" data-lte-toggle="sidebar" href="#" role="button"
-           onclick="event.preventDefault()" aria-label="Menüyü aç/kapat">
-          <i class="fas fa-bars"></i>
-        </a>
-      </li>
       <!-- Masaüstü marka -->
       <li class="nav-item d-none d-lg-flex align-items-center">
         <span class="nav-link top-brand-inline">
@@ -103,6 +96,10 @@ window.writeVersionedScripts = function(paths) {
   <!-- SIDEBAR -->
   <aside class="app-sidebar shadow obs-sidebar" data-bs-theme="light">
     <div class="sidebar-brand">
+      <a class="sidebar-toggle-btn top-icon-link" data-lte-toggle="sidebar" href="#" role="button"
+         onclick="event.preventDefault()" aria-label="Menüyü aç/kapat">
+        <i class="fas fa-bars"></i>
+      </a>
       <a href="#dashboard" class="brand-link" onclick="return sTab('dashboard')">
         <img src="./icon.png" alt="" class="brand-image">
         <span class="brand-text fw-bold">Öğretmen</span>

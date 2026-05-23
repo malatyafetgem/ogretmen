@@ -255,8 +255,8 @@ body {
     border-right: var(--border-ink);
     transition: width .2s ease;
   }
-  .app-header, .app-main, .app-footer { margin-left:240px; transition: margin-left .2s ease; }
-  .app-header { position:sticky; top:0; z-index:var(--z-topbar); }
+  .app-main, .app-footer { margin-left:240px; transition: margin-left .2s ease; }
+  .app-header { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; }
   .app-main   { min-height:calc(100vh - 57px); }
 
   /* ── Kapalı sidebar: sadece ikon görünür ── */
@@ -264,7 +264,6 @@ body {
     width:56px;
     overflow:hidden;
   }
-  body.sidebar-collapse .app-header,
   body.sidebar-collapse .app-main,
   body.sidebar-collapse .app-footer {
     margin-left:56px;
@@ -274,13 +273,18 @@ body {
   height:57px;
   display:flex;
   align-items:center;
+  gap:4px;
+  padding:0 8px;
   border-bottom:var(--border-light);
+}
+.sidebar-toggle-btn {
+  flex-shrink:0;
 }
 .brand-link {
   width:100%; height:100%;
-  display:grid; grid-template-columns:18px minmax(0,1fr);
-  align-items:center; column-gap:10px;
-  padding:0 22px;
+  display:flex;
+  align-items:center; gap:10px;
+  padding:0 8px 0 4px;
   text-decoration:none; border-bottom:0;
 }
 .brand-image {
@@ -313,13 +317,11 @@ body {
   /* Brand */
   body.sidebar-collapse .app-sidebar:not(:hover) .sidebar-brand {
     height:57px;
-  }
-  body.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
-    display:flex;
-    align-items:center;
     justify-content:center;
     padding:0;
-    width:100%;
+  }
+  body.sidebar-collapse .app-sidebar:not(:hover) .brand-link {
+    display:none;
   }
   body.sidebar-collapse .app-sidebar:not(:hover) .brand-text {
     display:none!important;
@@ -1437,19 +1439,16 @@ body.obs-desktop-site .obs-sidebar {
   border-right:var(--border-ink);
   transition: width .2s ease;
 }
-body.obs-desktop-site .app-header,
 body.obs-desktop-site .app-main,
 body.obs-desktop-site .app-footer { margin-left:240px; transition: margin-left .2s ease; }
-body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); }
+body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); margin-left:0; }
 
 /* sidebar-collapse: obs-desktop-site modunda da ikon-only çalışsın */
 body.obs-desktop-site.sidebar-collapse .obs-sidebar:not(:hover) { width:56px; overflow:hidden; }
-body.obs-desktop-site.sidebar-collapse .app-header,
 body.obs-desktop-site.sidebar-collapse .app-main,
 body.obs-desktop-site.sidebar-collapse .app-footer { margin-left:56px; }
 
-/* Masaüstü sitesi modunda topbar: hamburger + masaüstü marka görünür, mobil marka gizli */
-body.obs-desktop-site .d-none.d-lg-flex { display:flex !important; }
+/* Masaüstü sitesi modunda topbar: masaüstü marka görünür, mobil marka gizli */
 body.obs-desktop-site .top-mobile-brand { display:none !important; }
 
 /* ─── 36. YAZDIRMA ─── */
