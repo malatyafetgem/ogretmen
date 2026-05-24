@@ -1010,7 +1010,7 @@ function buildTeacherListPrintCss(type, root, opts) {
 .teacher-list-print.mobile-print .table th:nth-child(5),
 .teacher-list-print.mobile-print .table td:nth-child(5) { width:20mm; }
 .teacher-list-print.mobile-print .table th:nth-child(6),
-.teacher-list-print.mobile-print .table td:nth-child(6) { display:none!important; }
+.teacher-list-print.mobile-print .table td:nth-child(6) { width:24mm; }
 .teacher-list-print.mobile-print .table th:nth-child(7),
 .teacher-list-print.mobile-print .table td:nth-child(7) { width:14mm; }
 .teacher-list-print.mobile-print .table th:nth-child(8),
