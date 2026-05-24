@@ -860,13 +860,32 @@ function buildSheetPrintCss(type, root, opts) {
   const subFs     = (rawCW >= 7) ? '5pt'   : (rawCW >= 5.5) ? '4.3pt' : '3.8pt';
   const headFs    = (rawCW >= 7) ? '5.5pt' : '5pt';
 
-  /* Satır yüksekliği: tüm satırlar eşit, içeriğe göre değil */
-  const rowH = (rawCW >= 7) ? '8mm' : (rawCW >= 5.5) ? '7mm' : '6mm';
+  /* Satır yüksekliği: tüm satırlar eşit, içeriğe göre değil.
+     Öğretmen çarşafında satır sayısı biliniyorsa, tüm tablo tek A4 landscape
+     sayfasına sığacak şekilde rowH dinamik olarak kısıtlanır.
+     Landscape A4 kullanılabilir yükseklik:
+       210mm − 20mm kenar − ~12mm başlık (meta+card-header+title)
+       − ~9.5mm thead (5mm + 4.5mm) = ~168.5mm veri alanı            */
+  const rowBaseH = (rawCW >= 7) ? 8 : (rawCW >= 5.5) ? 7 : 6; // mm
+  let rowH = rowBaseH + 'mm';
+  if (isTeacherSheet && sheetTable) {
+    const rowCount = sheetTable.querySelectorAll('tbody tr').length;
+    if (rowCount > 0) {
+      const pageH      = 210;   // mm A4
+      const marginH    = 20;    // 2×10mm kenar
+      const headerBand = 12;    // meta + card-header + title
+      const theadH     = 9.5;   // thead iki satır
+      const availH     = pageH - marginH - headerBand - theadH;
+      const dynH       = Math.floor((availH / rowCount) * 10) / 10; // 0.1mm hassasiyet
+      const clampedH   = Math.min(rowBaseH, Math.max(4.5, dynH));
+      rowH = clampedH.toFixed(1) + 'mm';
+    }
+  }
 
   return `
 /* ════════════════════════════════════════
    ÇARŞAF (sheet-print) — yatay A4
-   Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}
+   Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}  rowH=${rowH}
    ════════════════════════════════════════ */
 .sheet-print { font-size:${contentFs}; }
 
