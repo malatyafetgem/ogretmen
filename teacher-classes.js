@@ -120,7 +120,7 @@ function classSubjectSummary(className){
 }
 
 function buildClassSubjectTable(className){
-  const rows=classSubjectSummary(className).map(item=>`<tr><td><strong>${escapeHtml(displaySubjectName(item.subject))}</strong></td><td>${[...item.teachers.values()].map(t=>teacherLink(t)).join(', ')||'—'}</td><td>${item.hours}</td></tr>`).join('');
+  const rows=classSubjectSummary(className).map(item=>`<tr><td><strong>${escapeHtml(item.subject)}</strong></td><td>${[...item.teachers.values()].map(t=>teacherLink(t)).join(', ')||'—'}</td><td>${item.hours}</td></tr>`).join('');
   return `${rows?`<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Ders</th><th>Öğretmen</th><th>Saat</th></tr></thead><tbody>${rows}</tbody></table></div>`:emptyState('Bu sınıf için ders kaydı yok.')}`;
 }
 
