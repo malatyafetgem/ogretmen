@@ -475,7 +475,32 @@ function buildPrintHeader(opts, root) {
     day: '2-digit', month: 'long', year: 'numeric'
   });
   const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
-  return `<div class="ph-wrap"><div class="ph-title"><strong>${esc(opts.title || '')}</strong>${opts.sub ? `<span>${esc(opts.sub)}</span>` : ''}</div><span class="ph-date">${printDate}</span></div>`;
+
+  // Okul adını DB'den al (varsa)
+  let schoolName = '';
+  try {
+    if (typeof DB !== 'undefined' && DB.settings && DB.settings.schoolName) {
+      schoolName = DB.settings.schoolName;
+    }
+  } catch(e) {}
+
+  const schoolRow = schoolName
+    ? `<div class="ph-school">${esc(schoolName)}</div>`
+    : '';
+  const subRow = opts.sub
+    ? `<div class="ph-sub">${esc(opts.sub)}</div>`
+    : '';
+
+  return `<div class="ph-wrap">
+  <div class="ph-left">
+    ${schoolRow}
+    <div class="ph-title">${esc(opts.title || '')}</div>
+    ${subRow}
+  </div>
+  <div class="ph-right">
+    <div class="ph-date">${printDate}</div>
+  </div>
+</div>`;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -555,35 +580,50 @@ a,.contact-link,.teacher-name-link { color:#0f172a!important; text-decoration:no
 .card-title  { margin:0; font-size:11pt; }
 /* Madde 9: üst wrapper margin'ları sıfırla — sonda boş sayfa önleme */
 .obs-panel, .card, .profile-card, .mt-2, .mt-3 { margin-top:0!important; }
-/* ── Ortak tablo tokenleri ──────────────────────────────── */
-/* Tüm tablo tiplerinde bu değerler kullanılır; override yoksa bu geçerli */
+/* ── Ortak print tokenleri ──────────────────────────────── */
 :root {
-  --pt-border:     0.7pt solid #334155;
-  --pt-border-h:   1.5pt  solid #334155;   /* güçlü ayraç */
+  --pt-border:     0.65pt solid #94a3b8;
+  --pt-border-h:   1.5pt  solid #334155;
+  --pt-border-top: 2pt solid #0f172a;
   --pt-head-bg:    #e8ecf2;
-  --pt-row-alt:    #f7f9fb;
-  --pt-pad-th:     2.2px 5px;
-  --pt-pad-td:     2px 5px;
+  --pt-row-alt:    #f5f7fa;
+  --pt-pad-th:     3px 5px;
+  --pt-pad-td:     3px 5px;
   --pt-fs-base:    8pt;
   --pt-fs-sm:      7.2pt;
   --pt-fs-xs:      6.2pt;
-  --pt-lh:         1.25;
+  --pt-lh:         1.3;
+  --pt-cell-h:     6mm;   /* minimum hücre yüksekliği — tüm satırlar eşit */
 }
-.table { width:100%; border-collapse:collapse; font-size:var(--pt-fs-base); }
+/* ── Tablo temeli ── */
+.table { width:100%; border-collapse:collapse; font-size:var(--pt-fs-base); table-layout:fixed; }
 .table th,.table td {
   border:var(--pt-border)!important;
   padding:var(--pt-pad-td)!important;
   vertical-align:middle;
   line-height:var(--pt-lh);
+  min-height:var(--pt-cell-h);
+  height:var(--pt-cell-h);
+  overflow-wrap:anywhere; word-break:break-word;
 }
 .table th {
   padding:var(--pt-pad-th)!important;
   background:var(--pt-head-bg)!important;
   font-weight:700; text-align:left;
+  white-space:nowrap;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.table tbody tr:nth-child(even) td { background:var(--pt-row-alt)!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.table thead th { border-bottom:var(--pt-border-h)!important; }
+.table tbody tr:nth-child(even) td {
+  background:var(--pt-row-alt)!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+/* Sütun kesme: satır ortasında bölünme yok */
+.table tbody tr { break-inside:avoid; page-break-inside:avoid; }
 thead { display:table-header-group; }
+/* Sütun kesme genel — tablo başlıktan önce kesilmesin */
+table { break-inside:auto; }
+thead { break-inside:avoid; break-after:avoid; }
 .no-print,.page-actions,.schedule-health,.obs-toast,.print-hidden,.app-footer,footer.app-footer,.page-title-row { display:none!important; }
 .dashboard-search-card,.teacher-action-row,.teacher-selected-preview,
 .program-filter-inline,.program-mode-btns,.schedule-toolbar-card,
@@ -612,17 +652,34 @@ button:not(.print-keep) { display:none!important; }
 .print-meta { font-size:7.5pt; color:#64748b; text-align:right; margin-bottom:3mm; }
 
 /* ── Yazdırma başlık bandı ── */
+/* ── Yazdırma başlık bandı ──────────────────────────────────── */
 .ph-wrap {
-  display:flex; justify-content:space-between; align-items:flex-end;
-  border-bottom:2pt solid #111827; margin-bottom:5mm; padding-bottom:2.5mm;
+  display:flex; justify-content:space-between; align-items:flex-start;
+  border-bottom:2.5pt solid #0f172a;
+  margin-bottom:6mm; padding-bottom:3mm;
   break-after:avoid; page-break-after:avoid;
+  gap:8mm;
 }
-.ph-title strong {
-  font-size:14pt; font-weight:900; display:block;
-  letter-spacing:-.02em; color:#0f172a;
+.ph-left  { flex:1 1 auto; min-width:0; }
+.ph-right { flex:0 0 auto; text-align:right; }
+.ph-school {
+  font-size:7.5pt; font-weight:700; color:#475569;
+  text-transform:uppercase; letter-spacing:.06em;
+  margin-bottom:1.5mm;
 }
-.ph-title span   { font-size:8pt; color:#64748b; display:block; margin-top:1mm; letter-spacing:.01em; }
-.ph-date         { font-size:7.8pt; color:#64748b; white-space:nowrap; text-align:right; line-height:1.5; }
+.ph-title {
+  font-size:15pt; font-weight:900; color:#0f172a;
+  letter-spacing:-.025em; line-height:1.1;
+}
+.ph-sub {
+  font-size:7.8pt; color:#64748b; margin-top:1.5mm;
+  letter-spacing:.01em; line-height:1.4;
+}
+.ph-date {
+  font-size:7.5pt; color:#64748b;
+  white-space:nowrap; line-height:1.6;
+  padding-top:1mm;
+}
 
 /* ── Disclosure (tüm modlar) ── */
 .content-disclosure { display:block!important; border-top:1px solid #dbe3ef; }
@@ -634,9 +691,15 @@ button:not(.print-keep) { display:none!important; }
 }
 .content-disclosure > summary::-webkit-details-marker { display:none!important; }
 .content-disclosure > summary::after { display:none!important; }
-.content-disclosure > summary .disclosure-title { display:flex; align-items:center; gap:2mm; font-weight:700; }
+.content-disclosure > summary .disclosure-title {
+  display:flex; align-items:center; gap:2mm;
+  font-size:9.5pt; font-weight:800; color:#0f172a; letter-spacing:-.01em;
+}
 .content-disclosure > summary .disclosure-title i { display:none!important; }
-.content-disclosure > summary .disclosure-meta { color:#64748b; font-size:7.5pt; }
+.content-disclosure > summary .disclosure-meta {
+  color:#64748b; font-size:7pt;
+  padding:1px 4px; border:0.5pt solid #cbd5e1; border-radius:3px;
+}
 .content-disclosure > .disclosure-body,
 .content-disclosure:not([open]) > .disclosure-body { display:block!important; padding:3mm 0; }
 
@@ -668,10 +731,10 @@ button:not(.print-keep) { display:none!important; }
   width:auto!important; max-width:none!important; flex:none!important; padding:0!important;
 }
 .profile-info {
-  border:0.8pt solid #334155;
-  border-radius:3px;
+  border:var(--pt-border);
+  border-radius:4px;
   background:#f8fafc!important;
-  padding:2mm 2.4mm;
+  padding:2.5mm 3mm;
   min-height:12mm;
   break-inside:avoid;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
@@ -720,7 +783,7 @@ h3,h4               { break-after:avoid; page-break-after:avoid; }
 
 /* ── Günlük program ── */
 .daily-program-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:3mm; }
-.daily-lesson-card  { border:1pt solid #334155; padding:2mm; min-height:18mm; break-inside:avoid; }
+.daily-lesson-card  { border:var(--pt-border); padding:2mm; min-height:18mm; break-inside:avoid; }
 .daily-lesson-card.has-lesson { border-left:2.5pt solid #1a56db; }
 .daily-slot strong,.daily-slot span,.daily-slot small { display:block; line-height:1.1; }
 .daily-slot strong { font-size:8.5pt; }
@@ -736,10 +799,11 @@ h3,h4               { break-after:avoid; page-break-after:avoid; }
 /* ── section-title-row ── */
 .section-title-row {
   display:flex; align-items:baseline; justify-content:space-between;
-  border-bottom:1.5pt solid #111827; margin-bottom:3mm; padding-bottom:1.5mm;
+  border-bottom:var(--pt-border-h); margin-bottom:3mm; padding-bottom:1.5mm;
+  break-after:avoid; page-break-after:avoid;
 }
-.section-title-row h4 { font-size:10pt; font-weight:700; margin:0; }
-.section-title-row .small { font-size:7.5pt; color:#64748b; }
+.section-title-row h4 { font-size:10.5pt; font-weight:900; margin:0; letter-spacing:-.01em; color:#0f172a; }
+.section-title-row .small { font-size:7pt; color:#64748b; }
 `;
 }
 
@@ -846,7 +910,7 @@ function buildSheetPrintCss(type, root, opts) {
 .sheet-print .class-sheet-transposed td.sheet-empty { width:${cellW}; }
 .sheet-print .schedule-sheet th,
 .sheet-print .schedule-sheet td { border:0.4pt solid #64748b!important; }
-.sheet-print .schedule-sheet .sheet-name { border-right:1.5pt solid #334155!important; }
+.sheet-print .schedule-sheet .sheet-name { border-right:var(--pt-border-h)!important; }
 .sheet-print .schedule-sheet thead th {
   background:var(--pt-head-bg)!important; font-size:4.5pt; font-weight:700;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
@@ -895,8 +959,9 @@ function buildWeeklyProgramPrintCss(type, root, opts) {
 .program-list-print .teacher-program-board td,
 .program-list-print .class-program-board th,
 .program-list-print .class-program-board td {
-  border:var(--pt-border)!important; padding:1.5px 3px!important;
+  border:var(--pt-border)!important; padding:2px 3px!important;
   text-align:center; vertical-align:middle; line-height:var(--pt-lh);
+  height:var(--pt-cell-h); min-height:var(--pt-cell-h);
 }
 .program-list-print .teacher-program-board thead th,
 .program-list-print .class-program-board thead th {
@@ -920,10 +985,15 @@ function buildWeeklyProgramPrintCss(type, root, opts) {
   display:flex; justify-content:space-between; align-items:baseline; gap:4mm;
   margin-bottom:1.5mm; break-after:avoid; page-break-after:avoid;
 }
-.program-list-print .print-program-title { font-size:9pt; font-weight:800; }
-.program-list-print .print-program-meta { font-size:7pt; color:#475569; white-space:nowrap; }
+.program-list-print .print-program-title {
+  font-size:9.5pt; font-weight:900; color:#0f172a; letter-spacing:-.01em;
+}
+.program-list-print .print-program-meta {
+  font-size:7pt; color:#64748b; white-space:nowrap;
+  padding:1px 4px; border:0.5pt solid #cbd5e1; border-radius:3px;
+}
 .program-list-print.mobile-print .print-program-section { margin-bottom:3mm; break-inside:auto; page-break-inside:auto; }
-.program-list-print.mobile-print .print-program-title { font-size:7.2pt; }
+.program-list-print.mobile-print .print-program-title { font-size:7.5pt; }
 .program-list-print.mobile-print .print-program-meta { font-size:6pt; }
 .program-list-print.mobile-print .teacher-program-board,
 .program-list-print.mobile-print .class-program-board,
@@ -974,21 +1044,34 @@ function buildTeacherListPrintCss(type, root, opts) {
   return `
 /* ════════════════════════════════════════
    ÖĞRETMEN LİSTESİ (teacher-list-print) — yatay A4
-   Sütunlar: #(1) Ad Soyad+TC(2) Branş(3) Telefon(4) E-posta(5) Sınıf(6) Nöbet(7) Ders(8) Görev(9)
+   Sütunlar: #(1) Ad+TC(2) Branş(3) Tel(4) Email(5) Sınıf(6) Nöbet(7) Ders(8) Görev(9)
    ════════════════════════════════════════ */
 .teacher-list-print { font-size:var(--pt-fs-base); }
 .teacher-list-print .card { border:0; break-inside:auto; page-break-inside:auto; }
 .teacher-list-print .card-header {
-  padding:0 0 2mm; margin-bottom:3mm;
-  border-bottom:2pt solid #0f172a;
+  padding:0 0 2.5mm; margin-bottom:4mm;
+  border-bottom:var(--pt-border-top);
 }
-.teacher-list-print .card-title { font-size:11pt; font-weight:900; letter-spacing:-.01em; }
+.teacher-list-print .card-title { font-size:11pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; }
 .teacher-list-print .table-responsive { overflow:visible!important; }
-.teacher-list-print .table { table-layout:auto; }
+/* Sabit genişlikler: landscape A4 ≈ 277mm kullanılabilir */
+.teacher-list-print .table { table-layout:fixed; }
+.teacher-list-print .table th:nth-child(1), .teacher-list-print .table td:nth-child(1) { width:7mm;  text-align:center; }
+.teacher-list-print .table th:nth-child(2), .teacher-list-print .table td:nth-child(2) { width:52mm; }
+.teacher-list-print .table th:nth-child(3), .teacher-list-print .table td:nth-child(3) { width:30mm; }
+.teacher-list-print .table th:nth-child(4), .teacher-list-print .table td:nth-child(4) { width:28mm; }
+.teacher-list-print .table th:nth-child(5), .teacher-list-print .table td:nth-child(5) { width:38mm; }
+.teacher-list-print .table th:nth-child(6), .teacher-list-print .table td:nth-child(6) { width:18mm; text-align:center; }
+.teacher-list-print .table th:nth-child(7), .teacher-list-print .table td:nth-child(7) { width:28mm; }
+.teacher-list-print .table th:nth-child(8), .teacher-list-print .table td:nth-child(8) { width:12mm; text-align:center; }
+.teacher-list-print .table th:nth-child(9), .teacher-list-print .table td:nth-child(9) { width:12mm; text-align:center; }
 /* TC kimlik sütunu her zaman görünür */
 .teacher-list-print .table .tc-print-col { display:table-cell!important; }
-.teacher-list-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
-/* Sıra zebra — base'den geliyor, burada rengi biraz ayarlıyoruz */
+/* Ad Soyad hücresinde TC küçük satırda */
+.teacher-list-print .table td:nth-child(2) small { display:block; font-size:6.5pt; color:#64748b; margin-top:0.5mm; }
+.teacher-list-print .table .tc-screen-mask { display:none!important; }
+.teacher-list-print .table .tc-print-full  { display:block!important; font-size:6.5pt; color:#64748b; }
+/* Zebra */
 .teacher-list-print .table tbody tr:nth-child(odd) td { background:#ffffff!important; }
 
 /* Mobil baskı: #(1) Ad(2) TC(3) Branş(4) Tel(5) [Email(6) gizli] Sınıf(7) Nöbet(8) Ders(9) Görev(10) */
@@ -1045,23 +1128,26 @@ function buildProfilePrintCss(type, root, opts) {
 }
 .profile-print .info-line,
 .profile-print .profile-info {
-  border:0.8pt solid #334155; border-radius:3px; background:#f8fafc!important;
-  padding:2mm 2.4mm; min-height:12mm; margin:0; break-inside:avoid;
+  border:var(--pt-border); border-radius:4px; background:#f8fafc!important;
+  padding:2.5mm 3mm; min-height:12mm; margin:0; break-inside:avoid;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 .profile-print .info-line span,
 .profile-print .profile-info span {
-  font-size:6.6pt; color:#64748b; display:block; text-transform:uppercase;
-  letter-spacing:.025em; margin-bottom:1mm;
+  font-size:6.2pt; color:#64748b; display:block; text-transform:uppercase;
+  letter-spacing:.05em; margin-bottom:1mm; font-weight:600;
 }
 .profile-print .info-line strong,
-.profile-print .profile-info strong { font-size:8.5pt; line-height:1.15; display:block; overflow-wrap:anywhere; }
+.profile-print .profile-info strong {
+  font-size:9pt; line-height:1.2; display:block; overflow-wrap:anywhere; color:#0f172a;
+}
 .profile-print .teacher-weekly-scroll,.profile-print .table-responsive { overflow:visible!important; }
 .profile-print .prog-table { width:100%; font-size:7pt; table-layout:fixed; border-collapse:collapse; }
 .profile-print .prog-table th,
 .profile-print .prog-table td {
-  border:0.8pt solid #475569!important; padding:1.5px 3px!important;
+  border:var(--pt-border)!important; padding:2px 3px!important;
   text-align:center; vertical-align:middle;
+  height:var(--pt-cell-h); min-height:var(--pt-cell-h);
 }
 .profile-print .prog-table thead th {
   background:var(--pt-head-bg)!important; font-weight:700;
@@ -1074,8 +1160,8 @@ function buildProfilePrintCss(type, root, opts) {
 .profile-print .tc-display      { display:none!important; }
 .profile-print .free-slot-grid  { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2mm; }
 .profile-print .free-day {
-  border:0.8pt solid #334155; border-radius:3px; background:#f8fafc!important;
-  padding:2mm; min-height:14mm; break-inside:avoid;
+  border:var(--pt-border); border-radius:4px; background:#f8fafc!important;
+  padding:2.5mm 2mm; min-height:14mm; break-inside:avoid;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 .profile-print .free-day strong {
@@ -1092,14 +1178,14 @@ function buildProfilePrintCss(type, root, opts) {
   background:#dcfce7!important; color:#166534!important; font-weight:800;
 }
 .profile-print .duty-profile-box {
-  display:flex; gap:6mm; border:1pt solid #334155; padding:2mm 4mm; border-radius:4px;
+  display:flex; gap:6mm; border:var(--pt-border); padding:2mm 4mm; border-radius:4px;
 }
 .profile-print .duty-profile-box span   { display:block; font-size:7.5pt; color:#64748b; }
 .profile-print .duty-profile-box strong { display:block; font-size:9pt; }
 /* teachers type — öğretmen listesi tablosu */
 .profile-print .table { width:100%; border-collapse:collapse; font-size:8.5pt; }
 .profile-print .table th,.profile-print .table td {
-  border:0.8pt solid #334155!important; padding:2px 5px!important; vertical-align:middle;
+  border:var(--pt-border)!important; padding:var(--pt-pad-td)!important; vertical-align:middle;
 }
 .profile-print .table thead th {
   background:var(--pt-head-bg)!important; font-weight:700;
@@ -1132,24 +1218,29 @@ function buildDutyPrintCss(type, root, opts) {
    NÖBET ÇİZELGESİ (duty-print) — yatay A4
    ════════════════════════════════════════ */
 .duty-print { font-size:var(--pt-fs-base); }
-.duty-print .duty-matrix { width:100%; border-collapse:collapse; }
+.duty-print .duty-matrix {
+  width:100%; border-collapse:collapse; table-layout:fixed;
+}
 .duty-print .duty-matrix th,
 .duty-print .duty-matrix td {
   border:var(--pt-border)!important;
   padding:2.5mm 3mm!important;
   vertical-align:middle; line-height:var(--pt-lh);
+  height:var(--pt-cell-h); min-height:var(--pt-cell-h);
 }
 .duty-print .duty-matrix thead th {
   background:var(--pt-head-bg)!important;
   font-size:var(--pt-fs-base); font-weight:700; text-align:center;
+  border-bottom:var(--pt-border-h)!important;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  white-space:nowrap;
 }
-.duty-print .duty-matrix thead { display:table-header-group; }
+.duty-print .duty-matrix thead { display:table-header-group; break-inside:avoid; break-after:avoid; }
 .duty-print .duty-matrix tbody tr { break-inside:avoid; page-break-inside:avoid; }
 .duty-print .duty-matrix tbody tr:nth-child(even) td { background:var(--pt-row-alt)!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.duty-print .duty-place-head { text-align:left!important; font-weight:700; white-space:nowrap; border-right:var(--pt-border-h)!important; }
+.duty-print .duty-place-head { text-align:left!important; font-weight:800; white-space:normal; border-right:var(--pt-border-h)!important; width:22mm; }
 .duty-print .duty-filled-cell { background:#dbeafe!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.duty-print .duty-empty-cell  { color:#94a3b8; text-align:center; }
+.duty-print .duty-empty-cell  { color:#cbd5e1; text-align:center; }
 .duty-print .duty-cell strong { display:block; font-size:var(--pt-fs-base); font-weight:700; }
 .duty-print .duty-cell span   { display:block; font-size:var(--pt-fs-sm); color:#475569; }
 .duty-print.mobile-print .duty-matrix { table-layout:fixed; width:100%; font-size:var(--pt-fs-xs); }
@@ -1173,19 +1264,25 @@ function buildTasksPrintCss(type, root, opts) {
 .tasks-print { font-size:var(--pt-fs-base); }
 .tasks-print .chip-wrap { display:none!important; }
 .tasks-print .card-header {
-  padding:0 0 2mm; margin-bottom:3mm;
-  border-bottom:2pt solid #0f172a;
+  padding:0 0 2.5mm; margin-bottom:4mm;
+  border-bottom:var(--pt-border-top);
 }
-.tasks-print .card-title { font-size:11pt; font-weight:900; letter-spacing:-.01em; }
-.tasks-print .table { width:100%; border-collapse:collapse; }
-.tasks-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
+.tasks-print .card-title { font-size:11pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; }
 .tasks-print .table-responsive { overflow:visible!important; }
 .tasks-print .table-actions { display:none!important; }
-/* Görev türü sütunu (1. td) — sol kenara belirgin çizgi */
-.tasks-print .table td:first-child { border-left:2.5pt solid #334155!important; font-weight:600; }
-.tasks-print.mobile-print .table { font-size:var(--pt-fs-xs); table-layout:fixed; }
+/* Sabit genişlikler: landscape A4 ≈ 277mm */
+.tasks-print .table { table-layout:fixed; }
+.tasks-print .table th:nth-child(1), .tasks-print .table td:nth-child(1) { width:40mm; }
+.tasks-print .table th:nth-child(2), .tasks-print .table td:nth-child(2) { width:40mm; }
+.tasks-print .table th:nth-child(3), .tasks-print .table td:nth-child(3) { width:60mm; }
+.tasks-print .table th:nth-child(4), .tasks-print .table td:nth-child(4) { width:55mm; }
+.tasks-print .table th:nth-child(5), .tasks-print .table td:nth-child(5) { width:22mm; text-align:center; }
+.tasks-print .table th:nth-child(6), .tasks-print .table td:nth-child(6) { width:22mm; text-align:center; }
+/* Öğretmen hücresinde branş alt satırda */
+.tasks-print .table td:nth-child(1) small { display:block; font-size:6.5pt; color:#64748b; }
+.tasks-print.mobile-print .table { font-size:var(--pt-fs-xs); }
 .tasks-print.mobile-print .table th,
-.tasks-print.mobile-print .table td { padding:.8px 1.5px!important; line-height:1.05; overflow-wrap:anywhere; }
+.tasks-print.mobile-print .table td { padding:.8px 1.5px!important; line-height:1.05; }
 `;
 }
 
@@ -1200,19 +1297,22 @@ function buildFreePrintCss(type, root, opts) {
 .free-print .free-report-block { break-inside:avoid; page-break-inside:avoid; margin-bottom:6mm; }
 .free-print .free-query-grid   { display:flex; flex-wrap:wrap; gap:3mm; }
 .free-print .free-query-card {
-  border:1pt solid #334155; padding:2mm 3mm; min-width:42mm; font-size:8.5pt;
-  break-inside:avoid; border-radius:3px;
+  border:var(--pt-border); padding:2.5mm 3mm; min-width:40mm; font-size:var(--pt-fs-base);
+  break-inside:avoid; border-radius:4px; background:#f8fafc!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.free-print .free-query-card strong { display:block; font-size:9pt; font-weight:700; }
-.free-print .free-query-card span   { display:block; font-size:7.5pt; color:#475569; }
+.free-print .free-query-card strong { display:block; font-size:9pt; font-weight:800; color:#0f172a; }
+.free-print .free-query-card span   { display:block; font-size:var(--pt-fs-sm); color:#475569; margin-top:.5mm; }
 .free-print .free-query-card small  { display:block; font-size:7pt; color:#64748b; margin-top:1mm; }
 .free-print .free-report-note { font-size:8pt; color:#475569; margin-bottom:3mm; }
 .free-print .free-day-overview { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3mm; }
 .free-print .free-day-summary {
-  border:1pt solid #cbd5e1; padding:2mm 3mm; min-width:38mm; break-inside:avoid;
+  border:var(--pt-border); padding:2.5mm 3mm; min-width:38mm; break-inside:avoid;
+  border-radius:4px; background:#f8fafc!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.free-print .free-day-summary strong { display:block; font-weight:700; font-size:9pt; }
-.free-print .free-day-summary span   { display:block; font-size:7.5pt; color:#64748b; margin-bottom:1mm; }
+.free-print .free-day-summary strong { display:block; font-weight:800; font-size:9pt; color:#0f172a; }
+.free-print .free-day-summary span   { display:block; font-size:var(--pt-fs-sm); color:#64748b; margin-bottom:1mm; }
 .free-print .free-slot-grid { display:flex; flex-wrap:wrap; gap:2mm; }
 .free-print .table-responsive { overflow:visible!important; }
 .free-print .table { width:100%; border-collapse:collapse; }

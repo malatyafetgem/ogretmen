@@ -4,6 +4,21 @@ function renderSettings(){
   const mkCard=(...sections)=>`<div class="settings-section-panel">${sections.join('')}</div>`;
   getEl('settingsContent').innerHTML=`
     <section class="settings-group">
+      <div class="row g-3 mb-2">
+        <div class="col-12">
+          <div class="obs-panel card">
+            <div class="card-body py-2 px-3 d-flex align-items-center gap-3">
+              <label for="settingsSchoolName" class="form-label mb-0 fw-700 text-nowrap"><i class="fas fa-school me-1 text-muted"></i>Okul Adı</label>
+              <input id="settingsSchoolName" type="text" class="form-control form-control-sm"
+                value="${escapeHtml(DB.settings.schoolName||'')}"
+                placeholder="Okul adını girin"
+                oninput="DB.settings.schoolName=this.value.trim();saveDB();">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="settings-group">
       <div class="row g-3">
         <div class="col-lg-6">${buildImportSettings()}</div>
         <div class="col-lg-6">${buildBackupSettings()}</div>

@@ -97,10 +97,11 @@ function uid(prefix='id'){
 
 let DB = loadDB();
 
-function makeEmptyDB(){ return { teachers: [], schedules: [], tasks: [], meta: {}, settings: { classes: [...CLASS_LIST], days: DAY_NAMES, hours: HOURS, lessonTimes: LESSON_TIMES, sharedLessonPairs: DEFAULT_SHARED_LESSON_PAIRS } }; }
+function makeEmptyDB(){ return { teachers: [], schedules: [], tasks: [], meta: {}, settings: { schoolName: 'FETGEM Fen Lisesi', classes: [...CLASS_LIST], days: DAY_NAMES, hours: HOURS, lessonTimes: LESSON_TIMES, sharedLessonPairs: DEFAULT_SHARED_LESSON_PAIRS } }; }
 function normalizeDB(d){
   d.meta=d.meta||{};
   d.settings=d.settings||{};
+  if(!d.settings.schoolName) d.settings.schoolName='FETGEM Fen Lisesi';
   d.settings.classes=normalizeClassSettings(d.settings.classes, d.meta);
   d.settings.days=normalizeDaySettings(d.settings.days);
   d.settings.hours=normalizeHourSettings(d.settings.hours, d.settings.lessonTimes);
