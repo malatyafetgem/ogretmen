@@ -69,14 +69,14 @@ window.writeVersionedScripts = function(paths) {
   <nav class="app-header navbar navbar-expand bg-body obs-topbar">
     <!-- Sol: marka (masaüstü) -->
     <ul class="navbar-nav obs-topbar-left">
-      <li class="nav-item d-none d-lg-flex align-items-center">
+      <li class="nav-item obs-topbar-desktop-elem align-items-center">
         <a href="#dashboard" class="top-brand-inline top-brand-link" onclick="return sTab('dashboard')" aria-label="Ana Sayfa">
           <img src="./icon.png" alt="" class="top-brand-img">
           <span class="top-brand-title">Öğretmen Bilgi Sistemi</span>
         </a>
       </li>
       <!-- Mobil marka -->
-      <li class="nav-item d-flex d-lg-none align-items-center">
+      <li class="nav-item obs-topbar-mobile-elem align-items-center">
         <a href="#dashboard" class="top-mobile-brand" onclick="return sTab('dashboard')" aria-label="Ana Sayfa">
           <span class="top-mobile-icon-wrap"><img src="./icon.png" alt="" class="top-mobile-icon"></span>
           <span class="top-mobile-title">Öğretmen Bilgi Sistemi</span>
@@ -84,7 +84,7 @@ window.writeVersionedScripts = function(paths) {
       </li>
     </ul>
     <!-- Orta: ana navigasyon (yalnızca masaüstü) -->
-    <ul class="navbar-nav obs-topnav d-none d-lg-flex" role="menubar" aria-label="Ana menü">
+    <ul class="navbar-nav obs-topnav obs-topbar-desktop-elem" role="menubar" aria-label="Ana menü">
       <li class="nav-item"><a id="nav-dashboard" href="#dashboard" class="nav-link obs-tnav-link active" onclick="return sTab('dashboard')" role="menuitem"><i class="fas fa-house"></i><span>Ana Sayfa</span></a></li>
       <li class="nav-item"><a id="nav-teachers" href="#teachers" class="nav-link obs-tnav-link" onclick="return sTab('teachers')" role="menuitem"><i class="fas fa-user-tie"></i><span>Öğretmen</span></a></li>
       <li class="nav-item"><a id="nav-classes" href="#classes" class="nav-link obs-tnav-link" onclick="return sTab('classes')" role="menuitem"><i class="fas fa-users"></i><span>Sınıf</span></a></li>
@@ -93,7 +93,7 @@ window.writeVersionedScripts = function(paths) {
     </ul>
     <!-- Sağ: sürüm + çıkış -->
     <ul class="navbar-nav ms-auto obs-topbar-right">
-      <li class="nav-item d-none d-lg-flex align-items-center"><span class="nav-link version-pill" id="versionBadge"></span></li>
+      <li class="nav-item obs-topbar-desktop-elem align-items-center"><span class="nav-link version-pill" id="versionBadge"></span></li>
       <li class="nav-item">
         <a href="#" class="nav-link top-action-link" onclick="logout(); return false;">
           <i class="fas fa-arrow-right-from-bracket me-1"></i><span class="d-none d-sm-inline">Çıkış</span>

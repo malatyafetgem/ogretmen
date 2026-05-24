@@ -248,6 +248,31 @@ body {
 /* ─── 6b. TOP NAVİGASYON (Masaüstü orta menü) ─── */
 /* Topbar üç bölge: sol marka | orta nav | sağ aksiyonlar */
 .obs-topbar { position:relative; }
+/* ── Topbar masaüstü/mobil görünürlük (Bootstrap bağımsız) ─── */
+/* Masaüstü unsurlar: geniş ekranda (≥992px) veya desktop-site modunda görünür */
+.obs-topbar-desktop-elem {
+  display:none;
+}
+@media (min-width:992px) {
+  .obs-topbar-desktop-elem {
+    display:flex !important;
+    align-items:center;
+  }
+}
+body.obs-desktop-site .obs-topbar-desktop-elem {
+  display:flex !important;
+  align-items:center;
+}
+/* Mobil marka: dar ekranda görünür, masaüstü desktop-site modunda gizli */
+.obs-topbar-mobile-elem {
+  display:flex;
+  align-items:center;
+}
+@media (min-width:992px) {
+  .obs-topbar-mobile-elem { display:none !important; }
+}
+body.obs-desktop-site .obs-topbar-mobile-elem { display:none !important; }
+
 /* Marka bağlantısı */
 .top-brand-link { text-decoration:none; }
 .top-brand-img {
@@ -255,9 +280,10 @@ body {
   border-radius:4px; display:block;
 }
 /* Orta nav grubu: mutlak konumlandırmayla tam ortalama */
+/* Görünürlük obs-topbar-desktop-elem class'ı tarafından yönetilir */
 .obs-topnav {
   position:absolute; left:50%; transform:translateX(-50%);
-  display:flex; align-items:center; gap:4px;
+  align-items:center; gap:4px;
   list-style:none; margin:0; padding:0;
 }
 .obs-tnav-link {
@@ -1389,10 +1415,6 @@ body.obs-desktop-site .app-main,
 body.obs-desktop-site .app-footer { margin-left:0 !important; }
 body.obs-desktop-site .app-header  { position:sticky; top:0; z-index:var(--z-topbar); padding-left:0; }
 body.obs-desktop-site .top-mobile-brand { display:none !important; }
-/* Masaüstü sitesi: dar viewport'ta Bootstrap d-none d-lg-flex'i geçersiz kıl */
-body.obs-desktop-site .obs-topbar-left .d-none { display:flex !important; }
-body.obs-desktop-site .obs-topnav { display:flex !important; }
-body.obs-desktop-site .obs-topbar-right .d-none { display:flex !important; }
 
 /* ─── 36. YAZDIRMA ─── */
 
