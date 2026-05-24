@@ -1392,6 +1392,7 @@ body.obs-desktop-site .top-mobile-brand { display:none !important; }
 /* Masaüstü sitesi: dar viewport'ta Bootstrap d-none d-lg-flex'i geçersiz kıl */
 body.obs-desktop-site .obs-topbar-left .d-none { display:flex !important; }
 body.obs-desktop-site .obs-topnav { display:flex !important; }
+body.obs-desktop-site .obs-topbar-right .d-none { display:flex !important; }
 
 /* ─── 36. YAZDIRMA ─── */
 

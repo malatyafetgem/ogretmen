@@ -176,12 +176,6 @@ function _mediaMatches(query, fallback) {
 
 function isLikelyDesktopSiteRequest() {
   const ua = navigator.userAgent || '';
-  let uaDataMobile = null;
-  try {
-    if(navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
-      uaDataMobile = navigator.userAgentData.mobile;
-    }
-  } catch(e) {}
   const coarsePointer = _mediaMatches('(pointer: coarse)', false);
   const touchDevice   = coarsePointer || (navigator.maxTouchPoints || 0) > 0;
   const mobileUa      = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
@@ -189,7 +183,10 @@ function isLikelyDesktopSiteRequest() {
   const screenShortSide = window.screen ? Math.min(window.screen.width || 0, window.screen.height || 0) : 0;
   // Dokunmatik cihaz ama viewport ekranın kısa kenarından belirgin geniş = masaüstü sitesi modu
   const desktopLikeViewport = touchDevice && screenShortSide > 0 && window.innerWidth >= 900 && window.innerWidth > screenShortSide * 1.35;
-  return narrowLayout && touchDevice && (uaDataMobile === false || !mobileUa || desktopLikeViewport);
+  // "Masaüstü sitesi" tespiti: dokunmatik + dar viewport AMA ekranın kısa kenarından
+  // belirgin geniş (tarayıcı zoom veya desktop-site modu).
+  // uaDataMobile kontrolü tabletleri yanlış sınıflandırdığı için kaldırıldı.
+  return narrowLayout && touchDevice && desktopLikeViewport;
 }
 
 function applyViewportLayout() {
