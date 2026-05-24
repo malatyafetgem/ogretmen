@@ -212,8 +212,8 @@ function buildClassProgramList(){
 function buildTeacherProgramList(){
   const f=scheduleFilters();
   const days=visibleScheduleDays(f), hours=visibleScheduleHours(f);
-  // Only teachers who have schedule entries and pass isSchedulableTeacher
-  const teachers=sortedTeachers().filter(t=>isSchedulableTeacher(t)&&(!f.teacherId||t.id===f.teacherId));
+  // Bir saati bile olan herkes ders programı listesinde yer alır (rol farkı gözetilmez)
+  const teachers=sortedTeachers().filter(t=>t&&teacherLessons(t.id).length>0&&(!f.teacherId||t.id===f.teacherId));
   if(!teachers.length) return emptyState('Seçili filtrelere uygun öğretmen yok.');
   return `<div class="class-program-list">${teachers.map((t,i)=>{
     const lessons=teacherLessons(t.id).filter(s=>(!f.day||s.day===f.day)&&(!f.hour||Number(s.hour)===Number(f.hour)));

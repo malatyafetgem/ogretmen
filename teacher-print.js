@@ -974,22 +974,29 @@ function buildTeacherListPrintCss(type, root, opts) {
 .teacher-list-print.mobile-print .table td {
   padding:.6px 1.2px!important; line-height:1; overflow-wrap:anywhere; word-break:break-word;
 }
+/* Mobil baskı: #(1) Ad(2) [TC(3) gizli] Branş(4) Rol(5) Tel(6) [Email(7) gizli] Sınıf(8) Nöbet(9) Ders(10) Görev(11) */
 .teacher-list-print.mobile-print .table th:nth-child(1),
 .teacher-list-print.mobile-print .table td:nth-child(1) { width:5mm; }
 .teacher-list-print.mobile-print .table th:nth-child(2),
-.teacher-list-print.mobile-print .table td:nth-child(2) { width:28mm; }
+.teacher-list-print.mobile-print .table td:nth-child(2) { width:26mm; }
 .teacher-list-print.mobile-print .table th:nth-child(3),
-.teacher-list-print.mobile-print .table td:nth-child(3) { width:24mm; }
+.teacher-list-print.mobile-print .table td:nth-child(3) { display:none!important; }
 .teacher-list-print.mobile-print .table th:nth-child(4),
-.teacher-list-print.mobile-print .table td:nth-child(4) { width:30mm; }
+.teacher-list-print.mobile-print .table td:nth-child(4) { width:22mm; }
 .teacher-list-print.mobile-print .table th:nth-child(5),
-.teacher-list-print.mobile-print .table td:nth-child(5) { width:22mm; }
+.teacher-list-print.mobile-print .table td:nth-child(5) { width:20mm; }
 .teacher-list-print.mobile-print .table th:nth-child(6),
-.teacher-list-print.mobile-print .table td:nth-child(6) { display:none!important; }
+.teacher-list-print.mobile-print .table td:nth-child(6) { width:20mm; }
 .teacher-list-print.mobile-print .table th:nth-child(7),
-.teacher-list-print.mobile-print .table td:nth-child(7) { width:10mm; }
-.teacher-list-print.mobile-print .table th:nth-child(n+8),
-.teacher-list-print.mobile-print .table td:nth-child(n+8) { display:none!important; }
+.teacher-list-print.mobile-print .table td:nth-child(7) { display:none!important; }
+.teacher-list-print.mobile-print .table th:nth-child(8),
+.teacher-list-print.mobile-print .table td:nth-child(8) { width:14mm; }
+.teacher-list-print.mobile-print .table th:nth-child(9),
+.teacher-list-print.mobile-print .table td:nth-child(9) { width:12mm; }
+.teacher-list-print.mobile-print .table th:nth-child(10),
+.teacher-list-print.mobile-print .table td:nth-child(10) { width:8mm; }
+.teacher-list-print.mobile-print .table th:nth-child(11),
+.teacher-list-print.mobile-print .table td:nth-child(11) { width:8mm; }
 `;
 }
 
@@ -1138,7 +1145,7 @@ function buildTasksPrintCss(type, root, opts) {
    GÖREV LİSTESİ (tasks-print) — yatay A4
    ════════════════════════════════════════ */
 .tasks-print { font-size:8.3pt; }
-.tasks-print .chip-wrap,.tasks-print .obs-panel:first-child { display:none!important; }
+.tasks-print .chip-wrap { display:none!important; }
 .tasks-print .table { width:100%; border-collapse:collapse; }
 .tasks-print .table th,.tasks-print .table td {
   border:0.8pt solid #334155!important; font-size:7.6pt; padding:1.6px 3px!important; vertical-align:middle;
