@@ -835,101 +835,181 @@ function buildPrintTypeCss(type, root, opts) {
  * @returns {string}
  */
 function buildSheetPrintCss(type, root, opts) {
-  // data-cell-count oku
-  const sheetTable     = root ? root.querySelector('.schedule-sheet') : null;
-  const cellCount      = sheetTable ? Number(sheetTable.dataset.cellCount || 0) : 0;
-  const isTeacherSheet = root ? !!root.querySelector('.teacher-sheet') : (type === 'teacher-sheet');
+  const sheetTable        = root ? root.querySelector('.schedule-sheet') : null;
+  const rawCellCount      = sheetTable ? Number(sheetTable.dataset.cellCount || 0) : 0;
+  const isTeacherSheet    = root ? !!root.querySelector('.teacher-sheet') : (type === 'teacher-sheet');
   const isClassTransposed = root ? !!root.querySelector('.class-sheet-transposed') : false;
-  const nameColW       = isTeacherSheet ? '12mm' : (isClassTransposed ? '22mm' : '15mm');
-  const cellW          = cellCount > 0
-    ? `calc((100% - ${nameColW}) / ${cellCount})`
-    : `calc((100% - ${nameColW}) / 40)`;
+  const isMobile          = opts && opts.mobile;
+
+  /* ── Kullanılabilir genişlik hesabı ──────────────────────────────
+     Landscape A4: 297mm − 2×10mm kenar = 277mm
+     Portrait  A4: 210mm − 2×10mm kenar = 190mm (transposed için)   */
+  const pageW   = 277;   // mm
+  const nameCol = isTeacherSheet ? 16 : (isClassTransposed ? 24 : 16);
+  const dataW   = pageW - nameCol;
+  const cells   = rawCellCount > 0 ? rawCellCount : 40;
+
+  /* Her hücre için mm cinsinden genişlik (min 4.5mm, max 9mm) */
+  const rawCW   = dataW / cells;
+  const cellMm  = Math.min(9, Math.max(4.5, rawCW)).toFixed(2);
+  const nameColW = nameCol + 'mm';
+  const cellW    = cellMm + 'mm';
+
+  /* Font boyutunu hücre genişliğine göre ölçekle */
+  const contentFs = (rawCW >= 7) ? '5.5pt' : (rawCW >= 5.5) ? '4.8pt' : '4.1pt';
+  const subFs     = (rawCW >= 7) ? '5pt'   : (rawCW >= 5.5) ? '4.3pt' : '3.8pt';
+  const headFs    = (rawCW >= 7) ? '5.5pt' : '5pt';
+
+  /* Satır yüksekliği: tüm satırlar eşit, içeriğe göre değil */
+  const rowH = (rawCW >= 7) ? '8mm' : (rawCW >= 5.5) ? '7mm' : '6mm';
 
   return `
 /* ════════════════════════════════════════
    ÇARŞAF (sheet-print) — yatay A4
+   Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}
    ════════════════════════════════════════ */
-.sheet-print { font-size:5pt; }
-.sheet-print .card-header { padding:0 0 1.5mm; }
-.sheet-print .card-title  { font-size:7.4pt; margin:0; }
+.sheet-print { font-size:${contentFs}; }
+
+/* Başlık bandı */
+.sheet-print .card-header {
+  padding:0 0 2mm; margin-bottom:3mm;
+  border-bottom:var(--pt-border-top);
+}
+.sheet-print .card-title {
+  font-size:10pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; margin:0;
+}
 .sheet-print .card-title i,.sheet-print .card-header .text-muted { display:none; }
 .sheet-print .table-responsive { overflow:visible!important; }
+
+/* Tablo genel */
 .sheet-print .schedule-sheet {
-  width:100%; table-layout:fixed; border-collapse:collapse; line-height:.92;
+  width:100%; table-layout:fixed; border-collapse:collapse;
 }
+.sheet-print .schedule-sheet thead { display:table-header-group; break-inside:avoid; break-after:avoid; }
+.sheet-print .schedule-sheet thead br { display:none; }
+
+/* Tüm hücreler */
 .sheet-print .schedule-sheet th,
 .sheet-print .schedule-sheet td {
-  padding:.35mm .4mm!important; line-height:.92; height:auto;
-  white-space:normal; overflow:hidden; text-align:center; break-inside:avoid;
+  border:0.4pt solid #94a3b8!important;
+  padding:.5mm .4mm!important;
+  vertical-align:middle; text-align:center;
+  height:${rowH}; min-height:${rowH};
+  overflow:hidden; break-inside:avoid;
+  line-height:1.15;
 }
+
+/* Gün başlığı (colspan) — daha belirgin */
+.sheet-print .schedule-sheet thead tr:first-child th {
+  background:#334155!important; color:#fff!important;
+  font-size:${headFs}; font-weight:800; letter-spacing:.02em;
+  border-color:#334155!important;
+  height:5mm; min-height:5mm;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+/* Saat başlığı (1, 2, 3...) */
+.sheet-print .schedule-sheet thead tr:nth-child(2) th {
+  background:var(--pt-head-bg)!important; font-size:${headFs}; font-weight:700;
+  height:4.5mm; min-height:4.5mm;
+  border-bottom:var(--pt-border-h)!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+
+/* Ad/sınıf sütunu */
+.sheet-print .schedule-sheet .sheet-name {
+  width:${nameColW}!important; min-width:${nameColW}!important; max-width:${nameColW}!important;
+  text-align:left; white-space:normal; overflow:hidden;
+  overflow-wrap:anywhere; word-break:break-word;
+  border-right:var(--pt-border-h)!important;
+  background:var(--pt-head-bg)!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  font-weight:700; font-size:${headFs};
+  padding:.5mm 1mm!important;
+}
+
+/* İçerik hücresi */
 .sheet-print .sheet-cell-content strong,
+.sheet-print .sheet-cell-content span { display:block; overflow:hidden; }
+.sheet-print .sheet-cell-content strong {
+  font-size:${contentFs}; font-weight:800; line-height:1.2;
+  white-space:normal; overflow-wrap:anywhere;
+}
 .sheet-print .sheet-cell-content span {
-  display:block; line-height:1.04; white-space:normal; overflow:hidden;
+  font-size:${subFs}; font-weight:600; line-height:1.15;
+  color:#475569; margin-top:.2mm;
+  white-space:normal; overflow-wrap:anywhere;
 }
-.sheet-print .sheet-cell-content strong { font-size:4.25pt; font-weight:800; }
-.sheet-print .sheet-cell-content span   { font-size:3.95pt; font-weight:700; margin-top:.15mm; }
-.sheet-print .schedule-sheet thead { display:table-header-group; }
-.sheet-print .schedule-sheet thead br { display:none; }
-.sheet-print .schedule-sheet small { font-size:4.25pt; display:inline; color:#111; margin-left:1px; }
-.sheet-print .teacher-sheet { font-size:4.15pt; }
-.sheet-print .class-sheet   { font-size:4.8pt; }
+
+/* Öğretmen çarşafı — ad sütunu kodu */
+.sheet-print .teacher-sheet .sheet-teacher-code {
+  display:block; font-size:${contentFs}; font-weight:800; line-height:1.2;
+  overflow-wrap:anywhere; white-space:normal;
+}
+
+/* Sınıf çarşafı */
+.sheet-print .class-sheet .sheet-name { text-align:center; }
 .sheet-print .class-sheet tbody br    { display:block; }
-.sheet-print .class-sheet tbody small { display:block; margin-left:0; font-size:4.45pt; }
-.sheet-print .teacher-sheet .sheet-name {
-  width:${nameColW}!important; min-width:${nameColW}!important; max-width:${nameColW}!important;
-  text-align:left; white-space:normal; overflow:hidden; line-height:1.03;
-  overflow-wrap:anywhere; word-break:normal;
-}
-.sheet-print .teacher-sheet .sheet-name .sheet-teacher-code {
-  display:block; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:clip;
-}
-.sheet-print .teacher-sheet .sheet-name .sheet-teacher-code {
-  font-size:4.1pt; line-height:1.05; font-weight:800;
-}
-.sheet-print .class-sheet .sheet-name {
-  width:${nameColW}!important; min-width:${nameColW}!important; max-width:${nameColW}!important;
-  text-align:center;
-}
+.sheet-print .class-sheet tbody small { display:block; margin-left:0; font-size:${subFs}; }
+.sheet-print .schedule-sheet small    { font-size:${subFs}; display:inline; color:#334155; margin-left:1px; }
+
+/* Transpozisyon */
 .sheet-print .class-sheet-transposed .sheet-day-cell {
   width:13mm!important; min-width:13mm!important; max-width:13mm!important;
-  text-align:left!important; font-weight:800;
+  text-align:left!important; font-weight:800; border-right:var(--pt-border-h)!important;
+  background:var(--pt-head-bg)!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 .sheet-print .class-sheet-transposed .sheet-hour-cell {
   width:9mm!important; min-width:9mm!important; max-width:9mm!important;
-  text-align:center!important; font-weight:800;
+  text-align:center!important; font-weight:700;
 }
 .sheet-print .class-sheet-transposed .sheet-hour-cell small {
-  display:block; margin:0; font-size:3.9pt; line-height:1.05; color:#334155;
+  display:block; margin:0; font-size:${subFs}; line-height:1.1; color:#334155;
 }
+
+/* Veri hücreleri genişliği */
 .sheet-print .teacher-sheet td,
-.sheet-print .teacher-sheet thead tr:nth-child(2) th { width:${cellW}; }
+.sheet-print .teacher-sheet thead tr:nth-child(2) th { width:${cellW}; max-width:${cellW}; }
 .sheet-print .class-sheet td,
-.sheet-print .class-sheet thead tr:nth-child(2) th   { width:${cellW}; }
+.sheet-print .class-sheet thead tr:nth-child(2) th   { width:${cellW}; max-width:${cellW}; }
 .sheet-print .class-sheet-transposed .sheet-class-head,
 .sheet-print .class-sheet-transposed td.sheet-filled,
-.sheet-print .class-sheet-transposed td.sheet-empty { width:${cellW}; }
-.sheet-print .schedule-sheet th,
-.sheet-print .schedule-sheet td { border:0.4pt solid #64748b!important; }
-.sheet-print .schedule-sheet .sheet-name { border-right:var(--pt-border-h)!important; }
-.sheet-print .schedule-sheet thead th {
-  background:var(--pt-head-bg)!important; font-size:4.5pt; font-weight:700;
-  -webkit-print-color-adjust:exact; print-color-adjust:exact;
-}
+.sheet-print .class-sheet-transposed td.sheet-empty  { width:${cellW}; max-width:${cellW}; }
+
+/* Dolu/boş hücre */
 .sheet-print .sheet-filled,.sheet-print .sheet-empty { min-width:0!important; }
 .sheet-print .sheet-empty {
-  background:#f8fafc!important; color:#94a3b8;
+  background:#f8fafc!important; color:#cbd5e1;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.sheet-print .duty-sheet { box-shadow:inset 0 0 0 .6pt #d97706; }
+
+/* Zebra — çift satır hafif gri */
+.sheet-print .schedule-sheet tbody tr:nth-child(even) td,
+.sheet-print .schedule-sheet tbody tr:nth-child(even) th {
+  background:#f5f7fa!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.sheet-print .sheet-filled {
+  background:#fff!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.sheet-print .schedule-sheet tbody tr:nth-child(even) .sheet-filled { background:#f0f4ff!important; }
+
+/* Nöbet günü vurgu */
+.sheet-print .duty-sheet { outline:.7pt solid #d97706; outline-offset:-1px; }
+
+/* Mobil baskı — biraz daha küçük */
 .sheet-print.mobile-print .schedule-sheet th,
-.sheet-print.mobile-print .schedule-sheet td { padding:.18mm .22mm!important; line-height:.82; }
-.sheet-print.mobile-print .sheet-cell-content strong { font-size:3.5pt; line-height:.92; }
-.sheet-print.mobile-print .sheet-cell-content span   { font-size:3.25pt; line-height:.9; }
-.sheet-print.mobile-print .class-sheet tbody small   { font-size:3.25pt; line-height:.9; }
-.sheet-print.mobile-print .class-sheet-transposed .sheet-day-cell { width:10mm!important; min-width:10mm!important; max-width:10mm!important; font-size:3.7pt; }
+.sheet-print.mobile-print .schedule-sheet td {
+  padding:.25mm .3mm!important; height:5.5mm; min-height:5.5mm;
+}
+.sheet-print.mobile-print .sheet-cell-content strong { font-size:3.8pt; }
+.sheet-print.mobile-print .sheet-cell-content span   { font-size:3.4pt; }
+.sheet-print.mobile-print .class-sheet tbody small   { font-size:3.4pt; }
+.sheet-print.mobile-print .class-sheet-transposed .sheet-day-cell  { width:10mm!important; min-width:10mm!important; max-width:10mm!important; font-size:3.8pt; }
 .sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell { width:7.5mm!important; min-width:7.5mm!important; max-width:7.5mm!important; font-size:3.5pt; }
-.sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell small { font-size:3.05pt; line-height:.88; }
-.sheet-print.mobile-print .class-sheet .sheet-name { font-size:4.2pt; line-height:.9; }
+.sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell small { font-size:3pt; }
+.sheet-print.mobile-print .class-sheet .sheet-name { font-size:4pt; }
 `;
 }
 
