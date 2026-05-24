@@ -985,17 +985,13 @@ function buildTeacherListPrintCss(type, root, opts) {
 .teacher-list-print .card-title { font-size:11pt; font-weight:900; letter-spacing:-.01em; }
 .teacher-list-print .table-responsive { overflow:visible!important; }
 .teacher-list-print .table { table-layout:auto; }
-/* Rol sütunu bu baskıda gizlenir */
-.teacher-list-print .table .col-role,
-.teacher-list-print .table th:nth-child(5),
-.teacher-list-print .table td:nth-child(5) { display:none!important; }
-/* TC kimlik: tc-print-col her zaman görünür */
+/* TC kimlik sütunu her zaman görünür */
 .teacher-list-print .table .tc-print-col { display:table-cell!important; }
 .teacher-list-print .table tbody tr { break-inside:avoid; page-break-inside:avoid; }
 /* Sıra zebra — base'den geliyor, burada rengi biraz ayarlıyoruz */
 .teacher-list-print .table tbody tr:nth-child(odd) td { background:#ffffff!important; }
 
-/* Mobil baskı: #(1) Ad(2) TC(3) Branş(4) [Rol(5) gizli] Tel(6) [Email(7) opsiyonel] Sınıf(8) Nöbet(9) Ders(10) Görev(11) */
+/* Mobil baskı: #(1) Ad(2) TC(3) Branş(4) Tel(5) [Email(6) gizli] Sınıf(7) Nöbet(8) Ders(9) Görev(10) */
 .teacher-list-print.mobile-print .table {
   table-layout:fixed; font-size:var(--pt-fs-xs); width:100%;
 }
@@ -1008,23 +1004,21 @@ function buildTeacherListPrintCss(type, root, opts) {
 .teacher-list-print.mobile-print .table th:nth-child(2),
 .teacher-list-print.mobile-print .table td:nth-child(2) { width:27mm; }
 .teacher-list-print.mobile-print .table th:nth-child(3),
-.teacher-list-print.mobile-print .table td:nth-child(3) { width:20mm; }
+.teacher-list-print.mobile-print .table td:nth-child(3) { width:22mm; }
 .teacher-list-print.mobile-print .table th:nth-child(4),
 .teacher-list-print.mobile-print .table td:nth-child(4) { width:22mm; }
 .teacher-list-print.mobile-print .table th:nth-child(5),
-.teacher-list-print.mobile-print .table td:nth-child(5) { display:none!important; }
+.teacher-list-print.mobile-print .table td:nth-child(5) { width:20mm; }
 .teacher-list-print.mobile-print .table th:nth-child(6),
-.teacher-list-print.mobile-print .table td:nth-child(6) { width:20mm; }
+.teacher-list-print.mobile-print .table td:nth-child(6) { display:none!important; }
 .teacher-list-print.mobile-print .table th:nth-child(7),
-.teacher-list-print.mobile-print .table td:nth-child(7) { display:none!important; }
+.teacher-list-print.mobile-print .table td:nth-child(7) { width:14mm; }
 .teacher-list-print.mobile-print .table th:nth-child(8),
 .teacher-list-print.mobile-print .table td:nth-child(8) { width:14mm; }
 .teacher-list-print.mobile-print .table th:nth-child(9),
-.teacher-list-print.mobile-print .table td:nth-child(9) { width:12mm; }
+.teacher-list-print.mobile-print .table td:nth-child(9) { width:8mm; }
 .teacher-list-print.mobile-print .table th:nth-child(10),
 .teacher-list-print.mobile-print .table td:nth-child(10) { width:8mm; }
-.teacher-list-print.mobile-print .table th:nth-child(11),
-.teacher-list-print.mobile-print .table td:nth-child(11) { width:8mm; }
 `;
 }
 
