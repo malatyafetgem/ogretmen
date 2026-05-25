@@ -844,8 +844,7 @@ function buildSheetPrintCss(type, root, opts) {
   /* ── Kullanılabilir genişlik hesabı ──────────────────────────────
      Landscape A4: 297mm − 2×10mm kenar = 277mm
      Portrait  A4: 210mm − 2×10mm kenar = 190mm (transposed için)   */
-  // Öğretmen çarşafında kenar payını 5mm'ye düşürüyoruz → 297-10=287mm kullanılabilir
-  const pageW   = isTeacherSheet ? 287 : 277;   // mm
+  const pageW   = 277;   // mm
   const nameCol = isTeacherSheet ? 16 : (isClassTransposed ? 24 : 16);
   const dataW   = pageW - nameCol;
   const cells   = rawCellCount > 0 ? rawCellCount : 40;
@@ -861,49 +860,26 @@ function buildSheetPrintCss(type, root, opts) {
   const subFs     = (rawCW >= 7) ? '5pt'   : (rawCW >= 5.5) ? '4.3pt' : '3.8pt';
   const headFs    = (rawCW >= 7) ? '5.5pt' : '5pt';
 
-  /* Satır yüksekliği: tüm satırlar eşit, içeriğe göre değil.
-     Öğretmen çarşafında satır sayısı biliniyorsa, tüm tablo tek A4 landscape
-     sayfasına sığacak şekilde rowH dinamik olarak kısıtlanır.
-     Landscape A4 kullanılabilir yükseklik:
-       210mm − 20mm kenar − 15mm başlık (meta+card-header+title+padding)
-       − 9.5mm thead (5mm + 4.5mm) = 165.5mm veri alanı
-     35 satır baz alınır; gerçek satır sayısı biliniyorsa ona göre hesaplanır. */
-  const rowBaseH = (rawCW >= 7) ? 8 : (rawCW >= 5.5) ? 7 : 6; // mm
-  let rowH = rowBaseH + 'mm';
-  {
-    const rowCount = (isTeacherSheet && sheetTable)
-      ? (sheetTable.querySelectorAll('tbody tr').length || 35)
-      : 35;
-    if (isTeacherSheet) {
-      const pageH      = 210;   // mm A4
-      const marginH    = 10;    // 2×5mm kenar (öğretmen çarşafı için küçültüldü)
-      const headerBand = 8;     // meta(~3mm) + card-header+title(~3mm) + boşluk(~2mm)
-      const theadH     = 7.5;   // thead iki satır (4mm + 3.5mm)
-      const availH     = pageH - marginH - headerBand - theadH;
-      const dynH       = Math.floor((availH / rowCount) * 10) / 10; // 0.1mm hassasiyet
-      const clampedH   = Math.min(rowBaseH, Math.max(4.0, dynH));
-      rowH = clampedH.toFixed(1) + 'mm';
-    }
-  }
+  /* Satır yüksekliği: tüm satırlar eşit, içeriğe göre değil */
+  const rowH = (rawCW >= 7) ? '8mm' : (rawCW >= 5.5) ? '7mm' : '6mm';
 
   return `
 /* ════════════════════════════════════════
    ÇARŞAF (sheet-print) — yatay A4
-   Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}  rowH=${rowH}
+   Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}
    ════════════════════════════════════════ */
 ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
 .sheet-print { font-size:${contentFs}; }
 
 /* Başlık bandı */
 .sheet-print .card-header {
-  padding:0; margin-bottom:1mm;
+  padding:0 0 2mm; margin-bottom:3mm;
   border-bottom:var(--pt-border-top);
 }
 .sheet-print .card-title {
-  font-size:8.5pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; margin:0;
+  font-size:10pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; margin:0;
 }
 .sheet-print .card-title i,.sheet-print .card-header .text-muted { display:none; }
-.sheet-print .print-meta { margin-bottom:1mm; font-size:6.5pt; }
 .sheet-print .table-responsive { overflow:visible!important; }
 
 /* Tablo genel */
@@ -919,7 +895,7 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
   border:0.4pt solid #94a3b8!important;
   padding:.5mm .4mm!important;
   vertical-align:middle; text-align:center;
-  height:${rowH}; max-height:${rowH}; min-height:0!important;
+  height:${rowH}; min-height:${rowH};
   overflow:hidden; break-inside:avoid;
   line-height:1.15;
 }
@@ -929,13 +905,13 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
   background:#334155!important; color:#fff!important;
   font-size:${headFs}; font-weight:800; letter-spacing:.02em;
   border-color:#334155!important;
-  height:4mm; min-height:4mm;
+  height:5mm; min-height:5mm;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 /* Saat başlığı (1, 2, 3...) */
 .sheet-print .schedule-sheet thead tr:nth-child(2) th {
   background:var(--pt-head-bg)!important; font-size:${headFs}; font-weight:700;
-  height:3.5mm; min-height:3.5mm;
+  height:4.5mm; min-height:4.5mm;
   border-bottom:var(--pt-border-h)!important;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
@@ -1026,7 +1002,7 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
 /* Mobil baskı — biraz daha küçük */
 .sheet-print.mobile-print .schedule-sheet th,
 .sheet-print.mobile-print .schedule-sheet td {
-  padding:.25mm .3mm!important; height:${rowH}; max-height:${rowH}; min-height:0!important;
+  padding:.25mm .3mm!important; height:4.8mm; min-height:4.8mm;
 }
 .sheet-print.mobile-print .sheet-cell-content strong { font-size:3.8pt; }
 .sheet-print.mobile-print .sheet-cell-content span   { font-size:3.4pt; }
