@@ -189,7 +189,7 @@ function scheduleTitle(){
   if(f.mode==='teacherSheet') return 'Öğretmen Çarşaf Programı';
   if(f.mode==='classSheet') return 'Sınıf Çarşaf Programı';
   if(f.mode==='classList') return `${c} Programları`;
-  if(f.mode==='free') return 'Boş Saat / Boş Gün Sorgusu';
+  if(f.mode==='free') return 'Boş Gün / Boş Saat Sorgusu';
   return 'Öğretmen Programları';
 }
 
@@ -375,7 +375,11 @@ function buildFreeTimeReport(){
   const summary=(f.day||f.hour)?buildFreeQuerySummary(teachers,days,hours,f):buildFreeDayOverview(teachers);
   const rows=teachers.map(t=>{
     const free=[];
-    days.forEach(d=>hours.forEach(h=>{ if(isTeacherFreeAt(t.id,d,h)) free.push({day:d,hour:h}); }));
+    days.forEach(d=>{
+      // O gün hiç dersi yoksa (boş gün) boş saat listesine dahil etme
+      if(!teacherLessons(t.id).some(s=>s.day===d)) return;
+      hours.forEach(h=>{ if(isTeacherFreeAt(t.id,d,h)) free.push({day:d,hour:h}); });
+    });
     const freeDayLabel=days.filter(d=>schoolHours().every(h=>isTeacherFreeAt(t.id,d,h))).join(', ');
     return `<tr><td><strong>${teacherLink(t)}</strong><br><small>${escapeHtml(t.branch||'')}</small></td><td>${escapeHtml(freeDayLabel||'—')}</td><td>${free.length}</td><td>${formatFreeSlotsByDayHtml(free)}</td></tr>`;
   }).join('');
