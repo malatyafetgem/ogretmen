@@ -919,7 +919,7 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
   border:0.4pt solid #94a3b8!important;
   padding:.5mm .4mm!important;
   vertical-align:middle; text-align:center;
-  height:${rowH}; max-height:${rowH};
+  height:${rowH}; max-height:${rowH}; min-height:0!important;
   overflow:hidden; break-inside:avoid;
   line-height:1.15;
 }
@@ -1026,7 +1026,7 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
 /* Mobil baskı — biraz daha küçük */
 .sheet-print.mobile-print .schedule-sheet th,
 .sheet-print.mobile-print .schedule-sheet td {
-  padding:.25mm .3mm!important;
+  padding:.25mm .3mm!important; height:${rowH}; max-height:${rowH}; min-height:0!important;
 }
 .sheet-print.mobile-print .sheet-cell-content strong { font-size:3.8pt; }
 .sheet-print.mobile-print .sheet-cell-content span   { font-size:3.4pt; }
