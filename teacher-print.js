@@ -1026,7 +1026,7 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
 /* Mobil baskı — biraz daha küçük */
 .sheet-print.mobile-print .schedule-sheet th,
 .sheet-print.mobile-print .schedule-sheet td {
-  padding:.25mm .3mm!important; height:5.5mm; min-height:5.5mm;
+  padding:.25mm .3mm!important;
 }
 .sheet-print.mobile-print .sheet-cell-content strong { font-size:3.8pt; }
 .sheet-print.mobile-print .sheet-cell-content span   { font-size:3.4pt; }
