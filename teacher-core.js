@@ -648,5 +648,5 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(initFirebase()) FIREBASE_AUTH.onAuthStateChanged(handleAuthUser);
   else if(canUseLocalAuthFallback()&&readSession()) startApp();
   else if(!canUseLocalAuthFallback()) showLoginSystemMessage('Firebase bağlantısı kurulamadı. Lütfen internet bağlantısını ve Firebase ayarlarını kontrol edin.');
-  if('serviceWorker' in navigator&&location.protocol!=='file:') navigator.serviceWorker.register('./sw.js?v='+(window.OBS_APP_VERSION||'dev'),{scope:'./',updateViaCache:'none'}).catch(()=>{});
+  if('serviceWorker' in navigator&&location.protocol!=='file:') navigator.serviceWorker.register('/ogretmen/sw.js?v='+(window.OBS_APP_VERSION||'dev'),{scope:'/ogretmen/',updateViaCache:'none'}).catch(()=>{});
 });
