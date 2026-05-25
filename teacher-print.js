@@ -844,7 +844,8 @@ function buildSheetPrintCss(type, root, opts) {
   /* ── Kullanılabilir genişlik hesabı ──────────────────────────────
      Landscape A4: 297mm − 2×10mm kenar = 277mm
      Portrait  A4: 210mm − 2×10mm kenar = 190mm (transposed için)   */
-  const pageW   = 277;   // mm
+  // Öğretmen çarşafında kenar payını 5mm'ye düşürüyoruz → 297-10=287mm kullanılabilir
+  const pageW   = isTeacherSheet ? 287 : 277;   // mm
   const nameCol = isTeacherSheet ? 16 : (isClassTransposed ? 24 : 16);
   const dataW   = pageW - nameCol;
   const cells   = rawCellCount > 0 ? rawCellCount : 40;
@@ -875,8 +876,8 @@ function buildSheetPrintCss(type, root, opts) {
       : 35;
     if (isTeacherSheet) {
       const pageH      = 210;   // mm A4
-      const marginH    = 20;    // 2×10mm kenar
-      const headerBand = 12;    // meta + card-header + title + padding
+      const marginH    = 10;    // 2×5mm kenar (öğretmen çarşafı için küçültüldü)
+      const headerBand = 8;     // meta(~3mm) + card-header+title(~3mm) + boşluk(~2mm)
       const theadH     = 7.5;   // thead iki satır (4mm + 3.5mm)
       const availH     = pageH - marginH - headerBand - theadH;
       const dynH       = Math.floor((availH / rowCount) * 10) / 10; // 0.1mm hassasiyet
@@ -890,17 +891,19 @@ function buildSheetPrintCss(type, root, opts) {
    ÇARŞAF (sheet-print) — yatay A4
    Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}  rowH=${rowH}
    ════════════════════════════════════════ */
+${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
 .sheet-print { font-size:${contentFs}; }
 
 /* Başlık bandı */
 .sheet-print .card-header {
-  padding:0 0 2mm; margin-bottom:3mm;
+  padding:0; margin-bottom:1mm;
   border-bottom:var(--pt-border-top);
 }
 .sheet-print .card-title {
-  font-size:10pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; margin:0;
+  font-size:8.5pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; margin:0;
 }
 .sheet-print .card-title i,.sheet-print .card-header .text-muted { display:none; }
+.sheet-print .print-meta { margin-bottom:1mm; font-size:6.5pt; }
 .sheet-print .table-responsive { overflow:visible!important; }
 
 /* Tablo genel */
