@@ -864,20 +864,23 @@ function buildSheetPrintCss(type, root, opts) {
      Öğretmen çarşafında satır sayısı biliniyorsa, tüm tablo tek A4 landscape
      sayfasına sığacak şekilde rowH dinamik olarak kısıtlanır.
      Landscape A4 kullanılabilir yükseklik:
-       210mm − 20mm kenar − ~12mm başlık (meta+card-header+title)
-       − ~9.5mm thead (5mm + 4.5mm) = ~168.5mm veri alanı            */
+       210mm − 20mm kenar − 15mm başlık (meta+card-header+title+padding)
+       − 9.5mm thead (5mm + 4.5mm) = 165.5mm veri alanı
+     35 satır baz alınır; gerçek satır sayısı biliniyorsa ona göre hesaplanır. */
   const rowBaseH = (rawCW >= 7) ? 8 : (rawCW >= 5.5) ? 7 : 6; // mm
   let rowH = rowBaseH + 'mm';
-  if (isTeacherSheet && sheetTable) {
-    const rowCount = sheetTable.querySelectorAll('tbody tr').length;
-    if (rowCount > 0) {
+  {
+    const rowCount = (isTeacherSheet && sheetTable)
+      ? (sheetTable.querySelectorAll('tbody tr').length || 35)
+      : 35;
+    if (isTeacherSheet) {
       const pageH      = 210;   // mm A4
       const marginH    = 20;    // 2×10mm kenar
-      const headerBand = 12;    // meta + card-header + title
-      const theadH     = 9.5;   // thead iki satır
+      const headerBand = 12;    // meta + card-header + title + padding
+      const theadH     = 7.5;   // thead iki satır (4mm + 3.5mm)
       const availH     = pageH - marginH - headerBand - theadH;
       const dynH       = Math.floor((availH / rowCount) * 10) / 10; // 0.1mm hassasiyet
-      const clampedH   = Math.min(rowBaseH, Math.max(4.5, dynH));
+      const clampedH   = Math.min(rowBaseH, Math.max(4.0, dynH));
       rowH = clampedH.toFixed(1) + 'mm';
     }
   }
@@ -913,7 +916,7 @@ function buildSheetPrintCss(type, root, opts) {
   border:0.4pt solid #94a3b8!important;
   padding:.5mm .4mm!important;
   vertical-align:middle; text-align:center;
-  height:${rowH}; min-height:${rowH};
+  height:${rowH}; max-height:${rowH};
   overflow:hidden; break-inside:avoid;
   line-height:1.15;
 }
@@ -923,13 +926,13 @@ function buildSheetPrintCss(type, root, opts) {
   background:#334155!important; color:#fff!important;
   font-size:${headFs}; font-weight:800; letter-spacing:.02em;
   border-color:#334155!important;
-  height:5mm; min-height:5mm;
+  height:4mm; min-height:4mm;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 /* Saat başlığı (1, 2, 3...) */
 .sheet-print .schedule-sheet thead tr:nth-child(2) th {
   background:var(--pt-head-bg)!important; font-size:${headFs}; font-weight:700;
-  height:4.5mm; min-height:4.5mm;
+  height:3.5mm; min-height:3.5mm;
   border-bottom:var(--pt-border-h)!important;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
