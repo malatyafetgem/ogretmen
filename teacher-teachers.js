@@ -388,7 +388,7 @@ function buildTeacherProfileSchedule(t, lessons){
       const span=slot.length ? matchingSlotSpan(lessons,day,i,hours,slot) : 1;
       const duty=t.dutyDay===day?' prog-td-duty':'';
       if(slot.length){
-        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}${dutyFreeHintHtml(day,hour,t.id)}</td>`);
+        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}</td>`);
       } else {
         cells.push(`<td class="prog-td-empty${duty}"></td>`);
       }
@@ -417,10 +417,21 @@ function teacherDailySlotHtml(slot){
 function buildTeacherDailySchedule(t, lessons, day){
   const dayLessons=lessons.filter(s=>s.day===day);
   if(!dayLessons.length) return `<div class="program-empty"><i class="fas fa-calendar-xmark"></i><span>${escapeHtml(day)} günü dersi bulunmamaktadır.</span></div>`;
+  // O gün nöbetçi olan diğer öğretmenleri bul (bu öğretmen hariç)
+  const dutyTeachersOnDay=DB.teachers.filter(dt=>dt.dutyDay===day && dt.id!==t.id);
   const cards=schoolHours().map(hour=>{
     const slot=dayLessons.filter(s=>Number(s.hour)===Number(hour));
     const duty=t.dutyDay===day?' duty-sheet':'';
-    return `<div class="daily-lesson-card${slot.length?' has-lesson':''}${duty}"><div class="daily-lesson-hour">${lessonHourCell(hour)}</div>${slot.length?teacherDailySlotHtml(slot):'<span class="text-muted">—</span>'}</div>`;
+    let dutyHint='';
+    if(slot.length && dutyTeachersOnDay.length){
+      // O saatte dersi olmayan nöbetçileri bul
+      const freeDuty=dutyTeachersOnDay.filter(dt=>isTeacherFreeAt(dt.id,day,hour));
+      if(freeDuty.length){
+        const names=freeDuty.map(dt=>compactTeacherCode(dt)).join(', ');
+        dutyHint=`<span class="duty-hint no-print">(${escapeHtml(names)})</span>`;
+      }
+    }
+    return `<div class="daily-lesson-card${slot.length?' has-lesson':''}${duty}"><div class="daily-lesson-hour">${lessonHourCell(hour)}</div>${slot.length?teacherDailySlotHtml(slot)+''+dutyHint:'<span class="text-muted">—</span>'}</div>`;
   }).join('');
   return `<div class="daily-program-grid">${cards}</div>`;
 }
