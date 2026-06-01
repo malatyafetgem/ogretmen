@@ -1742,7 +1742,19 @@ body.obs-desktop-site .top-mobile-brand { display:none !important; }
   .ti-preview-summary { gap:6px; }
 }
 
-/* ─── 38. MOBİL "MASAÜSTÜ SİTESİ" MODU ─── */
+/* ─── 38. NÖBET İPUCU — dolu hücre içindeki boş nöbetçi listesi ─── */
+/* .prog-duty-hint: yazdırmada gizlenir (no-print sınıfı taşır),
+   ekranda dolu hücrenin altına ince soluk notlar olarak görünür. */
+.prog-duty-hint {
+  margin-top:3px;
+  font-size:.6rem;
+  color:var(--c-muted);
+  line-height:1.3;
+  text-align:center;
+  opacity:.75;
+}
+
+/* ─── 39. MOBİL "MASAÜSTÜ SİTESİ" MODU ─── */
 /* JS applyViewportLayout() sidebar ve bottom-nav'ı inline style ile yönetir.
    CSS media query varsayılan durumu kontrol eder, JS override yapar. */
 

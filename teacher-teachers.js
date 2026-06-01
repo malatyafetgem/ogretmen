@@ -388,7 +388,7 @@ function buildTeacherProfileSchedule(t, lessons){
       const span=slot.length ? matchingSlotSpan(lessons,day,i,hours,slot) : 1;
       const duty=t.dutyDay===day?' prog-td-duty':'';
       if(slot.length){
-        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}</td>`);
+        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}${dutyFreeHintHtml(day,hour,t.id)}</td>`);
       } else {
         cells.push(`<td class="prog-td-empty${duty}"></td>`);
       }

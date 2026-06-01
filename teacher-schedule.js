@@ -228,6 +228,25 @@ function buildTeacherProgramList(){
   }).join('')}</div>`;
 }
 
+/* Belirtilen gün ve saatte nöbeti olan ama o saatte dersi olmayan öğretmenleri döndürür.
+   excludeId: bu öğretmeni sonuçtan hariç tut (programı gösterilen kişi). */
+function freeDutyTeachersAt(day, hour, excludeId){
+  return DB.teachers.filter(t=>
+    t.id !== excludeId &&
+    t.dutyDay === day &&
+    isTeacherFreeAt(t.id, day, hour)
+  );
+}
+
+/* Dolu hücreye eklenecek "no-print" boş nöbetçi ipucu HTML'ini üretir.
+   Öğretmen yoksa boş string döner. */
+function dutyFreeHintHtml(day, hour, excludeId){
+  const free=freeDutyTeachersAt(day, hour, excludeId);
+  if(!free.length) return '';
+  const names=free.map(t=>escapeHtml(sheetTeacherCode(t))).join(', ');
+  return `<div class="prog-duty-hint no-print">(${names})</div>`;
+}
+
 function buildReportTeacherProgramBoard(t,days,hours){
   const lessons=teacherLessons(t.id);
   const hourHeads=hours.map(hour=>`<th class="prog-th-hour">${lessonBoardHeader(hour)}</th>`).join('');
@@ -239,7 +258,7 @@ function buildReportTeacherProgramBoard(t,days,hours){
       const span=slot.length?matchingSlotSpan(lessons,day,i,hours,slot):1;
       const duty=t.dutyDay===day?' prog-td-duty':'';
       if(slot.length){
-        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}</td>`);
+        cells.push(`<td colspan="${span}" class="prog-td-filled${duty}">${teacherBoardSlotHtml(slot)}${dutyFreeHintHtml(day,hour,t.id)}</td>`);
       } else {
         cells.push(`<td class="prog-td-empty${duty}"></td>`);
       }
