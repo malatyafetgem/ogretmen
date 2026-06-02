@@ -884,7 +884,7 @@ body.obs-desktop-site .obs-topbar-mobile-elem { display:none !important; }
 .daily-lesson-card.duty-sheet .daily-slot strong { color:var(--c-ink); }
 /* Günlük programda dolu saatlerde müsait nöbetçi öğretmen isimleri */
 .duty-hint {
-  display:block; font-size:.68rem; color:var(--c-muted);
+  display:block; font-size:.68rem; color:var(--c-orange);
   margin-top:3px; line-height:1.3; font-style:italic;
 }
 
