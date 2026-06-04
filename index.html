@@ -207,9 +207,8 @@ window.writeVersionedScripts = function(paths) {
           <div class="card obs-panel mb-3">
             <div class="card-body">
               <div class="row g-2 align-items-end">
-                <div class="col-md-4"><label class="form-label">Sınıf</label><select id="classProfileSelect" class="form-select" onchange="renderClasses()"></select></div>
-                <div class="col-md-4"><label class="form-label">Program Görünümü</label><select id="classProfileDay" class="form-select" onchange="this.dataset.userSelected='1'; renderClasses()"></select></div>
-                <div class="col-md-4"><button class="btn btn-outline-secondary w-100" onclick="printDocument({sourceId:'classProfilePrintArea',type:'class-profile',title:'Sınıf Profili',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button></div>
+                <div class="col-md-6"><label class="form-label">Sınıf</label><select id="classProfileSelect" class="form-select" onchange="renderClasses()"></select></div>
+                <div class="col-md-6"><button class="btn btn-outline-secondary w-100" onclick="printDocument({sourceId:'classProfilePrintArea',type:'class-profile',title:'Sınıf Profili',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button></div>
               </div>
             </div>
           </div>

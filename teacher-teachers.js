@@ -155,9 +155,11 @@ function showTeacherProfile(id){
   // Badge ve butonları güncelle
   updateTeacherBadge(t);
   showProfileButtons(true);
-  currentProgramMode='weekly';
+  // Bugün ders günüyse o günden, değilse haftalık başlat
+  const _today=todayName();
+  currentProgramMode=_today?'day':'weekly';
   getEl('teacherProfile').innerHTML=`<div class="card obs-panel profile-card"><div class="card-body profile-disclosures">
-    ${disclosureSection({key:`teacher-${id}-program`,title:'Program',icon:'fas fa-calendar-days',meta:'Haftalık Program',content:buildTeacherProgramContent(id),open:false})}
+    ${disclosureSection({key:`teacher-${id}-program`,title:'Program',icon:'fas fa-calendar-days',meta:'Öğretmen Programı',content:buildTeacherProgramContent(id, _today),open:false})}
     ${disclosureSection({key:`teacher-${id}-personal`,title:'Kişisel Bilgiler',icon:'fas fa-user',meta:'Öğretmen kartı',content:buildTeacherPersonalInfo(t, lessons, tasks, free),open:false})}
     ${disclosureSection({key:`teacher-${id}-load`,title:'Ders Yükü',icon:'fas fa-book-open',meta:`${lessonHourCount} saat / hafta`,content:buildTeacherLessonLoad(t, lessons)})}
     ${disclosureSection({key:`teacher-${id}-duty`,title:'Nöbet',icon:'fas fa-clipboard-check',meta:dutyMeta,content:buildTeacherDutyInfo(t)})}
@@ -166,13 +168,24 @@ function showTeacherProfile(id){
   </div></div>`;
 }
 
-function buildTeacherProgramContent(id){
+function buildTeacherProgramContent(id, initialDay=''){
   const days=schoolDays();
-  const dayBtns=days.map(d=>`<button class="prog-mode-btn" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
-  const btns=`<div class="program-mode-btns" id="programModeBtns">${dayBtns}<button class="prog-mode-btn prog-mode-active" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button></div>`;
+  // Bugün ders günüyse o gün aktif, değilse haftalık
+  const useDay=initialDay&&days.includes(initialDay);
+  const dayBtns=days.map(d=>`<button class="prog-mode-btn${useDay&&d===initialDay?' prog-mode-active':''}" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
+  const weeklyActive=!useDay?' prog-mode-active':'';
+  const btns=`<div class="program-mode-btns" id="programModeBtns">${dayBtns}<button class="prog-mode-btn${weeklyActive}" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button></div>`;
   const t=teacherById(id);
-  const weekly=t?`<div class="program-section-content">${buildTeacherProfileSchedule(t, teacherLessons(id))}</div>`:'';
-  return `<div class="program-filter-inline">${btns}</div><div id="teacherProgramSection" class="teacher-program-section">${weekly}</div>`;
+  let initialContent='';
+  if(t){
+    const lessons=teacherLessons(id);
+    if(useDay){
+      initialContent=`<div class="program-section-content">${buildTeacherDailySchedule(t,lessons,initialDay)}</div>`;
+    } else {
+      initialContent=`<div class="program-section-content">${buildTeacherProfileSchedule(t,lessons)}</div>`;
+    }
+  }
+  return `<div class="program-filter-inline">${btns}</div><div id="teacherProgramSection" class="teacher-program-section">${initialContent}</div>`;
 }
 
 function setProgramMode(mode, day='', render=true){
