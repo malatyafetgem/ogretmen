@@ -189,6 +189,7 @@ window.writeVersionedScripts = function(paths) {
                 <button class="btn teacher-action-btn" onclick="openTeacherModal()"><i class="fas fa-user-plus me-1"></i>Ekle</button>
                 <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherEditBtn" style="display:none" onclick="openTeacherModal(selectedTeacherId)"><i class="fas fa-pen me-1"></i>Düzenle</button>
                 <button class="btn teacher-action-btn teacher-action-btn--profile" id="teacherPrintBtn" style="display:none" onclick="printDocument({sourceId:'teacherProfile',type:'teacher-profile',title:'Öğretmen Profili',button:this})"><i class="fas fa-print me-1"></i>Yazdır</button>
+                <button class="btn teacher-action-btn teacher-action-btn--profile teacher-action-btn--danger" id="teacherDeleteBtn" style="display:none" onclick="deleteTeacher(selectedTeacherId)"><i class="fas fa-trash me-1"></i>Sil</button>
               </div>
             </div>
           </div>
@@ -609,4 +610,3 @@ window.writeVersionedScripts([
 </script>
 </body>
 </html>
-

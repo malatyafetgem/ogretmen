@@ -1,6 +1,5 @@
 const STORAGE_KEY = 'ogretmenBilgiDB.v1';
 const REMOTE_DB_PATH = 'ogretmenSistemi/main';
-const ADMIN_UID = 'QO8oNRYiKXgv9KcfH4n8CWdzRw82';
 const DAY_NAMES = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
 const HOURS = [1, 2, 3, 4, 5, 6, 7, 8];
 const LESSON_TIMES = [
@@ -628,7 +627,12 @@ async function handleAuthUser(user){
     return;
   }
   CURRENT_USER=user;
-  CURRENT_ROLE=user.uid===ADMIN_UID ? 'admin' : 'user';
+  try {
+  const tokenResult = await user.getIdTokenResult(true);
+  CURRENT_ROLE = tokenResult.claims.admin === true ? 'admin' : 'user';
+} catch (e) {
+  CURRENT_ROLE = 'user';
+}
   applyAuthUiState();
   writeSession();
   const hasLocalData=Array.isArray(DB.teachers)&&DB.teachers.length>0;

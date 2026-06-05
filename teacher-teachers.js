@@ -96,10 +96,11 @@ function updateTeacherBadge(t){
   badge.innerHTML=`<i class="fas fa-user-tie"></i><div class="teacher-preview-info"><strong>${escapeHtml(teacherName(t))}</strong><span>${escapeHtml(t.branch||'Branş yok')}</span></div>`;
 }
 function showProfileButtons(visible){
-  const editBtn=getEl('teacherEditBtn'), printBtn=getEl('teacherPrintBtn');
+  const editBtn=getEl('teacherEditBtn'), printBtn=getEl('teacherPrintBtn'), deleteBtn=getEl('teacherDeleteBtn');
   const row=document.querySelector('.teacher-action-row');
   if(editBtn) editBtn.style.display=visible?'':'none';
   if(printBtn) printBtn.style.display=visible?'':'none';
+  if(deleteBtn) deleteBtn.style.display=visible?'':'none';
   if(row) row.classList.toggle('teacher-action-row--single',!visible);
 }
 function renderTeachers(){
@@ -301,7 +302,33 @@ function deleteTeacher(id){
     showToast('Öğretmen silmek için admin yetkisi gerekir.','warning');
     return;
   }
-  const t=teacherById(id); if(!t||!confirm(`${teacherName(t)} silinsin mi?`))return; DB.teachers=DB.teachers.filter(x=>x.id!==id); DB.schedules=DB.schedules.filter(x=>x.teacherId!==id); DB.tasks=(DB.tasks||[]).filter(x=>x.teacherId!==id); if(selectedTeacherId===id){selectedTeacherId=''; getEl('teacherProfile').innerHTML='';} saveDB(); renderAll(); showToast('Öğretmen silindi.','success');
+  const teacherId=String(id||selectedTeacherId||'');
+  const t=teacherById(teacherId);
+  if(!t) return;
+  const lessons=DB.schedules.filter(x=>x.teacherId===teacherId);
+  const tasks=(DB.tasks||[]).filter(x=>x.teacherId===teacherId);
+  const lessonCount=uniqueScheduleHourCount(lessons,'teacher');
+  const confirmLines=[
+    `${teacherName(t)} kalıcı olarak silinecek.`,
+    lessonCount?`${lessonCount} ders saati program kaydı silinecek.`:'',
+    tasks.length?`${tasks.length} görev kaydı silinecek.`:'',
+    'Bu işlem geri alınamaz.'
+  ].filter(Boolean).join('\n');
+  if(!confirm(confirmLines)) return;
+  DB.teachers=DB.teachers.filter(x=>x.id!==teacherId);
+  DB.schedules=DB.schedules.filter(x=>x.teacherId!==teacherId);
+  DB.tasks=(DB.tasks||[]).filter(x=>x.teacherId!==teacherId);
+  if(selectedTeacherId===teacherId){
+    selectedTeacherId='';
+    currentProgramMode='';
+    const profile=getEl('teacherProfile');
+    if(profile) profile.innerHTML='';
+    updateTeacherBadge(null);
+    showProfileButtons(false);
+  }
+  saveDB();
+  renderAll();
+  showToast('Öğretmen ve bağlı kayıtları silindi.','success');
 }
 
 function formatPhone(phone){

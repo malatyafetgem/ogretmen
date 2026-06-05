@@ -1115,6 +1115,8 @@ body.obs-desktop-site .obs-topbar-mobile-elem { display:none !important; }
 }
 .teacher-action-btn:hover { background:#f3f4f6; }
 .teacher-action-btn--profile { opacity:.9; }
+.teacher-action-btn--danger { color:var(--c-red); }
+.teacher-action-btn--danger:hover { background:#fef2f2; color:var(--c-red); }
 
 /* Dashboard add-row */
 .dashboard-add-row {
