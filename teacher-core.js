@@ -83,6 +83,8 @@ let FIREBASE_AUTH = null;
 let FIREBASE_DB = null;
 let REMOTE_READY = false;
 let REMOTE_SAVE_TIMER = null;
+let REMOTE_RETRY_TIMER = null;
+let REMOTE_HYDRATE_PROMISE = null;
 let REMOTE_SAVE_PENDING = false;
 let APP_STARTED = false;
 let CURRENT_USER = null;
@@ -278,18 +280,39 @@ function showLoginSystemMessage(message){
 }
 function remoteRef(){ return FIREBASE_DB?.ref(REMOTE_DB_PATH); }
 function queueRemoteSave(){
-  if(!isAdminUser()||!REMOTE_READY||!remoteRef()) return;
+  if(!isAdminUser()||!remoteRef()) return;
   REMOTE_SAVE_PENDING=true;
   clearTimeout(REMOTE_SAVE_TIMER);
+  if(!REMOTE_READY){
+    showSyncState('Bulut kaydı bekliyor', 'warning');
+    scheduleRemoteRetry();
+    return;
+  }
   REMOTE_SAVE_TIMER=setTimeout(pushRemoteDB,350);
 }
 function pushRemoteDB(){
   if(!isAdminUser()||!REMOTE_READY||!remoteRef()||!REMOTE_SAVE_PENDING) return Promise.resolve();
   REMOTE_SAVE_PENDING=false;
-  return remoteRef().set(dbForStorage(DB)).catch(()=>{
+  return remoteRef().set(dbForStorage(DB)).then(()=>{
+    showSyncState('Bulut bağlı','success');
+  }).catch(()=>{
+    REMOTE_READY=false;
     REMOTE_SAVE_PENDING=true;
     showSyncState('Bulut kaydı bekliyor', 'warning');
+    scheduleRemoteRetry();
   });
+}
+function scheduleRemoteRetry(delay=8000){
+  if(!isAdminUser()||!remoteRef()) return;
+  clearTimeout(REMOTE_RETRY_TIMER);
+  REMOTE_RETRY_TIMER=setTimeout(()=>{
+    REMOTE_RETRY_TIMER=null;
+    if(!isAdminUser()||!REMOTE_SAVE_PENDING) return;
+    hydrateRemoteDB().catch(()=>{
+      showSyncState('Bulut kaydı bekliyor', 'warning');
+      if(REMOTE_SAVE_PENDING) scheduleRemoteRetry(Math.min(delay*2,60000));
+    });
+  }, delay);
 }
 function showSyncState(text='',tone=''){
   const badge=getEl('versionBadge');
@@ -299,22 +322,42 @@ function showSyncState(text='',tone=''){
 }
 async function hydrateRemoteDB(){
   if(!remoteRef()) return;
-  const snapshot=await remoteRef().once('value');
-  const remote=snapshot.val();
-  if(remote&&Array.isArray(remote.teachers)&&Array.isArray(remote.schedules)){
-    const needsMigration=remote.meta?.dataNormalizationVersion!==DATA_NORMALIZATION_VERSION;
-    DB=normalizeDB(remote);
-    writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
-    // Versiyon eskiyse normalize edilmiş veriyi Firebase'e geri yaz (bir kez)
-    if(needsMigration&&isAdminUser()) await remoteRef().set(dbForStorage(DB)).catch(()=>{});
-  }else{
-    // Firebase'de veri yok — boş veritabanıyla başla, seed yükleme yok
-    DB=makeEmptyDB();
-    writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
-    if(isAdminUser()) await remoteRef().set(dbForStorage(DB));
+  if(REMOTE_HYDRATE_PROMISE) return REMOTE_HYDRATE_PROMISE;
+  REMOTE_HYDRATE_PROMISE=(async()=>{
+    const snapshot=await remoteRef().once('value');
+    const remote=snapshot.val();
+    const keepLocalPending=isAdminUser()&&REMOTE_SAVE_PENDING;
+    if(remote&&Array.isArray(remote.teachers)&&Array.isArray(remote.schedules)){
+      const needsMigration=remote.meta?.dataNormalizationVersion!==DATA_NORMALIZATION_VERSION;
+      if(keepLocalPending){
+        normalizeDB(DB);
+        writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
+      }else{
+        DB=normalizeDB(remote);
+        writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
+        // Versiyon eskiyse normalize edilmiş veriyi Firebase'e geri yaz (bir kez)
+        if(needsMigration&&isAdminUser()) await remoteRef().set(dbForStorage(DB)).catch(()=>{});
+      }
+    }else{
+      if(keepLocalPending){
+        normalizeDB(DB);
+      }else{
+        // Firebase'de veri yok — boş veritabanıyla başla, seed yükleme yok
+        DB=makeEmptyDB();
+      }
+      writeStorage(STORAGE_KEY, JSON.stringify(dbForStorage(DB)));
+      if(isAdminUser()&&!REMOTE_SAVE_PENDING) await remoteRef().set(dbForStorage(DB));
+    }
+    REMOTE_READY=true;
+    clearTimeout(REMOTE_RETRY_TIMER);
+    showSyncState('Bulut bağlı','success');
+    if(REMOTE_SAVE_PENDING&&isAdminUser()) await pushRemoteDB();
+  })();
+  try{
+    return await REMOTE_HYDRATE_PROMISE;
+  }finally{
+    REMOTE_HYDRATE_PROMISE=null;
   }
-  REMOTE_READY=true;
-  showSyncState('Bulut bağlı','success');
 }
 function fnv1a32(str){
   let h=2166136261;
@@ -333,6 +376,8 @@ function maskTc(identityNo){
 }
 function getEl(id){ return document.getElementById(id); }
 function escapeHtml(v){ return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function escapeJsString(v){ return String(v??'').replace(/[\\'"\n\r\u2028\u2029]/g,ch=>({'\\':'\\\\',"'":"\\'",'"':'\\"','\n':'\\n','\r':'\\r','\u2028':'\\u2028','\u2029':'\\u2029'}[ch])); }
+function escapeInlineJsString(v){ return escapeHtml(escapeJsString(v)); }
 function normalizeText(v){ return String(v||'').toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').trim(); }
 function plainKey(v){ return normalizeText(v).replace(/ı/g,'i').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); }
 function cleanClassName(v){ const raw=String(v||'').toLocaleUpperCase('tr-TR').replace(/\s+/g,''); const m=raw.match(/^(\d{1,2})([A-ZÇĞİÖŞÜ])$/); return m?`${m[1]}${m[2]}`:raw; }
@@ -586,6 +631,9 @@ async function login(){
 }
 async function logout(){
   clearSession();
+  clearTimeout(REMOTE_SAVE_TIMER);
+  clearTimeout(REMOTE_RETRY_TIMER);
+  REMOTE_SAVE_PENDING=false;
   APP_STARTED=false;
   REMOTE_READY=false;
   CURRENT_USER=null;

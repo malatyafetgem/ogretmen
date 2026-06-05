@@ -1,11 +1,11 @@
 function hydrateStaticSelects(){
   const days=schoolDays(), hours=schoolHours();
-  const dayBlank='<option value="">Seçiniz</option>'+days.map(d=>`<option value="${d}">${d}</option>`).join('');
+  const dayBlank='<option value="">Seçiniz</option>'+days.map(d=>`<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
   ['tFreeDay','tDutyDay','sDay'].forEach(id=>{ const el=getEl(id); if(el) el.innerHTML=dayBlank; });
-  const dayFilter=getEl('scheduleDayFilter'); if(dayFilter) dayFilter.innerHTML='<option value="">Tüm Günler</option>'+days.map(d=>`<option value="${d}">${d}</option>`).join('');
-  const teacherDay=getEl('teacherProfileDay'), teacherDayValue=teacherDay?.value||todayName()||days[0]; if(teacherDay) teacherDay.innerHTML=days.map(d=>`<option value="${d}" ${d===teacherDayValue?'selected':''}>${d}</option>`).join('');
-  const hourEl=getEl('sHour'); if(hourEl) hourEl.innerHTML=hours.map(h=>`<option value="${h}">${h}. Ders</option>`).join('');
-  const hourFilter=getEl('scheduleHourFilter'); if(hourFilter) hourFilter.innerHTML='<option value="">Tüm Saatler</option>'+hours.map(h=>`<option value="${h}">${h}. Ders</option>`).join('');
+  const dayFilter=getEl('scheduleDayFilter'); if(dayFilter) dayFilter.innerHTML='<option value="">Tüm Günler</option>'+days.map(d=>`<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+  const teacherDay=getEl('teacherProfileDay'), teacherDayValue=teacherDay?.value||todayName()||days[0]; if(teacherDay) teacherDay.innerHTML=days.map(d=>`<option value="${escapeHtml(d)}" ${d===teacherDayValue?'selected':''}>${escapeHtml(d)}</option>`).join('');
+  const hourEl=getEl('sHour'); if(hourEl) hourEl.innerHTML=hours.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}. Ders</option>`).join('');
+  const hourFilter=getEl('scheduleHourFilter'); if(hourFilter) hourFilter.innerHTML='<option value="">Tüm Saatler</option>'+hours.map(h=>`<option value="${escapeHtml(h)}">${escapeHtml(h)}. Ders</option>`).join('');
   fillDynamicSelects();
 }
 function fillDynamicSelects(){
@@ -21,13 +21,13 @@ function fillDynamicSelects(){
   const taskKinds=['Kulüp','Kurul','Komisyon','Zümre Başkanlığı','Belirli Gün ve Haftalar','Diğer',...(DB.tasks||[]).map(t=>t.kind||'Genel')];
   const taskKindList=getEl('taskKindOptions'); if(taskKindList) taskKindList.innerHTML=[...new Set(taskKinds.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr')).map(k=>`<option value="${escapeHtml(k)}"></option>`).join('');
   const grades=[...new Set((DB.settings.classes||CLASS_LIST).map(c=>classGrade(c)).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)||String(a).localeCompare(String(b),'tr'));
-  const gf=getEl('scheduleGradeFilter'), gfValue=gf?.value||''; if(gf){ gf.innerHTML='<option value="">Tüm Seviyeler</option>'+grades.map(g=>`<option value="${g}">${g}. Sınıflar</option>`).join(''); keepValue(gf,gfValue); }
+  const gf=getEl('scheduleGradeFilter'), gfValue=gf?.value||''; if(gf){ gf.innerHTML='<option value="">Tüm Seviyeler</option>'+grades.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}. Sınıflar</option>`).join(''); keepValue(gf,gfValue); }
   const selectedGrade=getEl('scheduleGradeFilter')?.value||'';
   const scheduleClasses=(DB.settings.classes||CLASS_LIST).filter(c=>!selectedGrade||classGrade(c)===String(selectedGrade));
-  const cOpts='<option value="">Tüm Sınıflar</option>'+scheduleClasses.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const cOpts='<option value="">Tüm Sınıflar</option>'+scheduleClasses.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   const cf=getEl('scheduleClassFilter'), cfValue=cf?.value||''; if(cf){ cf.innerHTML=cOpts; keepValue(cf,cfValue); }
-  const sc=getEl('sClass'), scValue=sc?.value||''; if(sc){ sc.innerHTML=DB.settings.classes.map(c=>`<option value="${c}">${c}</option>`).join(''); keepValue(sc,scValue); }
-  const cps=getEl('classProfileSelect'), cpsValue=cps?.value||''; if(cps){ cps.innerHTML=DB.settings.classes.map(c=>`<option value="${c}">${c}</option>`).join(''); keepValue(cps,cpsValue||DB.settings.classes[0]||''); }
+  const sc=getEl('sClass'), scValue=sc?.value||''; if(sc){ sc.innerHTML=DB.settings.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); keepValue(sc,scValue); }
+  const cps=getEl('classProfileSelect'), cpsValue=cps?.value||''; if(cps){ cps.innerHTML=DB.settings.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); keepValue(cps,cpsValue||DB.settings.classes[0]||''); }
 }
 function sTab(id){
   if(['schedule','duty','tasks'].includes(id)){ window.reportMode=id; id='reports'; }

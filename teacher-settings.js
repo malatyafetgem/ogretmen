@@ -149,7 +149,7 @@ function buildDutySettings(){
 }
 
 function dutyPlaceRow(place,index,assignments={}){
-  const cells=schoolDays().map(day=>`<td><select class="form-select form-select-sm duty-teacher-select" data-day="${day}">${teacherSelectOptions(assignments[`${place}__${day}`]||'', 'Boş')}</select></td>`).join('');
+  const cells=schoolDays().map(day=>`<td><select class="form-select form-select-sm duty-teacher-select" data-day="${escapeHtml(day)}">${teacherSelectOptions(assignments[`${place}__${day}`]||'', 'Boş')}</select></td>`).join('');
   return `<tr class="duty-place-row" data-row="${index}"><td class="place-cell"><input class="form-control form-control-sm duty-place-input" value="${escapeHtml(place)}" placeholder="Nöbet yeri"></td>${cells}<td class="no-print"><button class="btn btn-sm btn-outline-danger" onclick="removeSettingsRow(this)">Sil</button></td></tr>`;
 }
 
@@ -170,7 +170,7 @@ function saveDutyMatrix(){
     placeKeys.add(key);
     places.push(place);
     for(const day of schoolDays()){
-      const teacherId=row.querySelector(`select[data-day="${day}"]`)?.value||'';
+      const teacherId=[...row.querySelectorAll('.duty-teacher-select')].find(select=>select.dataset.day===day)?.value||'';
       if(!teacherId) continue;
       if(usedTeachers.has(teacherId)){ showToast('Bir öğretmen aynı nöbet çizelgesinde yalnızca bir kez seçilebilir.','warning',5000); return; }
       usedTeachers.add(teacherId);
@@ -197,11 +197,19 @@ function buildClassProgramSettings(dayValue){
   return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div><div class="settings-editor-body"><div class="settings-scroll-hint no-print"><i class="fas fa-arrows-left-right"></i> Yana kaydırın</div><div class="settings-filter-row"><div><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div><div id="classProgramConflictWarning" class="class-program-conflict mt-3"></div><div class="settings-table-scroll settings-table-scroll-wide mt-3"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th class="text-center">${h}.<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
 }
 
+function classProgramSlotItems(className,day,hour){
+  return DB.schedules.filter(s=>s.className===className&&s.day===day&&Number(s.hour)===Number(hour));
+}
+
 function classProgramRow(className,originalClass,day,index){
   const hours=schoolHours();
   const cells=hours.map(hour=>{
-    const item=DB.schedules.find(s=>s.className===className&&s.day===day&&Number(s.hour)===Number(hour));
-    return `<td class="class-program-slot"><div class="class-program-cell"><select class="form-select form-select-sm class-program-teacher" data-hour="${hour}" onchange="updateClassProgramSubjectSelect(this); updateClassProgramConflictWarnings()">${teacherSelectOptions(item?.teacherId||'', 'Boş')}</select><select class="form-select form-select-sm class-program-subject" data-hour="${hour}" onchange="updateClassProgramConflictWarnings()" ${item?.teacherId?'':'disabled'}>${classProgramSubjectOptions(item?.teacherId||'', item?.subject||'')}</select></div></td>`;
+    const items=classProgramSlotItems(className,day,hour);
+    const item=items[0]||null;
+    const preserveMulti=items.length>1;
+    const disabled=preserveMulti?' disabled title="Bu saatte birden fazla kayıt var; ayrıntılı ders programı ekranından düzenleyin."':'';
+    const note=preserveMulti?`<small class="text-muted">${items.length} kayıt - ayrıntılı düzenleyin</small>`:'';
+    return `<td class="class-program-slot"><div class="class-program-cell${preserveMulti?' class-program-cell-multi':''}" data-preserve-multi="${preserveMulti?'1':'0'}"><select class="form-select form-select-sm class-program-teacher" data-hour="${hour}" onchange="updateClassProgramSubjectSelect(this); updateClassProgramConflictWarnings()"${disabled}>${teacherSelectOptions(item?.teacherId||'', 'Boş')}</select><select class="form-select form-select-sm class-program-subject" data-hour="${hour}" onchange="updateClassProgramConflictWarnings()" ${(item?.teacherId&&!preserveMulti)?'':'disabled'}>${classProgramSubjectOptions(item?.teacherId||'', item?.subject||'')}</select>${note}</div></td>`;
   }).join('');
   return `<tr class="class-program-row" data-original-class="${escapeHtml(originalClass||'')}" data-row="${index}"><td class="place-cell"><input class="form-control form-control-sm class-name-input" value="${escapeHtml(className||'')}" placeholder="Örn: 9A"></td>${cells}<td class="no-print"><button class="btn btn-sm btn-outline-danger" onclick="removeSettingsRow(this)">Sil</button></td></tr>`;
 }
@@ -236,6 +244,7 @@ function classProgramSubjectOptions(teacherId='', selectedSubject=''){
 
 function updateClassProgramSubjectSelect(teacherSelect){
   const cell=teacherSelect?.closest('.class-program-cell');
+  if(cell?.dataset.preserveMulti==='1') return;
   const subjectSelect=cell?.querySelector('.class-program-subject');
   if(!subjectSelect) return;
   const teacherId=teacherSelect.value||'';
@@ -254,9 +263,10 @@ function updateClassProgramConflictWarnings(){
     document.querySelectorAll('#classProgramBody .class-program-row').forEach(row=>{
       const className=cleanClassName(row.querySelector('.class-name-input')?.value||'');
       const teacherSelect=row.querySelector(`.class-program-teacher[data-hour="${hour}"]`);
+      const cell=teacherSelect?.closest('.class-program-cell');
+      if(cell?.dataset.preserveMulti==='1') return;
       const teacherId=teacherSelect?.value||'';
       if(!className||!teacherId) return;
-      const cell=teacherSelect.closest('.class-program-cell');
       if(used.has(teacherId)){
         const previous=used.get(teacherId);
         previous.cell?.classList.add('has-conflict');
@@ -305,7 +315,9 @@ function saveClassProgramMatrix(){
   for(const hour of schoolHours()){
     const used=new Map();
     for(const item of maps){
-      const teacherId=item.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`)?.value||'';
+      const teacherSelect=item.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`);
+      if(teacherSelect?.closest('.class-program-cell')?.dataset.preserveMulti==='1') continue;
+      const teacherId=teacherSelect?.value||'';
       if(!teacherId) continue;
       if(used.has(teacherId)){
         showToast(`${day} ${hour}. derste aynı öğretmen birden fazla sınıfa seçilmiş.`, 'warning', 6000);
@@ -316,7 +328,9 @@ function saveClassProgramMatrix(){
   }
   for(const item of maps){
     for(const hour of schoolHours()){
-      const teacherId=item.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`)?.value||'';
+      const teacherSelect=item.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`);
+      if(teacherSelect?.closest('.class-program-cell')?.dataset.preserveMulti==='1') continue;
+      const teacherId=teacherSelect?.value||'';
       const subject=item.row.querySelector(`.class-program-subject[data-hour="${hour}"]`)?.value||'';
       if(teacherId&&!subject){
         showToast(`${item.className} ${hour}. derste ders seçilmemiş.`, 'warning', 5000);
@@ -325,19 +339,30 @@ function saveClassProgramMatrix(){
     }
   }
   maps.forEach(m=>{ if(m.oldName&&m.oldName!==m.className) DB.schedules.forEach(s=>{ if(s.className===m.oldName) s.className=m.className; }); });
+  const preservedSchedules=[];
+  maps.forEach(m=>{
+    schoolHours().forEach(hour=>{
+      const teacherSelect=m.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`);
+      if(teacherSelect?.closest('.class-program-cell')?.dataset.preserveMulti!=='1') return;
+      classProgramSlotItems(m.className,day,hour).forEach(s=>preservedSchedules.push({...s}));
+    });
+  });
   const allowed=new Set(classNames), oldSet=new Set(oldClasses);
   DB.schedules=DB.schedules.filter(s=>!(oldSet.has(s.className)&&!allowed.has(s.className)));
   // Remove existing entries for this day for all managed classes
   DB.schedules=DB.schedules.filter(s=>!(allowed.has(s.className)&&s.day===day));
   maps.forEach(m=>{
     schoolHours().forEach(hour=>{
-      const teacherId=m.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`)?.value||'';
+      const teacherSelect=m.row.querySelector(`.class-program-teacher[data-hour="${hour}"]`);
+      if(teacherSelect?.closest('.class-program-cell')?.dataset.preserveMulti==='1') return;
+      const teacherId=teacherSelect?.value||'';
       if(!teacherId) return;
       const subject=m.row.querySelector(`.class-program-subject[data-hour="${hour}"]`)?.value||'';
       const time=lessonTimeByHour(hour);
       DB.schedules.push({id:uid('s'),teacherId,className:m.className,subject:normalizeSubjectName(subject, teacherId),day,hour,startTime:time?.start||'',endTime:time?.end||'',note:''});
     });
   });
+  DB.schedules.push(...preservedSchedules);
   DB.settings.classes=classNames;
   saveDB();
   renderAll();
@@ -661,7 +686,7 @@ function processTeacherImport(){
     return { col: r.col, label: r.label, fieldKey: sys ? sys.fieldKey : null };
   });
 
-  const toAdd = [], toUpdate = [], errRows = [];
+  const toAdd = [], toUpdate = [], updateOldIds = [], errRows = [];
   const tcSeen = new Set();
 
   _tiExcelData.forEach((row, idx) => {
@@ -707,11 +732,13 @@ function processTeacherImport(){
       else                              rec.extraFields[m.label] = val; // serbest alan
     });
 
-    if(existing) toUpdate.push(rec);
-    else toAdd.push(rec);
+    if(existing){
+      toUpdate.push(rec);
+      updateOldIds.push(existing.id);
+    }else toAdd.push(rec);
   });
 
-  _tiPendingData = { toAdd, toUpdate, errRows, extraMappings };
+  _tiPendingData = { toAdd, toUpdate, updateOldIds, errRows, extraMappings };
 
   // ── Önizleme ──
   let html = `<div class="ti-preview-summary">
@@ -757,11 +784,17 @@ function processTeacherImport(){
 function confirmTeacherImport(){
   if(!requireSettingsAdmin()) return;
   if(!_tiPendingData){ cancelTeacherImport(); return; }
-  const { toAdd, toUpdate } = _tiPendingData;
+  const { toAdd, toUpdate, updateOldIds=[] } = _tiPendingData;
   showBusyState('Öğretmen kayıtları işleniyor','Yeni ve güncellenecek kayıtlar kaydediliyor.');
 
-  toUpdate.forEach(rec => {
-    const idx = DB.teachers.findIndex(t => t.id === rec.id || String(t._tcRaw||'') === rec._tcRaw);
+  toUpdate.forEach((rec,index) => {
+    const oldId=updateOldIds[index]||'';
+    if(oldId&&oldId!==rec.id){
+      DB.schedules.forEach(s=>{ if(s.teacherId===oldId) s.teacherId=rec.id; });
+      (DB.tasks||[]).forEach(task=>{ if(task.teacherId===oldId) task.teacherId=rec.id; });
+      if(typeof selectedTeacherId!=='undefined'&&selectedTeacherId===oldId) selectedTeacherId=rec.id;
+    }
+    const idx = DB.teachers.findIndex(t => t.id === oldId || t.id === rec.id || String(t._tcRaw||'') === rec._tcRaw);
     if(idx >= 0) DB.teachers[idx] = rec;
     else DB.teachers.push(rec);
   });

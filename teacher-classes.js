@@ -2,7 +2,7 @@ let selectedClassName='';
 
 function classLink(className,label=''){
   const cls=cleanClassName(className);
-  return `<a href="#classes" class="teacher-name-link" onclick="return goClassProfile('${escapeHtml(cls)}')">${escapeHtml(label||cls)}</a>`;
+  return `<a href="#classes" class="teacher-name-link" onclick="return goClassProfile('${escapeInlineJsString(cls)}')">${escapeHtml(label||cls)}</a>`;
 }
 
 function goClassProfile(className){
@@ -43,7 +43,7 @@ function buildClassProgramContent(cls){
   // Bugün ders günüyse o günü, değilse haftalık başlat
   const useDay=today&&days.includes(today);
   const activeDay=useDay?today:'';
-  const dayBtns=days.map(d=>`<button class="prog-mode-btn${activeDay===d?' prog-mode-active':''}" data-class-day="${escapeHtml(d)}" onclick="selectClassDay('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
+  const dayBtns=days.map(d=>`<button class="prog-mode-btn${activeDay===d?' prog-mode-active':''}" data-class-day="${escapeHtml(d)}" onclick="selectClassDay('${escapeInlineJsString(d)}')">${escapeHtml(d)}</button>`).join('');
   const weeklyActive=!useDay?' prog-mode-active':'';
   const btns=`<div class="program-mode-btns" id="classProgramModeBtns">${dayBtns}<button class="prog-mode-btn${weeklyActive}" data-class-day="weekly" onclick="setClassProgramMode('weekly')">Haftalık</button></div>`;
   let initialContent='';

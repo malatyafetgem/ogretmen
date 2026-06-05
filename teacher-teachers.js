@@ -2,7 +2,7 @@ let selectedTeacherId='';
 
 function teacherLink(t,label=''){
   if(!t) return '<span class="text-muted">—</span>';
-  return `<a href="#teachers" class="teacher-name-link" onclick="event.stopPropagation(); return goTeacherProfile('${escapeHtml(t.id)}')">${escapeHtml(label||teacherName(t))}</a>`;
+  return `<a href="#teachers" class="teacher-name-link" onclick="event.stopPropagation(); return goTeacherProfile('${escapeInlineJsString(t.id)}')">${escapeHtml(label||teacherName(t))}</a>`;
 }
 
 function renderDashboard(){
@@ -55,8 +55,8 @@ function renderDashboardSearch(){
   const teacherRows=sortedTeachers().filter(t=>normalizeText(`${teacherName(t)} ${t.branch}`).includes(q)).slice(0,8);
   const classRows=(DB.settings.classes||CLASS_LIST).filter(cls=>normalizeText(cls).includes(q)).slice(0,8);
   const items=[
-    ...teacherRows.map(t=>`<button class="search-result-item" onclick="goTeacherProfile('${escapeHtml(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`),
-    ...classRows.map(cls=>`<button class="search-result-item" onclick="goClassProfile('${escapeHtml(cls)}')"><i class="fas fa-users"></i><span><strong>${escapeHtml(cls)}</strong><small>Sınıf profiline git</small></span><span class="search-result-select">Seç</span></button>`)
+    ...teacherRows.map(t=>`<button class="search-result-item" onclick="goTeacherProfile('${escapeInlineJsString(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`),
+    ...classRows.map(cls=>`<button class="search-result-item" onclick="goClassProfile('${escapeInlineJsString(cls)}')"><i class="fas fa-users"></i><span><strong>${escapeHtml(cls)}</strong><small>Sınıf profiline git</small></span><span class="search-result-select">Seç</span></button>`)
   ];
   target.innerHTML=items.length?`<div class="search-result-list">${items.join('')}</div>`:emptyState('Aramaya uygun öğretmen veya sınıf bulunamadı.');
 }
@@ -72,7 +72,7 @@ function renderTeacherSearch(){
   const q=normalizeText(input.value||'');
   if(!q){ target.innerHTML=''; return; }
   const teacherRows=sortedTeachers().filter(t=>normalizeText(`${teacherName(t)} ${t.branch}`).includes(q)).slice(0,8);
-  const items=teacherRows.map(t=>`<button class="search-result-item" onclick="selectTeacherFromSearch('${escapeHtml(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`);
+  const items=teacherRows.map(t=>`<button class="search-result-item" onclick="selectTeacherFromSearch('${escapeInlineJsString(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`);
   target.innerHTML=items.length?`<div class="search-result-list">${items.join('')}</div>`:emptyState('Aramaya uygun öğretmen bulunamadı.');
 }
 function selectTeacherFromSearch(id){
@@ -173,7 +173,7 @@ function buildTeacherProgramContent(id, initialDay=''){
   const days=schoolDays();
   // Bugün ders günüyse o gün aktif, değilse haftalık
   const useDay=initialDay&&days.includes(initialDay);
-  const dayBtns=days.map(d=>`<button class="prog-mode-btn${useDay&&d===initialDay?' prog-mode-active':''}" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeHtml(d)}')">${escapeHtml(d)}</button>`).join('');
+  const dayBtns=days.map(d=>`<button class="prog-mode-btn${useDay&&d===initialDay?' prog-mode-active':''}" data-mode="${escapeHtml(d)}" onclick="selectDayFromProgram('${escapeInlineJsString(d)}')">${escapeHtml(d)}</button>`).join('');
   const weeklyActive=!useDay?' prog-mode-active':'';
   const btns=`<div class="program-mode-btns" id="programModeBtns">${dayBtns}<button class="prog-mode-btn${weeklyActive}" data-mode="weekly" onclick="setProgramMode('weekly')">Haftalık</button></div>`;
   const t=teacherById(id);
@@ -332,12 +332,33 @@ function deleteTeacher(id){
 }
 
 function formatPhone(phone){
-  if(!phone) return '—';
-  const digits=phone.replace(/\D/g,'');
-  // Başında 0 yoksa ekle (10 haneli Türk numarası için)
-  const display=digits.length===10?'0'+digits:(digits.length===11&&digits.startsWith('0')?digits:'0'+digits);
-  const tel=digits.length===10?'+90'+digits:(digits.startsWith('90')?'+'+digits:'+90'+digits.replace(/^0/,''));
-  return `<a href="tel:${tel}" class="contact-link"><i class="fas fa-phone me-1"></i>${display}</a>`;
+  const raw=String(phone||'').trim();
+  if(!raw) return '—';
+  const digits=raw.replace(/\D/g,'');
+  if(!digits) return escapeHtml(raw);
+  const displayTr=national=>`${national.slice(0,4)} ${national.slice(4,7)} ${national.slice(7,9)} ${national.slice(9,11)}`;
+  let tel='', display='';
+  if(digits.length===10){
+    const national='0'+digits;
+    tel='+90'+digits;
+    display=displayTr(national);
+  }else if(digits.length===11&&digits.startsWith('0')){
+    tel='+90'+digits.slice(1);
+    display=displayTr(digits);
+  }else if(digits.length===12&&digits.startsWith('90')){
+    const national='0'+digits.slice(2);
+    tel='+'+digits;
+    display=displayTr(national);
+  }else if(digits.length>8&&digits.startsWith('00')){
+    tel='+'+digits.slice(2);
+    display=tel;
+  }else if(raw.startsWith('+')&&digits.length>8){
+    tel='+'+digits;
+    display=tel;
+  }else{
+    return escapeHtml(raw);
+  }
+  return `<a href="tel:${escapeHtml(tel)}" class="contact-link"><i class="fas fa-phone me-1"></i>${escapeHtml(display)}</a>`;
 }
 function formatEmail(email){
   if(!email) return '—';
