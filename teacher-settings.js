@@ -69,7 +69,22 @@ function buildImportSettings(){
 }
 
 function buildBackupSettings(){
-  return `<div class="card obs-panel h-100"><div class="card-header"><h3 class="card-title">Yedekleme</h3></div><div class="card-body d-grid gap-2"><button class="btn btn-outline-primary" onclick="exportBackup()">Yedeği İndir</button><input type="file" class="form-control" accept=".json" onchange="importBackup(event)"><button class="btn btn-outline-danger" onclick="resetAllData()">Tüm Verileri Sıfırla</button></div></div>`;
+  return `<div class="card obs-panel h-100"><div class="card-header"><h3 class="card-title">Yedekleme & Dışa Aktar</h3></div><div class="card-body d-grid gap-2">
+    <div class="import-block">
+      <h4>JSON Yedekleme</h4>
+      <button class="btn btn-outline-primary w-100" onclick="exportBackup()"><i class="fas fa-download me-1"></i>Yedeği İndir</button>
+      <input type="file" class="form-control mt-2" accept=".json" onchange="importBackup(event)">
+    </div>
+    <div class="import-block">
+      <h4>Excel'e Aktar</h4>
+      <p class="text-muted small">Tüm öğretmen bilgileri, ders programı ve görevler ayrı sayfalar halinde Excel dosyasına aktarılır.</p>
+      <button class="btn btn-outline-success w-100" onclick="exportToExcel()"><i class="fas fa-file-excel me-1"></i>Excel İndir</button>
+    </div>
+    <div class="import-block">
+      <h4>Veri Sıfırlama</h4>
+      <button class="btn btn-outline-danger w-100" onclick="resetAllData()"><i class="fas fa-trash me-1"></i>Tüm Verileri Sıfırla</button>
+    </div>
+  </div></div>`;
 }
 
 function buildCalendarSettings(){
@@ -970,6 +985,94 @@ function exportBackup(){
   URL.revokeObjectURL(a.href);
   showToast('Yedek indirildi.','success');
 }
+
+function exportToExcel(){
+  if(!window.XLSX){ showToast('Excel kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.','warning',6000); return; }
+  const stamp=new Date().toISOString().slice(0,10);
+  const schoolName=DB.settings?.schoolName||'Okul';
+  const wb=XLSX.utils.book_new();
+
+  // ── 1. Sayfa: Öğretmen Bilgileri ──
+  const teacherHeaders=['Ad','Soyad','T.C. Kimlik No','Branş','Rol','Telefon','E-posta','Sınıf Öğretmenliği','Kulüp','Proje','Nöbet Günü','Nöbet Yeri','Boş Gün','Program Notu','Verdiği Dersler'];
+  const teacherRows=sortedTeachers().map(t=>[
+    t.firstName||'',
+    t.lastName||'',
+    t._tcRaw||'',
+    t.branch||'',
+    t.role||'',
+    t.phone||'',
+    t.email||'',
+    t.classAdvisor||'',
+    t.club||'',
+    t.project||'',
+    t.dutyDay||'',
+    t.dutyPlace||'',
+    t.freeDay||'',
+    t.scheduleNote||'',
+    (t.subjects||[]).join(', ')
+  ]);
+  const wsTeachers=XLSX.utils.aoa_to_sheet([teacherHeaders,...teacherRows]);
+  wsTeachers['!cols']=[{wch:14},{wch:14},{wch:14},{wch:18},{wch:12},{wch:14},{wch:24},{wch:10},{wch:16},{wch:20},{wch:12},{wch:16},{wch:12},{wch:20},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,wsTeachers,'Öğretmenler');
+
+  // ── 2. Sayfa: Ders Programı ──
+  const schedHeaders=['Ad Soyad','T.C. Kimlik No','Branş','Gün','Ders Saati','Başlangıç','Bitiş','Sınıf','Ders','Not'];
+  const schedRows=[];
+  const sortedSchedules=[...DB.schedules].sort((a,b)=>{
+    const ta=teacherById(a.teacherId), tb=teacherById(b.teacherId);
+    const nameCmp=teacherName(ta).localeCompare(teacherName(tb),'tr');
+    if(nameCmp!==0) return nameCmp;
+    const days=schoolDays(); const di=days.indexOf(a.day)-days.indexOf(b.day);
+    if(di!==0) return di;
+    return Number(a.hour)-Number(b.hour);
+  });
+  sortedSchedules.forEach(s=>{
+    const t=teacherById(s.teacherId);
+    const lt=lessonTimeByHour(s.hour);
+    schedRows.push([
+      t?teacherName(t):'',
+      t?._tcRaw||'',
+      t?.branch||'',
+      s.day||'',
+      s.hour!=null?Number(s.hour):'',
+      lt?.start||'',
+      lt?.end||'',
+      s.className||'',
+      s.subject||'',
+      s.note||''
+    ]);
+  });
+  const wsSchedule=XLSX.utils.aoa_to_sheet([schedHeaders,...schedRows]);
+  wsSchedule['!cols']=[{wch:20},{wch:14},{wch:16},{wch:12},{wch:10},{wch:10},{wch:10},{wch:8},{wch:22},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,wsSchedule,'Ders Programı');
+
+  // ── 3. Sayfa: Görevler ──
+  const taskHeaders=['Ad Soyad','T.C. Kimlik No','Branş','Görev Türü','Görev Başlığı','Açıklama','Detay','Başlangıç','Bitiş'];
+  const taskRows=[...DB.tasks].sort((a,b)=>{
+    const ta=teacherById(a.teacherId), tb=teacherById(b.teacherId);
+    return teacherName(ta).localeCompare(teacherName(tb),'tr');
+  }).map(task=>{
+    const t=teacherById(task.teacherId);
+    return [
+      t?teacherName(t):'',
+      t?._tcRaw||'',
+      t?.branch||'',
+      task.kind||'',
+      task.title||'',
+      task.description||'',
+      task.details||'',
+      task.startDate||'',
+      task.endDate||''
+    ];
+  });
+  const wsTasks=XLSX.utils.aoa_to_sheet([taskHeaders,...taskRows]);
+  wsTasks['!cols']=[{wch:20},{wch:14},{wch:16},{wch:14},{wch:24},{wch:28},{wch:32},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,wsTasks,'Görevler');
+
+  XLSX.writeFile(wb,`ogretmen-${stamp}.xlsx`);
+  showToast(`Excel indirildi. ${DB.teachers.length} öğretmen · ${DB.schedules.length} ders · ${DB.tasks.length} görev`,'success');
+}
+
 function importBackup(e){
   if(!requireSettingsAdmin()){ e.target.value=''; return; }
   const f=e.target.files&&e.target.files[0];
