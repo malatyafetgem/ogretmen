@@ -87,7 +87,6 @@ function selectTeacherFromSearch(id){
   showProfileButtons(true);
   // Profil render
   showTeacherProfile(id);
-  getEl('teacherProfile')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function updateTeacherBadge(t){
   const badge=getEl('teacherSelectedBadge'); if(!badge) return;
@@ -141,7 +140,6 @@ function goTeacherProfile(id){
   showProfileButtons(true);
   sTab('teachers');
   showTeacherProfile(id);
-  setTimeout(()=>getEl('teacherProfile')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   return false;
 }
 function showTeacherProfile(id){

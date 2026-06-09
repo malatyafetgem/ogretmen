@@ -13,7 +13,6 @@ function goClassProfile(className){
   if(select) select.value=cls;
   sTab('classes');
   renderClasses();
-  setTimeout(()=>getEl('classProfileContent')?.scrollIntoView({behavior:'smooth',block:'start'}),60);
   return false;
 }
 
