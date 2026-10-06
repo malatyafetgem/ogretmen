@@ -294,7 +294,7 @@ function buildTeacherSheet(){
       }
       return dayCells.join('');
     }).join('');
-    return `<tr><th class="sheet-name" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}"><strong class="sheet-teacher-code">${escapeHtml(sheetTeacherCode(t))}</strong></th>${cells}</tr>`;
+    return `<tr><th class="sheet-name" data-duty="${escapeHtml(t.dutyDay||'')}" title="${escapeHtml(`${teacherName(t)} · ${t.branch||''}`)}"><strong class="sheet-teacher-code">${escapeHtml(sheetTeacherCode(t))}</strong></th>${cells}</tr>`;
   }).join('');
   const cellCount=days.length*hours.length;
   return `<div class="table-responsive sheet-scroll"><table class="table table-bordered schedule-sheet teacher-sheet" data-cell-count="${cellCount}"><thead><tr><th rowspan="2">Öğr.</th>${head}</tr><tr>${sub}</tr></thead><tbody>${rows}</tbody></table></div>`;

@@ -119,7 +119,7 @@ function teacherSheetFitMetrics(root, orientation) {
   const landscape = orientation !== 'A4 portrait';
   const pageW = (landscape ? 297 : 210) - MARGIN * 2;
   const pageH = (landscape ? 210 : 297) - MARGIN * 2;
-  const nameCol = 13;                     // mm
+  const nameCol = 27;                     // mm (tam ad + nöbet etiketi)
   const HEADER_MM = 18, THEAD_MM = 10.5, SAFETY_MM = 3;
   const table = root ? root.querySelector('.schedule-sheet') : null;
   const cells = table ? Number(table.dataset.cellCount || 0) || 40 : 40;
@@ -207,6 +207,71 @@ function shouldUseLandscapeForPrint(root) {
 /* ──────────────────────────────────────────────────────────────
    3. DOM HAZIRLIK FONKSİYONLARI
    ────────────────────────────────────────────────────────────── */
+
+/**
+ * Öğretmen çarşafı yazdırma klonunu düzenler: tam ad, nöbet etiketi,
+ * gün grupları (ayırıcı çizgi + dönüşümlü hafif zemin).
+ * Ekrandaki gerçek tabloya dokunmaz; yalnızca klonu değiştirir.
+ * @param {Element} root
+ */
+function prepareTeacherSheetForPrint(root, orientation) {
+  const table = root ? root.querySelector('.teacher-sheet.schedule-sheet') : null;
+  if (!table) return;
+  const esc = (typeof escapeHtml === 'function') ? escapeHtml : (x => String(x));
+
+  const headRows = table.querySelectorAll('thead tr');
+  const firstHead = headRows[0];
+  if (!firstHead) return;
+
+  // Sütun genişlikleri açıkça tanımlanır (table-layout:fixed ilk satıra bakar;
+  // tanımlanmazsa ad sütunu diğer hücreler kadar dar kalır).
+  const fit = teacherSheetFitMetrics(root, orientation);
+  const totalCells = Number(table.dataset.cellCount || 0);
+  if (totalCells > 0 && !table.querySelector('colgroup')) {
+    const colgroup = document.createElement('colgroup');
+    const nameCol = document.createElement('col');
+    nameCol.style.width = fit.nameCol + 'mm';
+    colgroup.appendChild(nameCol);
+    for (let i = 0; i < totalCells; i++) {
+      const c = document.createElement('col');
+      c.style.width = fit.cellMm.toFixed(3) + 'mm';
+      colgroup.appendChild(c);
+    }
+    table.insertBefore(colgroup, table.firstChild);
+  }
+  const dayThs = Array.prototype.filter.call(firstHead.children, th => th.hasAttribute('colspan'));
+  const perDay = dayThs.length ? (Number(dayThs[0].getAttribute('colspan')) || 1) : 1;
+  const corner = Array.prototype.find.call(firstHead.children, th => th.hasAttribute('rowspan'));
+  if (corner) corner.textContent = 'Öğretmen';
+
+  const mark = (cell, colIndex) => {
+    const day = Math.floor(colIndex / perDay);
+    cell.classList.add(day % 2 === 0 ? 'day-a' : 'day-b');
+    if (colIndex % perDay === 0) cell.classList.add('day-start');
+  };
+
+  dayThs.forEach((th, i) => mark(th, i * perDay));
+  if (headRows[1]) Array.prototype.forEach.call(headRows[1].children, (th, i) => mark(th, i));
+
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    let col = 0;
+    Array.prototype.forEach.call(tr.children, cell => {
+      if (cell.classList.contains('sheet-name')) {
+        const full = String(cell.getAttribute('title') || '').split(' · ')[0].trim();
+        const parts = full.split(/\s+/).filter(Boolean);
+        const last  = parts.length > 1 ? parts.pop() : '';
+        const first = parts.join(' ');
+        if (full) {
+          cell.innerHTML = `<span class="tsn-name">${first ? esc(first) + ' ' : ''}<b>${esc(last || (first ? '' : full))}</b></span>`;
+        }
+        return;
+      }
+      const span = Number(cell.getAttribute('colspan') || 1);
+      mark(cell, col);
+      col += span;
+    });
+  });
+}
 
 /**
  * Yazdırma klonundan gereksiz UI öğelerini doğrudan kaldırır.
@@ -1059,46 +1124,94 @@ ${isTeacherSheet ? '@page { size:'+pageOrientation+'; margin:5mm; }' : ''}
 .sheet-print.mobile-print .class-sheet .sheet-name { font-size:4pt; }
 ${fit ? `
 /* ════════════════════════════════════════
-   ÖĞRETMEN ÇARŞAFI — TEK SAYFA + NÖBET VURGUSU
+   ÖĞRETMEN ÇARŞAFI — sade, açık, tek sayfa
    yön=${pageOrientation}  satır=${fit.rowMm.toFixed(2)}mm  yazı=${fit.fs.toFixed(2)}pt
+   Renkli ve siyah-beyaz çıktıda aynı okunur: vurgu = fosforlu zemin + KALIN yazı.
    ════════════════════════════════════════ */
-.sheet-print .ph-wrap { margin-bottom:2mm; padding-bottom:1.5mm; }
-.sheet-print .ph-title { font-size:12pt; }
-.sheet-print .ph-school { margin-bottom:.8mm; }
-.sheet-print .ph-sub { margin-top:.8mm; }
+body.sheet-print { font-family:"Segoe UI","Helvetica Neue",Roboto,"Inter",Arial,sans-serif; color:#0f172a; }
+
+/* Üst başlık */
+.sheet-print .ph-wrap { margin-bottom:2.2mm; padding-bottom:1.6mm; border-bottom:1.2pt solid #1e293b; }
+.sheet-print .ph-school { font-size:6.8pt; letter-spacing:.14em; color:#64748b; margin-bottom:.6mm; }
+.sheet-print .ph-title { font-size:13pt; font-weight:800; letter-spacing:-.01em; color:#0f172a; }
+.sheet-print .ph-sub { margin-top:.6mm; }
+.sheet-print .ph-date { font-size:7pt; color:#64748b; }
+/* Gösterge: fosforlu kalemle işaretli "Nöbet günü" */
 .sheet-print .ph-title::after {
-  content:"   ·   Nöbet günü: gölgeli çerçeve ve N";
-  font-size:7pt; font-weight:700; letter-spacing:0; color:#92400e;
+  content:"Nöbet günü";
+  display:inline-block; vertical-align:middle; margin-left:5mm; padding:.3mm 2mm;
+  font-size:6.8pt; font-weight:700; letter-spacing:.02em; color:#1e293b;
+  background:linear-gradient(to bottom,transparent 12%,#fde047 12%,#fde047 88%,transparent 88%);
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
+
+/* Tablo iskeleti: açık, ince çizgili */
+.sheet-print .teacher-sheet.schedule-sheet { border:.8pt solid #334155!important; }
+.sheet-print .teacher-sheet.schedule-sheet th,
+.sheet-print .teacher-sheet.schedule-sheet td { border:.3pt solid #e2e8f0!important; }
+
+/* Başlık satırları: açık zemin, koyu yazı */
+.sheet-print .teacher-sheet.schedule-sheet thead tr:first-child th {
+  background:#eef2f7!important; color:#0f172a!important; border-color:#cbd5e1!important;
+  font-size:${Math.min(6, Math.max(4, fit.fs)).toFixed(2)}pt; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  height:5mm; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.sheet-print .teacher-sheet.schedule-sheet thead tr:first-child th[rowspan] {
+  text-align:left; padding-left:1.2mm!important; letter-spacing:.04em;
+}
+.sheet-print .teacher-sheet.schedule-sheet thead tr:nth-child(2) th {
+  background:#ffffff!important; color:#64748b; font-weight:600;
+  font-size:${Math.min(5, Math.max(3.4, fit.fs * 0.85)).toFixed(2)}pt; height:4.5mm;
+  border-bottom:.8pt solid #334155!important;
+}
+
+/* Gün grupları: belirgin ayırıcı çizgi */
+.sheet-print .teacher-sheet.schedule-sheet .day-start { border-left:.8pt solid #475569!important; }
+
+/* Gövde hücreleri: hepsi aynı sade görünüm (dolu/boş fark etmez) */
 .sheet-print .teacher-sheet.schedule-sheet tbody th,
 .sheet-print .teacher-sheet.schedule-sheet tbody td {
   height:${fit.rowMm.toFixed(2)}mm!important; min-height:0!important;
   padding:.1mm .25mm!important; line-height:1.05;
 }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.sheet-filled,
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.sheet-empty {
+  background:#ffffff!important; color:#0f172a;
+  border-top:.4pt solid #cbd5e1!important; border-bottom:.4pt solid #cbd5e1!important;
+}
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.sheet-empty { color:transparent; }
 .sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content strong,
 .sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span {
-  font-size:${fit.fs.toFixed(2)}pt; line-height:1.05; margin:0;
-  white-space:nowrap!important; overflow:hidden; text-overflow:clip;
+  line-height:1.05; margin:0; white-space:nowrap!important; overflow:hidden; text-overflow:clip;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span { font-size:${(fit.fs * 0.9).toFixed(2)}pt; }
-.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-teacher-code {
-  font-size:${fit.fs.toFixed(2)}pt; line-height:1.05; white-space:nowrap; overflow:hidden;
+/* Normal gün: sınıf adı normal kalınlık */
+.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content strong {
+  font-size:${fit.fs.toFixed(2)}pt; font-weight:400; color:#0f172a;
 }
-.sheet-print .teacher-sheet.schedule-sheet thead th { font-size:${Math.min(5.5, Math.max(3.6, fit.fs)).toFixed(2)}pt; }
+.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span {
+  font-size:${(fit.fs * 0.88).toFixed(2)}pt; font-weight:400; color:#475569; margin-top:0;
+}
 
-/* Nöbet günü: gölgeli, kalın çerçeveli blok + boş hücrelerde "N" */
-.sheet-print .duty-sheet { outline:none; }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet {
-  background:#fcd34d!important;
-  border-top:1pt solid #111827!important; border-bottom:1pt solid #111827!important;
+/* Öğretmen adı sütunu */
+.sheet-print .teacher-sheet.schedule-sheet tbody tr th.sheet-name {
+  background:#f8fafc!important; text-align:left; white-space:nowrap; overflow:hidden;
+  padding:.1mm 1mm!important; border-right:.8pt solid #334155!important;
+  border-top:.4pt solid #cbd5e1!important; border-bottom:.4pt solid #cbd5e1!important;
+  font-size:${fit.fs.toFixed(2)}pt; font-weight:500; color:#1e293b;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.duty-first { border-left:1.6pt solid #111827!important; }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.duty-last  { border-right:1.6pt solid #111827!important; }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.sheet-empty { font-size:0; color:transparent; }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.sheet-empty::after {
-  content:"N"; font-size:${fit.fs.toFixed(2)}pt; font-weight:900; color:#78350f;
+.sheet-print .teacher-sheet.schedule-sheet tbody th.sheet-name .tsn-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.1; }
+.sheet-print .teacher-sheet.schedule-sheet tbody th.sheet-name .tsn-name b { font-weight:800; color:#0f172a; }
+
+/* Nöbet günü: fosforlu kalemle çizilmiş şerit + KALIN sınıf adı (S/B çıktıda da ayırt edilir) */
+.sheet-print .duty-sheet { outline:none; }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet {
+  background:linear-gradient(to bottom,#ffffff 0,#ffffff 12%,#fde047 12%,#fde047 88%,#ffffff 88%,#ffffff 100%)!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet .sheet-cell-content strong,
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet strong { font-weight:800; color:#0f172a; }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet span { color:#334155; }
 ` : ''}
 `;
 }
@@ -1775,6 +1888,7 @@ function printDocument(options) {
     // DOM hazırlık
     const rootClone = root.cloneNode(true);
     expandScrollableAreas(rootClone);
+    if (opts.type === 'teacher-sheet') prepareTeacherSheetForPrint(rootClone, orientation);
     openDisclosureForPrint(rootClone);
     prepareProfileProgramForPrint(rootClone, opts);
     normalizeProgramListForPrint(rootClone, opts);

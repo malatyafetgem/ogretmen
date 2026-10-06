@@ -1,1 +1,1 @@
-const APP_VERSION = 'R32';
+const APP_VERSION = 'R34';
