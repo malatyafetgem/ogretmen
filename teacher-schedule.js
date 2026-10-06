@@ -11,7 +11,7 @@ function openScheduleModal(id=''){
   getEl('scheduleId').value=s?.id||'';
   const teacherId=s?.teacherId||sortedTeachers()[0]?.id||'';
   getEl('sTeacher').value=teacherId;
-  getEl('sClass').value=s?.className||DB.settings.classes[0];
+  getEl('sClass').value=s?.className||sortedClassList(DB.settings.classes)[0];
   getEl('sDay').value=s?.day||schoolDays()[0];
   getEl('sHour').value=s?.hour||schoolHours()[0]||1;
   getEl('sNote').value=s?.note||'';
@@ -35,9 +35,11 @@ function fillScheduleSubjectSelect(teacherId, selectedSubject=''){
   const allSubjects=subjectSettings().map(s=>s.name);
   // Öğretmenin dersleri önce, sonra geri kalanlar (tekrar etmeden)
   const teacherKeys=new Set(teacherSubjects.map(s=>plainKey(s)));
-  const others=allSubjects.filter(s=>!teacherKeys.has(plainKey(s)));
+  const others=allSubjects.filter(s=>!teacherKeys.has(plainKey(s))).sort((a,b)=>a.localeCompare(b,'tr'));
+  const defaultSubject=teacherSubjects[0];
+  const sortedTeacherSubjects=teacherSubjects.slice().sort((a,b)=>String(a).localeCompare(String(b),'tr'));
   const opts=[
-    ...teacherSubjects.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`),
+    ...sortedTeacherSubjects.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`),
     others.length && teacherSubjects.length ? '<option disabled>──────────</option>' : '',
     ...others.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
   ].filter(Boolean).join('');
@@ -46,7 +48,7 @@ function fillScheduleSubjectSelect(teacherId, selectedSubject=''){
   if(selectedSubject && [...select.options].some(o=>o.value===selectedSubject)){
     select.value=selectedSubject;
   } else if(teacherSubjects.length){
-    select.value=teacherSubjects[0];
+    select.value=defaultSubject;
   }
 }
 
@@ -282,7 +284,7 @@ function buildTeacherSheet(){
             span++;
           }
         }
-        const duty=t.dutyDay===d?' duty-sheet':'';
+        const duty=t.dutyDay===d?' duty-sheet'+(i===0?' duty-first':'')+(i+span-1===hours.length-1?' duty-last':''):'';
         const classes=[...new Set(slot.map(s=>s.className))].join('/');
         const subjects=[...new Set(slot.map(s=>sheetSubjectCode(s.subject)))].join('/');
         const title=slot.map(s=>`${s.subject} ${s.className}`).join(' | ') || (t.dutyDay===d?'Nöbet günü':'');
@@ -471,7 +473,7 @@ function classGrade(className){
 }
 
 function filteredClassList(f=scheduleFilters()){
-  return (DB.settings.classes||CLASS_LIST).filter(c=>(!f.className||c===f.className)&&(!f.grade||classGrade(c)===String(f.grade)));
+  return sortedClassList(DB.settings.classes||CLASS_LIST).filter(c=>(!f.className||c===f.className)&&(!f.grade||classGrade(c)===String(f.grade)));
 }
 
 function isTeacherFreeAt(teacherId, day, hour){

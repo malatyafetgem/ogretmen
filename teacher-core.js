@@ -15,7 +15,7 @@ const LESSON_TIMES = [
 const CLASS_LIST = ['9A','9B','9C','9D','10A','10B','10C','10D','11A','11B','11C','11D','12A','12B'];
 const CLASS_MIGRATION_VERSION = 'classes-no-12cd-v1';
 const DATA_NORMALIZATION_VERSION = 'subject-secmeli-migration-v2';
-const TEACHER_FIELDS = ['ADI','SOYADI','T.C. KİMLİK NO','BRANŞI','CEP TELEFONU','E-POSTA','SINIFI','KULÜP','PROJE','BOŞ GÜN','NÖBET GÜNÜ','NÖBET YERİ','DERS PROGRAMI'];
+const TEACHER_FIELDS = ['ADI','SOYADI','T.C. KİMLİK NO','BRANŞI','SINIFI','KULÜP','PROJE','BOŞ GÜN','NÖBET GÜNÜ','NÖBET YERİ','DERS PROGRAMI'];
 const SCHEDULE_IMPORT_FIELDS = ['SINIF','GÜN','DERS SAATİ','ÖĞRETMEN T.C.','ÖĞRETMEN','DERS','BAŞLANGIÇ','BİTİŞ','NOT'];
 const SUBJECT_CATALOG = [
   ['Beden Eğitimi ve Spor','BED'],
@@ -125,6 +125,13 @@ function normalizeDB(d){
   d.meta.dataNormalizationVersion=DATA_NORMALIZATION_VERSION;
   return d;
 }
+function classOrderCompare(a,b){
+  const pa=String(a||'').match(/^(\d+)(.*)$/), pb=String(b||'').match(/^(\d+)(.*)$/);
+  const ga=pa?Number(pa[1]):Infinity, gb=pb?Number(pb[1]):Infinity;
+  if(ga!==gb) return ga<gb?-1:1;
+  return String(pa?pa[2]:a||'').localeCompare(String(pb?pb[2]:b||''),'tr');
+}
+function sortedClassList(list){ return (Array.isArray(list)?list:[]).slice().sort(classOrderCompare); }
 function normalizeClassSettings(classes, meta={}){
   let list=Array.isArray(classes)&&classes.length ? classes.map(cleanClassName).filter(Boolean) : [...CLASS_LIST];
   if(meta.classMigrationVersion!==CLASS_MIGRATION_VERSION){
@@ -132,7 +139,7 @@ function normalizeClassSettings(classes, meta={}){
     meta.classMigrationVersion=CLASS_MIGRATION_VERSION;
   }
   const seen=new Set();
-  return list.filter(cls=>{ if(seen.has(cls)) return false; seen.add(cls); return true; });
+  return sortedClassList(list.filter(cls=>{ if(seen.has(cls)) return false; seen.add(cls); return true; }));
 }
 function normalizeDaySettings(days){
   const source=Array.isArray(days)&&days.length ? days : DAY_NAMES;
@@ -481,6 +488,8 @@ function normalizeTeacherRecord(t){
   rec.role=resolveTeacherRole({...rec, firstName:parts.first, lastName:parts.last});
   if(rawTc) rec._tcRaw=rawTc; else delete rec._tcRaw;
   delete rec.identityNo;
+  delete rec.phone;
+  delete rec.email;
   return rec;
 }
 function subjectInfo(subject){
@@ -529,9 +538,7 @@ function teacherCompare(a,b){ return teacherName(a).localeCompare(teacherName(b)
 function sortedTeachers(list=DB.teachers){ return (Array.isArray(list)?list:[]).slice().sort(teacherCompare); }
 function classCompare(a,b){
   const ca=cleanClassName(typeof a==='string'?a:a?.className), cb=cleanClassName(typeof b==='string'?b:b?.className);
-  const classes=DB?.settings?.classes||CLASS_LIST, ia=classes.indexOf(ca), ib=classes.indexOf(cb);
-  if(ia>=0 || ib>=0) return (ia>=0?ia:9999)-(ib>=0?ib:9999);
-  return ca.localeCompare(cb,'tr',{numeric:true});
+  return classOrderCompare(ca,cb);
 }
 function branchList(){ return [...new Set(DB.teachers.map(t=>t.branch).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr')); }
 function dutyPlaceList(){
@@ -587,7 +594,7 @@ function teacherFromRow(row){
   const get=(...ks)=>{ for(const k of ks){ const v=lookup[mapHeaderKey(k)]; if(v!==undefined&&v!==null&&String(v).trim()!=='') return String(v).trim(); } return ''; };
   const rawTc=get('T.C. KİMLİK NO','TC Kimlik No','TCKN').replace(/\D+/g,'');
   const hashed=rawTc?tcHash(rawTc):'';
-  const rec={ id:hashed||uid('t'), firstName:get('ADI','Adı','Ad'), lastName:get('SOYADI','Soyadı','Soyad'), branch:get('BRANŞI','Branşı','Branş'), phone:get('CEP TELEFONU','Telefon','Cep'), email:get('E-POSTA','Eposta','Email'), classAdvisor:cleanClassName(get('SINIFI','Sınıfı','Sınıf')), club:get('KULÜP','Kulüp'), project:get('PROJE','Proje'), freeDay:get('BOŞ GÜN','Boş Gün'), dutyDay:get('NÖBET GÜNÜ','Nöbet Günü'), dutyPlace:get('NÖBET YERLERİ','Nöbet Yerleri','NÖBET YERİ','Nöbet Yeri'), scheduleNote:get('DERS PROGRAMI','Ders Programı') };
+  const rec={ id:hashed||uid('t'), firstName:get('ADI','Adı','Ad'), lastName:get('SOYADI','Soyadı','Soyad'), branch:get('BRANŞI','Branşı','Branş'), classAdvisor:cleanClassName(get('SINIFI','Sınıfı','Sınıf')), club:get('KULÜP','Kulüp'), project:get('PROJE','Proje'), freeDay:get('BOŞ GÜN','Boş Gün'), dutyDay:get('NÖBET GÜNÜ','Nöbet Günü'), dutyPlace:get('NÖBET YERLERİ','Nöbet Yerleri','NÖBET YERİ','Nöbet Yeri'), scheduleNote:get('DERS PROGRAMI','Ders Programı') };
   if(rawTc) rec._tcRaw=rawTc;
   return rec;
 }

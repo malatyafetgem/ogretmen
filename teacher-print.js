@@ -107,6 +107,47 @@ function notifyLandscapePrintHintAfterPrint(type) {
 }
 
 /**
+ * Öğretmen çarşafını TEK SAYFAYA sığdırmak için ölçüleri hesaplar.
+ * Satır sayısı (öğretmen) ve sütun sayısı (gün x saat) bilinir; sayfa yönüne göre
+ * satır yüksekliği, hücre genişliği ve yazı boyutu hesaplanır.
+ * @param {Element|null} root
+ * @param {'A4 portrait'|'A4 landscape'} orientation
+ * @returns {{pageW:number,nameCol:number,cellMm:number,rowMm:number,fs:number}}
+ */
+function teacherSheetFitMetrics(root, orientation) {
+  const MARGIN = 5;                       // mm (teacher sheet @page margin)
+  const landscape = orientation !== 'A4 portrait';
+  const pageW = (landscape ? 297 : 210) - MARGIN * 2;
+  const pageH = (landscape ? 210 : 297) - MARGIN * 2;
+  const nameCol = 13;                     // mm
+  const HEADER_MM = 18, THEAD_MM = 10.5, SAFETY_MM = 3;
+  const table = root ? root.querySelector('.schedule-sheet') : null;
+  const cells = table ? Number(table.dataset.cellCount || 0) || 40 : 40;
+  const rows = root ? Math.max(1, root.querySelectorAll('.teacher-sheet tbody tr').length) : 1;
+  const cellMm = (pageW - nameCol) / cells;
+  const rowAvail = (pageH - HEADER_MM - THEAD_MM - SAFETY_MM) / rows;       // mm / satır (kenarlık dahil)
+  const rowMm = Math.min(8, rowAvail) - 0.14;                                 // çökmüş kenarlık payı
+  const fsByHeight = (rowMm - 0.5) / 0.74;                                    // iki satır içerik
+  const fsByWidth  = (cellMm - 0.8) / 0.656;                                  // 3 karakter kalın
+  const rawFs = Math.min(6.5, fsByHeight, fsByWidth);
+  const fs = Math.max(3, rawFs);
+  return { pageW, nameCol, cellMm, rowMm: Math.max(2.6, rowMm), fs, rawFs };
+}
+
+/**
+ * Öğretmen çarşafı için en okunaklı sayfa yönünü seçer (yatay tercih edilir;
+ * çok öğretmen varsa dikey, tek sayfaya daha büyük yazıyla sığar).
+ * @param {Element|null} root
+ * @returns {'A4 portrait'|'A4 landscape'}
+ */
+function pickTeacherSheetOrientation(root) {
+  const land = teacherSheetFitMetrics(root, 'A4 landscape');
+  if (land.fs >= 5) return 'A4 landscape';
+  const port = teacherSheetFitMetrics(root, 'A4 portrait');
+  return port.rawFs > land.rawFs ? 'A4 portrait' : 'A4 landscape';
+}
+
+/**
  * Sayfa yönünü belirler.
  * orientation='auto' ise DOM'u inceleyerek karar verir.
  * @param {string} type
@@ -118,6 +159,9 @@ function notifyLandscapePrintHintAfterPrint(type) {
 function resolvePrintOrientation(type, requested, root, sourceId) {
   if (requested === 'portrait')  return 'A4 portrait';
   if (requested === 'landscape') return 'A4 landscape';
+
+  // Öğretmen çarşafı: tek sayfaya en iyi sığan yön
+  if (type === 'teacher-sheet') return pickTeacherSheetOrientation(root);
 
   // type ile kesin karar
   if (type === 'teacher-profile') {
@@ -518,7 +562,7 @@ function buildPrintHeader(opts, root) {
 function buildPrintCss(type, orientation, root, opts) {
   return [
     buildBasePrintCss(orientation),
-    buildPrintTypeCss(type, root, opts),
+    buildPrintTypeCss(type, root, Object.assign({}, opts, { resolvedOrientation: orientation })),
   ].join('\n');
 }
 
@@ -840,18 +884,20 @@ function buildSheetPrintCss(type, root, opts) {
   const isTeacherSheet    = root ? !!root.querySelector('.teacher-sheet') : (type === 'teacher-sheet');
   const isClassTransposed = root ? !!root.querySelector('.class-sheet-transposed') : false;
   const isMobile          = opts && opts.mobile;
+  const pageOrientation   = (opts && opts.resolvedOrientation) || 'A4 landscape';
 
   /* ── Kullanılabilir genişlik hesabı ──────────────────────────────
      Landscape A4: 297mm − 2×10mm kenar = 277mm
      Portrait  A4: 210mm − 2×10mm kenar = 190mm (transposed için)   */
-  const pageW   = 277;   // mm
-  const nameCol = isTeacherSheet ? 16 : (isClassTransposed ? 24 : 16);
+  const fit     = isTeacherSheet ? teacherSheetFitMetrics(root, pageOrientation) : null;
+  const pageW   = fit ? fit.pageW : 277;   // mm
+  const nameCol = fit ? fit.nameCol : (isClassTransposed ? 24 : 16);
   const dataW   = pageW - nameCol;
   const cells   = rawCellCount > 0 ? rawCellCount : 40;
 
   /* Her hücre için mm cinsinden genişlik (min 4.5mm, max 9mm) */
   const rawCW   = dataW / cells;
-  const cellMm  = Math.min(9, Math.max(4.5, rawCW)).toFixed(2);
+  const cellMm  = Math.min(9, Math.max(fit ? 2 : 4.5, rawCW)).toFixed(2);
   const nameColW = nameCol + 'mm';
   const cellW    = cellMm + 'mm';
 
@@ -868,7 +914,7 @@ function buildSheetPrintCss(type, root, opts) {
    ÇARŞAF (sheet-print) — yatay A4
    Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}
    ════════════════════════════════════════ */
-${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
+${isTeacherSheet ? '@page { size:'+pageOrientation+'; margin:5mm; }' : ''}
 .sheet-print { font-size:${contentFs}; }
 
 /* Başlık bandı */
@@ -1011,6 +1057,49 @@ ${isTeacherSheet ? '@page { size:'+orientation+'; margin:5mm; }' : ''}
 .sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell { width:7.5mm!important; min-width:7.5mm!important; max-width:7.5mm!important; font-size:3.5pt; }
 .sheet-print.mobile-print .class-sheet-transposed .sheet-hour-cell small { font-size:3pt; }
 .sheet-print.mobile-print .class-sheet .sheet-name { font-size:4pt; }
+${fit ? `
+/* ════════════════════════════════════════
+   ÖĞRETMEN ÇARŞAFI — TEK SAYFA + NÖBET VURGUSU
+   yön=${pageOrientation}  satır=${fit.rowMm.toFixed(2)}mm  yazı=${fit.fs.toFixed(2)}pt
+   ════════════════════════════════════════ */
+.sheet-print .ph-wrap { margin-bottom:2mm; padding-bottom:1.5mm; }
+.sheet-print .ph-title { font-size:12pt; }
+.sheet-print .ph-school { margin-bottom:.8mm; }
+.sheet-print .ph-sub { margin-top:.8mm; }
+.sheet-print .ph-title::after {
+  content:"   ·   Nöbet günü: gölgeli çerçeve ve N";
+  font-size:7pt; font-weight:700; letter-spacing:0; color:#92400e;
+}
+.sheet-print .teacher-sheet.schedule-sheet tbody th,
+.sheet-print .teacher-sheet.schedule-sheet tbody td {
+  height:${fit.rowMm.toFixed(2)}mm!important; min-height:0!important;
+  padding:.1mm .25mm!important; line-height:1.05;
+}
+.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content strong,
+.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span {
+  font-size:${fit.fs.toFixed(2)}pt; line-height:1.05; margin:0;
+  white-space:nowrap!important; overflow:hidden; text-overflow:clip;
+}
+.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span { font-size:${(fit.fs * 0.9).toFixed(2)}pt; }
+.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-teacher-code {
+  font-size:${fit.fs.toFixed(2)}pt; line-height:1.05; white-space:nowrap; overflow:hidden;
+}
+.sheet-print .teacher-sheet.schedule-sheet thead th { font-size:${Math.min(5.5, Math.max(3.6, fit.fs)).toFixed(2)}pt; }
+
+/* Nöbet günü: gölgeli, kalın çerçeveli blok + boş hücrelerde "N" */
+.sheet-print .duty-sheet { outline:none; }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet {
+  background:#fcd34d!important;
+  border-top:1pt solid #111827!important; border-bottom:1pt solid #111827!important;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.duty-first { border-left:1.6pt solid #111827!important; }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.duty-last  { border-right:1.6pt solid #111827!important; }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.sheet-empty { font-size:0; color:transparent; }
+.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet.sheet-empty::after {
+  content:"N"; font-size:${fit.fs.toFixed(2)}pt; font-weight:900; color:#78350f;
+}
+` : ''}
 `;
 }
 
@@ -1125,7 +1214,7 @@ function buildTeacherListPrintCss(type, root, opts) {
   return `
 /* ════════════════════════════════════════
    ÖĞRETMEN LİSTESİ (teacher-list-print) — yatay A4
-   Sütunlar: #(1) Ad+TC(2) Branş(3) Tel(4) Email(5) Sınıf(6) Nöbet(7) Ders(8) Görev(9)
+   Sütunlar: #(1) Ad(2) TC(3) Branş(4) Sınıf(5) Nöbet(6) Ders(7) Görev(8)
    ════════════════════════════════════════ */
 .teacher-list-print { font-size:var(--pt-fs-base); }
 .teacher-list-print .card { border:0; break-inside:auto; page-break-inside:auto; }
@@ -1135,17 +1224,16 @@ function buildTeacherListPrintCss(type, root, opts) {
 }
 .teacher-list-print .card-title { font-size:11pt; font-weight:900; letter-spacing:-.01em; color:#0f172a; }
 .teacher-list-print .table-responsive { overflow:visible!important; }
-/* Sabit genişlikler: landscape A4 ≈ 277mm kullanılabilir */
-.teacher-list-print .table { table-layout:fixed; }
+/* Sabit genişlikler: landscape A4 ≈ 277mm kullanılabilir
+   Sütunlar: #(1) Ad(2) TC(3) Branş(4) Sınıf(5) Nöbet(6) Ders(7) Görev(8) */
 .teacher-list-print .table th:nth-child(1), .teacher-list-print .table td:nth-child(1) { width:7mm;  text-align:center; }
 .teacher-list-print .table th:nth-child(2), .teacher-list-print .table td:nth-child(2) { width:52mm; }
 .teacher-list-print .table th:nth-child(3), .teacher-list-print .table td:nth-child(3) { width:30mm; }
-.teacher-list-print .table th:nth-child(4), .teacher-list-print .table td:nth-child(4) { width:28mm; }
-.teacher-list-print .table th:nth-child(5), .teacher-list-print .table td:nth-child(5) { width:38mm; }
-.teacher-list-print .table th:nth-child(6), .teacher-list-print .table td:nth-child(6) { width:18mm; text-align:center; }
-.teacher-list-print .table th:nth-child(7), .teacher-list-print .table td:nth-child(7) { width:28mm; }
-.teacher-list-print .table th:nth-child(8), .teacher-list-print .table td:nth-child(8) { width:12mm; text-align:center; }
-.teacher-list-print .table th:nth-child(9), .teacher-list-print .table td:nth-child(9) { width:12mm; text-align:center; }
+.teacher-list-print .table th:nth-child(4), .teacher-list-print .table td:nth-child(4) { width:40mm; }
+.teacher-list-print .table th:nth-child(5), .teacher-list-print .table td:nth-child(5) { width:22mm; text-align:center; }
+.teacher-list-print .table th:nth-child(6), .teacher-list-print .table td:nth-child(6) { width:45mm; }
+.teacher-list-print .table th:nth-child(7), .teacher-list-print .table td:nth-child(7) { width:14mm; text-align:center; }
+.teacher-list-print .table th:nth-child(8), .teacher-list-print .table td:nth-child(8) { width:14mm; text-align:center; }
 /* TC kimlik sütunu her zaman görünür */
 .teacher-list-print .table .tc-print-col { display:table-cell!important; }
 /* Ad Soyad hücresinde TC küçük satırda */
@@ -1155,7 +1243,7 @@ function buildTeacherListPrintCss(type, root, opts) {
 /* Zebra */
 .teacher-list-print .table tbody tr:nth-child(odd) td { background:#ffffff!important; }
 
-/* Mobil baskı: #(1) Ad(2) TC(3) Branş(4) Tel(5) [Email(6) gizli] Sınıf(7) Nöbet(8) Ders(9) Görev(10) */
+/* Mobil baskı: #(1) Ad(2) TC(3) Branş(4) Sınıf(5) Nöbet(6) Ders(7) Görev(8) */
 .teacher-list-print.mobile-print .table {
   table-layout:fixed; font-size:var(--pt-fs-xs); width:100%;
 }
@@ -1170,19 +1258,15 @@ function buildTeacherListPrintCss(type, root, opts) {
 .teacher-list-print.mobile-print .table th:nth-child(3),
 .teacher-list-print.mobile-print .table td:nth-child(3) { width:22mm; }
 .teacher-list-print.mobile-print .table th:nth-child(4),
-.teacher-list-print.mobile-print .table td:nth-child(4) { width:22mm; }
+.teacher-list-print.mobile-print .table td:nth-child(4) { width:26mm; }
 .teacher-list-print.mobile-print .table th:nth-child(5),
-.teacher-list-print.mobile-print .table td:nth-child(5) { width:20mm; }
+.teacher-list-print.mobile-print .table td:nth-child(5) { width:14mm; }
 .teacher-list-print.mobile-print .table th:nth-child(6),
-.teacher-list-print.mobile-print .table td:nth-child(6) { width:24mm; }
+.teacher-list-print.mobile-print .table td:nth-child(6) { width:30mm; }
 .teacher-list-print.mobile-print .table th:nth-child(7),
-.teacher-list-print.mobile-print .table td:nth-child(7) { width:14mm; }
+.teacher-list-print.mobile-print .table td:nth-child(7) { width:9mm; }
 .teacher-list-print.mobile-print .table th:nth-child(8),
-.teacher-list-print.mobile-print .table td:nth-child(8) { width:14mm; }
-.teacher-list-print.mobile-print .table th:nth-child(9),
-.teacher-list-print.mobile-print .table td:nth-child(9) { width:8mm; }
-.teacher-list-print.mobile-print .table th:nth-child(10),
-.teacher-list-print.mobile-print .table td:nth-child(10) { width:8mm; }
+.teacher-list-print.mobile-print .table td:nth-child(8) { width:9mm; }
 `;
 }
 

@@ -53,7 +53,7 @@ function renderDashboardSearch(){
   const q=normalizeText(input.value||'');
   if(!q){ target.innerHTML=''; return; }
   const teacherRows=sortedTeachers().filter(t=>normalizeText(`${teacherName(t)} ${t.branch}`).includes(q)).slice(0,8);
-  const classRows=(DB.settings.classes||CLASS_LIST).filter(cls=>normalizeText(cls).includes(q)).slice(0,8);
+  const classRows=sortedClassList(DB.settings.classes||CLASS_LIST).filter(cls=>normalizeText(cls).includes(q)).slice(0,8);
   const items=[
     ...teacherRows.map(t=>`<button class="search-result-item" onclick="goTeacherProfile('${escapeInlineJsString(t.id)}')"><i class="fas fa-user-tie"></i><span><strong>${escapeHtml(teacherName(t))}</strong><small>${escapeHtml(t.branch||'')}</small></span><span class="search-result-select">Seç</span></button>`),
     ...classRows.map(cls=>`<button class="search-result-item" onclick="goClassProfile('${escapeInlineJsString(cls)}')"><i class="fas fa-users"></i><span><strong>${escapeHtml(cls)}</strong><small>Sınıf profiline git</small></span><span class="search-result-select">Seç</span></button>`)
@@ -117,10 +117,10 @@ function renderTeachers(){
 }
 function teacherTableHtml(rows,{actions=false}={}){
   if(!rows.length) return `<tbody><tr><td>${emptyState('Kayıt bulunamadı.')}</td></tr></tbody>`;
-  return `<thead><tr><th>#</th><th>Ad Soyad</th><th class="tc-print-col">T.C. Kimlik No</th><th>Branş</th><th>Telefon</th><th>E-posta</th><th>Sınıf</th><th>Nöbet</th><th>Ders</th><th>Görev</th>${actions?'<th class="no-print">İşlem</th>':''}</tr></thead><tbody>${rows.map((t,i)=>{
+  return `<thead><tr><th>#</th><th>Ad Soyad</th><th class="tc-print-col">T.C. Kimlik No</th><th>Branş</th><th>Sınıf</th><th>Nöbet</th><th>Ders</th><th>Görev</th>${actions?'<th class="no-print">İşlem</th>':''}</tr></thead><tbody>${rows.map((t,i)=>{
     const lessons=teacherLessons(t.id), tasks=teacherTasks(t.id), selected=t.id===selectedTeacherId?' selected-row':'';
     const tcRaw=t._tcRaw||'';
-    return `<tr class="teacher-row${selected}" data-teacher-id="${escapeHtml(t.id)}" onclick="goTeacherProfile(this.dataset.teacherId)"><td>${i+1}</td><td><strong>${teacherLink(t)}</strong><br><small class="tc-screen-mask">${escapeHtml(maskTc(tcRaw))}</small></td><td class="tc-print-col">${escapeHtml(tcRaw||'—')}</td><td>${escapeHtml(t.branch)}</td><td>${formatPhone(t.phone)}</td><td>${formatEmail(t.email)}</td><td>${escapeHtml(t.classAdvisor||'—')}</td><td>${escapeHtml([t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'—')}</td><td>${uniqueScheduleHourCount(lessons,'teacher')}</td><td>${tasks.length}</td>${actions?`<td class="no-print table-actions"><button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();openTeacherModal(this.closest('tr').dataset.teacherId)"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();deleteTeacher(this.closest('tr').dataset.teacherId)"><i class="fas fa-trash"></i></button></td>`:''}</tr>`;
+    return `<tr class="teacher-row${selected}" data-teacher-id="${escapeHtml(t.id)}" onclick="goTeacherProfile(this.dataset.teacherId)"><td>${i+1}</td><td><strong>${teacherLink(t)}</strong><br><small class="tc-screen-mask">${escapeHtml(maskTc(tcRaw))}</small></td><td class="tc-print-col">${escapeHtml(tcRaw||'—')}</td><td>${escapeHtml(t.branch)}</td><td>${escapeHtml(t.classAdvisor||'—')}</td><td>${escapeHtml([t.dutyDay,t.dutyPlace].filter(Boolean).join(' / ')||'—')}</td><td>${uniqueScheduleHourCount(lessons,'teacher')}</td><td>${tasks.length}</td>${actions?`<td class="no-print table-actions"><button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();openTeacherModal(this.closest('tr').dataset.teacherId)"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();deleteTeacher(this.closest('tr').dataset.teacherId)"><i class="fas fa-trash"></i></button></td>`:''}</tr>`;
   }).join('')}</tbody>`;
 }
 function renderTeacherReport(){
@@ -240,8 +240,8 @@ function openTeacherModal(id=''){
   const t=id?teacherById(id):null, nameParts=t?teacherNameParts(t):null;
   getEl('teacherModalTitle').textContent=t?'Öğretmen Düzenle':'Öğretmen Ekle';
   getEl('teacherId').value=t?.id||'';
-  ['FirstName','LastName','Branch','Phone','Email','ClassAdvisor','Club','Project','DutyPlace','ScheduleNote'].forEach(k=>{
-    const map={FirstName:'firstName',LastName:'lastName',Branch:'branch',Phone:'phone',Email:'email',ClassAdvisor:'classAdvisor',Club:'club',Project:'project',DutyPlace:'dutyPlace',ScheduleNote:'scheduleNote'};
+  ['FirstName','LastName','Branch','ClassAdvisor','Club','Project','DutyPlace','ScheduleNote'].forEach(k=>{
+    const map={FirstName:'firstName',LastName:'lastName',Branch:'branch',ClassAdvisor:'classAdvisor',Club:'club',Project:'project',DutyPlace:'dutyPlace',ScheduleNote:'scheduleNote'};
     getEl('t'+k).value=t?.[map[k]]||'';
   });
   getEl('tRole').value=t?resolveTeacherRole(t):'Öğretmen';
@@ -285,7 +285,7 @@ function saveTeacherForm(){
   const nameParts=teacherNameParts(draft);
   const subjectsList=getEl('tSubjectsList');
   const subjects=[...subjectsList?.querySelectorAll('input[type=checkbox]:checked')||[]].map(cb=>cb.value);
-  const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),role:getEl('tRole').value||'Öğretmen',phone:getEl('tPhone').value.trim(),email:getEl('tEmail').value.trim(),classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim(),subjects};
+  const t={id,firstName:nameParts.first,lastName:nameParts.last,branch:getEl('tBranch').value.trim(),role:getEl('tRole').value||'Öğretmen',classAdvisor:cleanClassName(getEl('tClassAdvisor').value),club:getEl('tClub').value.trim(),project:getEl('tProject').value.trim(),freeDay:getEl('tFreeDay').value,dutyDay:getEl('tDutyDay').value,dutyPlace:getEl('tDutyPlace').value.trim(),scheduleNote:getEl('tScheduleNote').value.trim(),subjects};
   if(rawTc) t._tcRaw=rawTc;
   if(!t.firstName||!t.lastName){showToast('Ad ve soyad zorunlu.','warning');return;}
   if(oldId&&oldId!==id){DB.schedules.forEach(s=>{if(s.teacherId===oldId)s.teacherId=id;}); (DB.tasks||[]).forEach(g=>{if(g.teacherId===oldId)g.teacherId=id;}); if(selectedTeacherId===oldId)selectedTeacherId=id;}
@@ -329,39 +329,6 @@ function deleteTeacher(id){
   showToast('Öğretmen ve bağlı kayıtları silindi.','success');
 }
 
-function formatPhone(phone){
-  const raw=String(phone||'').trim();
-  if(!raw) return '—';
-  const digits=raw.replace(/\D/g,'');
-  if(!digits) return escapeHtml(raw);
-  const displayTr=national=>`${national.slice(0,4)} ${national.slice(4,7)} ${national.slice(7,9)} ${national.slice(9,11)}`;
-  let tel='', display='';
-  if(digits.length===10){
-    const national='0'+digits;
-    tel='+90'+digits;
-    display=displayTr(national);
-  }else if(digits.length===11&&digits.startsWith('0')){
-    tel='+90'+digits.slice(1);
-    display=displayTr(digits);
-  }else if(digits.length===12&&digits.startsWith('90')){
-    const national='0'+digits.slice(2);
-    tel='+'+digits;
-    display=displayTr(national);
-  }else if(digits.length>8&&digits.startsWith('00')){
-    tel='+'+digits.slice(2);
-    display=tel;
-  }else if(raw.startsWith('+')&&digits.length>8){
-    tel='+'+digits;
-    display=tel;
-  }else{
-    return escapeHtml(raw);
-  }
-  return `<a href="tel:${escapeHtml(tel)}" class="contact-link"><i class="fas fa-phone me-1"></i>${escapeHtml(display)}</a>`;
-}
-function formatEmail(email){
-  if(!email) return '—';
-  return `<a href="mailto:${escapeHtml(email)}" class="contact-link"><i class="fas fa-envelope me-1"></i>${escapeHtml(email)}</a>`;
-}
 function isBlankProfileValue(value){
   const text=String(value ?? '').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
   return !text || text==='—' || text==='-';
@@ -396,8 +363,6 @@ function buildTeacherPersonalInfo(t, lessons, tasks, free){
   return `<div class="row g-3 profile-info-grid-print">
       ${profileInfoTc(t._tcRaw||'')}
       ${profileInfo('Branş',t.branch||'—','fas fa-book-open')}
-      ${profileInfoRaw('Telefon',formatPhone(t.phone),'fas fa-phone')}
-      ${profileInfoRaw('E-posta',formatEmail(t.email),'fas fa-envelope')}
       ${profileInfo('Sınıf Öğretmenliği',t.classAdvisor||'—','fas fa-users')}
       ${profileInfo('Kulüp',t.club||'—','fas fa-people-group')}
       ${profileInfo('Proje',t.project||'—','fas fa-diagram-project')}

@@ -23,11 +23,11 @@ function fillDynamicSelects(){
   const grades=[...new Set((DB.settings.classes||CLASS_LIST).map(c=>classGrade(c)).filter(Boolean))].sort((a,b)=>Number(a)-Number(b)||String(a).localeCompare(String(b),'tr'));
   const gf=getEl('scheduleGradeFilter'), gfValue=gf?.value||''; if(gf){ gf.innerHTML='<option value="">Tüm Seviyeler</option>'+grades.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}. Sınıflar</option>`).join(''); keepValue(gf,gfValue); }
   const selectedGrade=getEl('scheduleGradeFilter')?.value||'';
-  const scheduleClasses=(DB.settings.classes||CLASS_LIST).filter(c=>!selectedGrade||classGrade(c)===String(selectedGrade));
+  const scheduleClasses=sortedClassList(DB.settings.classes||CLASS_LIST).filter(c=>!selectedGrade||classGrade(c)===String(selectedGrade));
   const cOpts='<option value="">Tüm Sınıflar</option>'+scheduleClasses.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   const cf=getEl('scheduleClassFilter'), cfValue=cf?.value||''; if(cf){ cf.innerHTML=cOpts; keepValue(cf,cfValue); }
-  const sc=getEl('sClass'), scValue=sc?.value||''; if(sc){ sc.innerHTML=DB.settings.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); keepValue(sc,scValue); }
-  const cps=getEl('classProfileSelect'), cpsValue=cps?.value||''; if(cps){ cps.innerHTML=DB.settings.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); keepValue(cps,cpsValue||DB.settings.classes[0]||''); }
+  const sc=getEl('sClass'), scValue=sc?.value||''; if(sc){ sc.innerHTML=sortedClassList(DB.settings.classes).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); keepValue(sc,scValue); }
+  const cps=getEl('classProfileSelect'), cpsValue=cps?.value||''; if(cps){ cps.innerHTML=sortedClassList(DB.settings.classes).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join(''); keepValue(cps,cpsValue||sortedClassList(DB.settings.classes)[0]||''); }
 }
 function sTab(id){
   if(['schedule','duty','tasks'].includes(id)){ window.reportMode=id; id='reports'; }

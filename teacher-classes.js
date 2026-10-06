@@ -23,7 +23,7 @@ function renderClasses(){
   fillDynamicSelects();
   const select=getEl('classProfileSelect');
   if(!select) return;
-  const classes=DB.settings.classes||CLASS_LIST;
+  const classes=sortedClassList(DB.settings.classes||CLASS_LIST);
   const cls=cleanClassName(select.value||selectedClassName||classes[0]||'');
   if(cls&&select.value!==cls&&[...select.options].some(o=>o.value===cls)) select.value=cls;
   selectedClassName=cls;

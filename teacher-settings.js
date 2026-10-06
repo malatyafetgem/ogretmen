@@ -208,7 +208,7 @@ function getDutyPlaces(){
 function buildClassProgramSettings(dayValue){
   const days=schoolDays(), hours=schoolHours();
   const dayOptions=days.map(d=>`<option value="${escapeHtml(d)}" ${d===dayValue?'selected':''}>${escapeHtml(d)}</option>`).join('');
-  const rows=(DB.settings.classes||CLASS_LIST).map((cls,i)=>classProgramRow(cls,cls,dayValue,i)).join('');
+  const rows=sortedClassList(DB.settings.classes||CLASS_LIST).map((cls,i)=>classProgramRow(cls,cls,dayValue,i)).join('');
   return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addClassProgramRow()">Sınıf Ekle</button><button class="btn btn-sm btn-primary" onclick="saveClassProgramMatrix()">Kaydet</button></div><div class="settings-editor-body"><div class="settings-scroll-hint no-print"><i class="fas fa-arrows-left-right"></i> Yana kaydırın</div><div class="settings-filter-row"><div><label class="form-label">Gün</label><select id="classProgramDay" class="form-select" onchange="window.settingsProgramDay=this.value; renderSettings()">${dayOptions}</select></div><p class="text-muted small mb-0">Bu tablo seçili günü düzenler. Her hücrede önce öğretmen, sonra o öğretmene ait ders seçilir. Öğretmen listesi alfabetiktir; ders listesinde öğretmenin kayıtlı dersleri önce gelir.</p></div><div id="classProgramConflictWarning" class="class-program-conflict mt-3"></div><div class="settings-table-scroll settings-table-scroll-wide mt-3"><table class="table settings-matrix mb-0 class-program-settings-table"><thead><tr><th>Sınıf</th>${hours.map(h=>`<th class="text-center">${h}.<br><small>${escapeHtml(lessonTimeByHour(h)?.start||'')}</small></th>`).join('')}<th class="no-print">İşlem</th></tr></thead><tbody id="classProgramBody">${rows}</tbody></table></div></div></div>`;
 }
 
@@ -254,7 +254,7 @@ function classProgramSubjectOptions(teacherId='', selectedSubject=''){
   const choices=classProgramSubjectChoices(teacherId, selectedSubject);
   if(!choices.length) return '<option value="">Ders bulunamadı</option>';
   const selectedKey=plainKey(selectedSubject||choices[0]);
-  return choices.map(subject=>`<option value="${escapeHtml(subject)}" ${plainKey(subject)===selectedKey?'selected':''}>${escapeHtml(subject)}</option>`).join('');
+  return choices.slice().sort((a,b)=>String(a).localeCompare(String(b),'tr')).map(subject=>`<option value="${escapeHtml(subject)}" ${plainKey(subject)===selectedKey?'selected':''}>${escapeHtml(subject)}</option>`).join('');
 }
 
 function updateClassProgramSubjectSelect(teacherSelect){
@@ -378,14 +378,14 @@ function saveClassProgramMatrix(){
     });
   });
   DB.schedules.push(...preservedSchedules);
-  DB.settings.classes=classNames;
+  DB.settings.classes=sortedClassList(classNames);
   saveDB();
   renderAll();
   showToast('Ders programı hızlı düzenleme kaydedildi.','success');
 }
 
 function buildSubjectSettings(){
-  const rows=(DB.settings.subjects||subjectSettings()).map((item,i)=>subjectSettingsRow(item,i)).join('');
+  const rows=(DB.settings.subjects||subjectSettings()).slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr')).map((item,i)=>subjectSettingsRow(item,i)).join('');
   return `<div class="settings-editor"><div class="settings-editor-toolbar no-print"><button class="btn btn-sm btn-outline-secondary" onclick="addSubjectSettingsRow()">Ders Ekle</button><button class="btn btn-sm btn-primary" onclick="saveSubjectSettings()">Kaydet</button></div><div class="settings-editor-body"><p class="text-muted small">Çarşaf program ve sınıf/öğretmen özetlerinde kullanılan ders adları ve kısa kodlar burada tutulur.</p><div class="settings-table-scroll"><table class="table settings-matrix mb-0 subject-settings-table"><thead><tr><th>Ders Adı</th><th>Kısaltma</th><th class="no-print">İşlem</th></tr></thead><tbody id="subjectSettingsBody">${rows}</tbody></table></div></div></div>`;
 }
 
@@ -478,8 +478,6 @@ let _tiPendingData = null; // önizleme verisi
 
 // Sistem alanı map: key → { label, header (tahmin için), fieldKey (teacher objesindeki alan adı) }
 const TI_SYSTEM_FIELDS = [
-  { key:'phone',        label:'Cep Telefonu', header:'CEP TELEFONU',  fieldKey:'phone' },
-  { key:'email',        label:'E-posta',       header:'E-POSTA',       fieldKey:'email' },
   { key:'classAdvisor', label:'Sınıf',         header:'SINIFI',        fieldKey:'classAdvisor' },
   { key:'club',         label:'Kulüp',         header:'KULÜP',         fieldKey:'club' },
   { key:'project',      label:'Proje',         header:'PROJE',         fieldKey:'project' },
@@ -723,7 +721,7 @@ function processTeacherImport(){
     const existing = DB.teachers.find(t => t.id === hashed || String(t._tcRaw||'') === rawTc);
 
     const rec = {
-      phone:'', email:'', classAdvisor:'', club:'', project:'',
+      classAdvisor:'', club:'', project:'',
       freeDay:'', dutyDay:'', dutyPlace:'', scheduleNote:'',
       ...(existing || {}),
       id: hashed, _tcRaw: rawTc, firstName, lastName,
@@ -957,6 +955,7 @@ function applyImportedSchedule(parsed,mode){
   DB.settings.subjects=DB.settings.subjects||subjectSettings().map(s=>({name:s.name,code:s.code}));
   const classKeys=new Set((DB.settings.classes||[]).map(plainKey));
   parsed.classes.forEach(cls=>{ if(!classKeys.has(plainKey(cls))){ DB.settings.classes.push(cls); classKeys.add(plainKey(cls)); } });
+  DB.settings.classes=sortedClassList(DB.settings.classes);
   const subjectKeys=new Set((DB.settings.subjects||subjectSettings()).map(s=>plainKey(s.name)));
   parsed.subjects.forEach(subject=>{
     const key=plainKey(subject);
@@ -993,15 +992,13 @@ function exportToExcel(){
   const wb=XLSX.utils.book_new();
 
   // ── 1. Sayfa: Öğretmen Bilgileri ──
-  const teacherHeaders=['Ad','Soyad','T.C. Kimlik No','Branş','Rol','Telefon','E-posta','Sınıf Öğretmenliği','Kulüp','Proje','Nöbet Günü','Nöbet Yeri','Boş Gün','Program Notu','Verdiği Dersler'];
+  const teacherHeaders=['Ad','Soyad','T.C. Kimlik No','Branş','Rol','Sınıf Öğretmenliği','Kulüp','Proje','Nöbet Günü','Nöbet Yeri','Boş Gün','Program Notu','Verdiği Dersler'];
   const teacherRows=sortedTeachers().map(t=>[
     t.firstName||'',
     t.lastName||'',
     t._tcRaw||'',
     t.branch||'',
     t.role||'',
-    t.phone||'',
-    t.email||'',
     t.classAdvisor||'',
     t.club||'',
     t.project||'',
