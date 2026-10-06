@@ -119,11 +119,12 @@ function teacherSheetFitMetrics(root, orientation) {
   const landscape = orientation !== 'A4 portrait';
   const pageW = (landscape ? 297 : 210) - MARGIN * 2;
   const pageH = (landscape ? 210 : 297) - MARGIN * 2;
-  const nameCol = 27;                     // mm (tam ad + nöbet etiketi)
+  const isClass = !!(root && root.querySelector('.class-sheet'));
+  const nameCol = isClass ? 14 : 27;      // mm (sınıf adı kısa; öğretmen için tam ad)
   const HEADER_MM = 18, THEAD_MM = 10.5, SAFETY_MM = 3;
   const table = root ? root.querySelector('.schedule-sheet') : null;
   const cells = table ? Number(table.dataset.cellCount || 0) || 40 : 40;
-  const rows = root ? Math.max(1, root.querySelectorAll('.teacher-sheet tbody tr').length) : 1;
+  const rows = root ? Math.max(1, root.querySelectorAll('.schedule-sheet tbody tr').length) : 1;
   const cellMm = (pageW - nameCol) / cells;
   const rowAvail = (pageH - HEADER_MM - THEAD_MM - SAFETY_MM) / rows;       // mm / satır (kenarlık dahil)
   const rowMm = Math.min(8, rowAvail) - 0.14;                                 // çökmüş kenarlık payı
@@ -161,7 +162,7 @@ function resolvePrintOrientation(type, requested, root, sourceId) {
   if (requested === 'landscape') return 'A4 landscape';
 
   // Öğretmen çarşafı: tek sayfaya en iyi sığan yön
-  if (type === 'teacher-sheet') return pickTeacherSheetOrientation(root);
+  if (type === 'teacher-sheet' || type === 'class-sheet') return pickTeacherSheetOrientation(root);
 
   // type ile kesin karar
   if (type === 'teacher-profile') {
@@ -215,7 +216,7 @@ function shouldUseLandscapeForPrint(root) {
  * @param {Element} root
  */
 function prepareTeacherSheetForPrint(root, orientation) {
-  const table = root ? root.querySelector('.teacher-sheet.schedule-sheet') : null;
+  const table = root ? root.querySelector('.teacher-sheet.schedule-sheet, .class-sheet.schedule-sheet') : null;
   if (!table) return;
   const esc = (typeof escapeHtml === 'function') ? escapeHtml : (x => String(x));
 
@@ -242,7 +243,7 @@ function prepareTeacherSheetForPrint(root, orientation) {
   const dayThs = Array.prototype.filter.call(firstHead.children, th => th.hasAttribute('colspan'));
   const perDay = dayThs.length ? (Number(dayThs[0].getAttribute('colspan')) || 1) : 1;
   const corner = Array.prototype.find.call(firstHead.children, th => th.hasAttribute('rowspan'));
-  if (corner) corner.textContent = 'Öğretmen';
+  if (corner && table.classList.contains('teacher-sheet')) corner.textContent = 'Öğretmen';
 
   const mark = (cell, colIndex) => {
     const day = Math.floor(colIndex / perDay);
@@ -253,7 +254,18 @@ function prepareTeacherSheetForPrint(root, orientation) {
   dayThs.forEach((th, i) => mark(th, i * perDay));
   if (headRows[1]) Array.prototype.forEach.call(headRows[1].children, (th, i) => mark(th, i));
 
+  const isClassTable = table.classList.contains('class-sheet');
+  let prevGrade = null;
   table.querySelectorAll('tbody tr').forEach(tr => {
+    if (isClassTable) {
+      const nameCell = tr.querySelector('.sheet-name');
+      const m = nameCell ? String(nameCell.textContent || '').trim().match(/^\d+/) : null;
+      const grade = m ? m[0] : '';
+      if (prevGrade !== null && grade !== prevGrade) {
+        Array.prototype.forEach.call(tr.children, c => c.classList.add('grade-start'));
+      }
+      prevGrade = grade;
+    }
     let col = 0;
     Array.prototype.forEach.call(tr.children, cell => {
       if (cell.classList.contains('sheet-name')) {
@@ -947,6 +959,8 @@ function buildSheetPrintCss(type, root, opts) {
   const sheetTable        = root ? root.querySelector('.schedule-sheet') : null;
   const rawCellCount      = sheetTable ? Number(sheetTable.dataset.cellCount || 0) : 0;
   const isTeacherSheet    = root ? !!root.querySelector('.teacher-sheet') : (type === 'teacher-sheet');
+  const isClassSheet      = root ? !!root.querySelector('.class-sheet') && !root.querySelector('.class-sheet-transposed') : false;
+  const sheetKind         = isClassSheet ? 'class-sheet' : 'teacher-sheet';
   const isClassTransposed = root ? !!root.querySelector('.class-sheet-transposed') : false;
   const isMobile          = opts && opts.mobile;
   const pageOrientation   = (opts && opts.resolvedOrientation) || 'A4 landscape';
@@ -954,7 +968,7 @@ function buildSheetPrintCss(type, root, opts) {
   /* ── Kullanılabilir genişlik hesabı ──────────────────────────────
      Landscape A4: 297mm − 2×10mm kenar = 277mm
      Portrait  A4: 210mm − 2×10mm kenar = 190mm (transposed için)   */
-  const fit     = isTeacherSheet ? teacherSheetFitMetrics(root, pageOrientation) : null;
+  const fit     = (isTeacherSheet || isClassSheet) ? teacherSheetFitMetrics(root, pageOrientation) : null;
   const pageW   = fit ? fit.pageW : 277;   // mm
   const nameCol = fit ? fit.nameCol : (isClassTransposed ? 24 : 16);
   const dataW   = pageW - nameCol;
@@ -979,7 +993,7 @@ function buildSheetPrintCss(type, root, opts) {
    ÇARŞAF (sheet-print) — yatay A4
    Hesaplanan: nameCol=${nameCol}mm  cellW=${cellMm}mm  cells=${cells}
    ════════════════════════════════════════ */
-${isTeacherSheet ? '@page { size:'+pageOrientation+'; margin:5mm; }' : ''}
+${(isTeacherSheet || isClassSheet) ? '@page { size:'+pageOrientation+'; margin:5mm; }' : ''}
 .sheet-print { font-size:${contentFs}; }
 
 /* Başlık bandı */
@@ -1124,7 +1138,7 @@ ${isTeacherSheet ? '@page { size:'+pageOrientation+'; margin:5mm; }' : ''}
 .sheet-print.mobile-print .class-sheet .sheet-name { font-size:4pt; }
 ${fit ? `
 /* ════════════════════════════════════════
-   ÖĞRETMEN ÇARŞAFI — sade, açık, tek sayfa
+   ÇARŞAF (öğretmen/sınıf) — sade, açık, tek sayfa
    yön=${pageOrientation}  satır=${fit.rowMm.toFixed(2)}mm  yazı=${fit.fs.toFixed(2)}pt
    Renkli ve siyah-beyaz çıktıda aynı okunur: vurgu = fosforlu zemin + KALIN yazı.
    ════════════════════════════════════════ */
@@ -1136,7 +1150,7 @@ body.sheet-print { font-family:"Segoe UI","Helvetica Neue",Roboto,"Inter",Arial,
 .sheet-print .ph-title { font-size:13pt; font-weight:800; letter-spacing:-.01em; color:#0f172a; }
 .sheet-print .ph-sub { margin-top:.6mm; }
 .sheet-print .ph-date { font-size:7pt; color:#64748b; }
-/* Gösterge: fosforlu kalemle işaretli "Nöbet günü" */
+${isTeacherSheet ? `/* Gösterge: fosforlu kalemle işaretli "Nöbet günü" */
 .sheet-print .ph-title::after {
   content:"Nöbet günü";
   display:inline-block; vertical-align:middle; margin-left:5mm; padding:.3mm 2mm;
@@ -1144,74 +1158,93 @@ body.sheet-print { font-family:"Segoe UI","Helvetica Neue",Roboto,"Inter",Arial,
   background:linear-gradient(to bottom,transparent 12%,#fde047 12%,#fde047 88%,transparent 88%);
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
+` : ''}
 
 /* Tablo iskeleti: açık, ince çizgili */
-.sheet-print .teacher-sheet.schedule-sheet { border:.8pt solid #334155!important; }
-.sheet-print .teacher-sheet.schedule-sheet th,
-.sheet-print .teacher-sheet.schedule-sheet td { border:.3pt solid #e2e8f0!important; }
+.sheet-print .${sheetKind}.schedule-sheet { border:.8pt solid #334155!important; }
+.sheet-print .${sheetKind}.schedule-sheet th,
+.sheet-print .${sheetKind}.schedule-sheet td { border:.3pt solid #e2e8f0!important; }
 
 /* Başlık satırları: açık zemin, koyu yazı */
-.sheet-print .teacher-sheet.schedule-sheet thead tr:first-child th {
+.sheet-print .${sheetKind}.schedule-sheet thead tr:first-child th {
   background:#eef2f7!important; color:#0f172a!important; border-color:#cbd5e1!important;
   font-size:${Math.min(6, Math.max(4, fit.fs)).toFixed(2)}pt; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
   height:5mm; -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.sheet-print .teacher-sheet.schedule-sheet thead tr:first-child th[rowspan] {
+.sheet-print .${sheetKind}.schedule-sheet thead tr:first-child th[rowspan] {
   text-align:left; padding-left:1.2mm!important; letter-spacing:.04em;
 }
-.sheet-print .teacher-sheet.schedule-sheet thead tr:nth-child(2) th {
+.sheet-print .${sheetKind}.schedule-sheet thead tr:nth-child(2) th {
   background:#ffffff!important; color:#64748b; font-weight:600;
   font-size:${Math.min(5, Math.max(3.4, fit.fs * 0.85)).toFixed(2)}pt; height:4.5mm;
   border-bottom:.8pt solid #334155!important;
 }
 
 /* Gün grupları: belirgin ayırıcı çizgi */
-.sheet-print .teacher-sheet.schedule-sheet .day-start { border-left:.8pt solid #475569!important; }
+.sheet-print .${sheetKind}.schedule-sheet .day-start { border-left:1.6pt solid #1e293b!important; }
+.sheet-print .${sheetKind}.schedule-sheet thead tr th.day-start { border-left-color:#1e293b!important; }
+/* Gün başlıkları: dönüşümlü ton (S/B çıktıda da günler ayrışır) */
+.sheet-print .${sheetKind}.schedule-sheet thead tr:first-child th.day-a { background:#dbe3ee!important; }
+.sheet-print .${sheetKind}.schedule-sheet thead tr:first-child th.day-b { background:#eef2f7!important; }
+.sheet-print .${sheetKind}.schedule-sheet thead tr:nth-child(2) th.day-a { background:#f1f5f9!important; }
+.sheet-print .${sheetKind}.schedule-sheet thead tr:nth-child(2) th.day-b { background:#ffffff!important; }
 
 /* Gövde hücreleri: hepsi aynı sade görünüm (dolu/boş fark etmez) */
-.sheet-print .teacher-sheet.schedule-sheet tbody th,
-.sheet-print .teacher-sheet.schedule-sheet tbody td {
+.sheet-print .${sheetKind}.schedule-sheet tbody th,
+.sheet-print .${sheetKind}.schedule-sheet tbody td {
   height:${fit.rowMm.toFixed(2)}mm!important; min-height:0!important;
   padding:.1mm .25mm!important; line-height:1.05;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.sheet-filled,
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.sheet-empty {
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.sheet-filled,
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.sheet-empty {
   background:#ffffff!important; color:#0f172a;
   border-top:.4pt solid #cbd5e1!important; border-bottom:.4pt solid #cbd5e1!important;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.sheet-empty { color:transparent; }
-.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content strong,
-.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span {
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.sheet-empty { color:transparent; }
+.sheet-print .${sheetKind}.schedule-sheet tbody .sheet-cell-content strong,
+.sheet-print .${sheetKind}.schedule-sheet tbody .sheet-cell-content span {
   line-height:1.05; margin:0; white-space:nowrap!important; overflow:hidden; text-overflow:clip;
 }
 /* Normal gün: sınıf adı normal kalınlık */
-.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content strong {
+.sheet-print .${sheetKind}.schedule-sheet tbody .sheet-cell-content strong {
   font-size:${fit.fs.toFixed(2)}pt; font-weight:400; color:#0f172a;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody .sheet-cell-content span {
+.sheet-print .${sheetKind}.schedule-sheet tbody .sheet-cell-content span {
   font-size:${(fit.fs * 0.88).toFixed(2)}pt; font-weight:400; color:#475569; margin-top:0;
 }
 
 /* Öğretmen adı sütunu */
-.sheet-print .teacher-sheet.schedule-sheet tbody tr th.sheet-name {
+.sheet-print .${sheetKind}.schedule-sheet tbody tr th.sheet-name {
   background:#f8fafc!important; text-align:left; white-space:nowrap; overflow:hidden;
   padding:.1mm 1mm!important; border-right:.8pt solid #334155!important;
   border-top:.4pt solid #cbd5e1!important; border-bottom:.4pt solid #cbd5e1!important;
   font-size:${fit.fs.toFixed(2)}pt; font-weight:500; color:#1e293b;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody th.sheet-name .tsn-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.1; }
-.sheet-print .teacher-sheet.schedule-sheet tbody th.sheet-name .tsn-name b { font-weight:800; color:#0f172a; }
+.sheet-print .${sheetKind}.schedule-sheet tbody th.sheet-name .tsn-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.1; }
+.sheet-print .${sheetKind}.schedule-sheet tbody th.sheet-name .tsn-name b { font-weight:800; color:#0f172a; }
 
 /* Nöbet günü: fosforlu kalemle çizilmiş şerit + KALIN sınıf adı (S/B çıktıda da ayırt edilir) */
 .sheet-print .duty-sheet { outline:none; }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet {
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.duty-sheet {
   background:linear-gradient(to bottom,#ffffff 0,#ffffff 12%,#fde047 12%,#fde047 88%,#ffffff 88%,#ffffff 100%)!important;
   -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet .sheet-cell-content strong,
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet strong { font-weight:800; color:#0f172a; }
-.sheet-print .teacher-sheet.schedule-sheet tbody tr td.duty-sheet span { color:#334155; }
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.duty-sheet .sheet-cell-content strong,
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.duty-sheet strong { font-weight:800; color:#0f172a; }
+.sheet-print .${sheetKind}.schedule-sheet tbody tr td.duty-sheet span { color:#334155; }
+${isClassSheet ? `
+/* Sınıflar: belirgin satır çizgisi, sınıf seviyesi grupları arasında kalın çizgi, ayrışan ad sütunu */
+.sheet-print .class-sheet.schedule-sheet tbody tr td.sheet-filled,
+.sheet-print .class-sheet.schedule-sheet tbody tr td.sheet-empty { border-top-color:#94a3b8!important; border-bottom-color:#94a3b8!important; }
+.sheet-print .class-sheet.schedule-sheet tbody tr th.sheet-name { background:#eef2f7!important; border-top-color:#94a3b8!important; border-bottom-color:#94a3b8!important; border-right:1.6pt solid #1e293b!important; }
+.sheet-print .class-sheet.schedule-sheet tbody tr td.grade-start,
+.sheet-print .class-sheet.schedule-sheet tbody tr th.grade-start { border-top:1.6pt solid #1e293b!important; }
+/* Sınıf çarşafı: ders kodu belirgin (yarı kalın), öğretmen kodu sakin gri; sınıf adı ortalı kalın */
+.sheet-print .class-sheet.schedule-sheet tbody .sheet-cell-content strong { font-weight:700; }
+.sheet-print .class-sheet.schedule-sheet tbody tr th.sheet-name { text-align:center; font-weight:800; padding:.1mm .4mm!important; }
+.sheet-print .class-sheet.schedule-sheet thead tr:first-child th[rowspan] { text-align:center; padding-left:0!important; }
+` : ''}
 ` : ''}
 `;
 }
@@ -1888,7 +1921,7 @@ function printDocument(options) {
     // DOM hazırlık
     const rootClone = root.cloneNode(true);
     expandScrollableAreas(rootClone);
-    if (opts.type === 'teacher-sheet') prepareTeacherSheetForPrint(rootClone, orientation);
+    if (opts.type === 'teacher-sheet' || opts.type === 'class-sheet') prepareTeacherSheetForPrint(rootClone, orientation);
     openDisclosureForPrint(rootClone);
     prepareProfileProgramForPrint(rootClone, opts);
     normalizeProgramListForPrint(rootClone, opts);
